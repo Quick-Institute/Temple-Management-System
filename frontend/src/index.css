@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Petrona:ital,wght@0,100..900;1,100..900&display=swap');
+@import 'tailwindcss';
+
+@theme {
+    --font-temple: 'Petrona', Georgia, serif;
+    --font-display: 'Petrona', Georgia, serif;
+    --font-arial: Arial, Helvetica, sans-serif;
+}
+
+@layer base {
+    html {
+        min-width: 320px;
+    }
+
+    body {
+        @apply m-0 min-h-screen bg-[#18382d] font-temple text-[#18251f] antialiased;
+    }
+
+    button,
+    input {
+        font: inherit;
+    }
+}
