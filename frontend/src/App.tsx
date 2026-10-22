@@ -1,6 +1,5 @@
-const App = () => {
-  return (
-      <div>App</div>
-  )
-}
+import {AppRoutes} from './routes/AppRoutes'
+
+const App = () => <AppRoutes/>
+
 export default App
