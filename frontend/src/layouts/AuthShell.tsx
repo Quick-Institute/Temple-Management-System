@@ -39,62 +39,116 @@ const features: { icon: ShellIconName; title: string; description: string }[] = 
     {icon: 'donation', title: 'Enable\nDonations', description: 'Make giving simple and secure'},
 ]
 
-export const AuthShell = ({children}: { children: ReactNode }) => (
-    <main
-        className="relative isolate min-h-svh min-w-[320px] overflow-x-hidden bg-[#18382d] bg-position-[18%_center] bg-cover bg-no-repeat lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(500px,.9fr)] max-[840px]:block max-[840px]:bg-position-[41%_center]"
-        style={{backgroundImage: "url('/images/temple-bg.jpg')"}}
-    >
-        <div
-            className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(8,31,21,.15)_0%,rgba(9,35,23,.04)_46%,rgba(25,20,14,.03)_100%)] max-[840px]:bg-[#061c1360]"/>
+type AuthVariant = 'login' | 'signup'
 
-        {/* TOP HEADER SECTION */}
-        <section
-            className="flex items-center px-[3.8vw] py-[7.5vw] max-[840px]:items-start max-[840px]:bg-linear-to-b max-[840px]:from-[#0619103d] max-[840px]:to-transparent max-[840px]:px-7.5 max-[840px]:pt-12 max-[840px]:pb-4 max-[640px]:min-h-0 max-[640px]:px-6 max-[640px]:pt-8 max-[640px]:pb-3 max-[450px]:pt-6 max-[450px]:pb-2">
-            <div className="mt-[4vh] w-full max-w-172.5 text-white max-[840px]:mt-0">
-                <div>
-                    {/* DESKTOP VERSION - Hidden on mobile (<= 640px) */}
-                    <h1 className="m-0 hidden font-arial text-[clamp(3rem,4.45vw,5rem)] font-black leading-[.84] tracking-[-.04em] text-white [text-shadow:0_3px_0_rgba(0,0,0,.35),0_7px_12px_rgba(0,0,0,.68)] min-[641px]:block min-[641px]:whitespace-nowrap max-[840px]:text-[clamp(2.8rem,9vw,4rem)]">
-                        <span className="block min-[641px]:whitespace-nowrap">Temple Management</span>
-                        <span className="block mt-1">System</span>
-                    </h1>
+const COPY: Record<AuthVariant, { desktop: string[]; mobile: string[]; subtitle: string }> = {
+    login: {
+        desktop: ['Temple Management', 'System'],
+        mobile: ['Temple', 'Management', 'System'],
+        subtitle: 'Connecting Temples || Supporting Communities || Preserving Tradition',
+    },
+    signup: {
+        desktop: ['Join Our', 'Temple', 'Community'],
+        mobile: ['Join Our', 'Temple', 'Community'],
+        subtitle: 'Register your temple or become a member of our group',
+    },
+}
 
-                    {/* MOBILE VERSION */}
-                    <h1 className="m-0 flex flex-col items-center text-center gap-0.5 font-arial font-black leading-[1.05] text-white [text-shadow:0_3px_0_rgba(0,0,0,.35),0_7px_12px_rgba(0,0,0,.68)] max-[640px]:text-[clamp(2rem,8vw,2.6rem)] max-[450px]:text-[2.1rem] min-[641px]:hidden">
-                        <span>Temple</span>
-                        <span>Management</span>
-                        <span>System</span>
-                    </h1>
-                </div>
+export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; variant?: AuthVariant }) => {
+    const copy = COPY[variant]
+    return (
+        <main
+            className={`auth-scope relative isolate min-h-svh min-w-[320px] overflow-x-hidden bg-[#18382d] max-[840px]:block ${
+                variant === 'signup'
+                    ? 'lg:grid lg:items-start lg:grid-cols-[minmax(0,.82fr)_minmax(0,1.18fr)]'
+                    : 'lg:grid lg:items-start lg:grid-cols-[minmax(0,1.02fr)_minmax(0,.98fr)]'
+            }`}
+        >
+            {/*
+          The photograph sits in a viewport-fixed layer instead of on <main>. Previously the image was
+          a background of <main>, whose height grows with the form inside the card — so the long Temple
+          Admin form scaled and re-cropped the photo compared with the shorter Committee Member and
+          Family User forms. Anchored to the viewport, all three tabs frame the temple identically.
+          The srcSet picks the smallest file that still covers the screen (480/768/1024/1253 px wide).
+        */}
+            <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-20 overflow-hidden bg-[#18382d]">
+                <img
+                    src="/images/temple-bg-1253.jpg"
+                    srcSet="/images/temple-bg-480.jpg 480w, /images/temple-bg-768.jpg 768w, /images/temple-bg-1024.jpg 1024w, /images/temple-bg-1253.jpg 1253w"
+                    sizes="100vw"
+                    alt=""
+                    decoding="async"
+                    fetchPriority="high"
+                    className="auth-photo h-full w-full object-cover"
+                />
+            </div>
 
-                {/* SUBTITLE - Hidden on <= 640px */}
-                <p className="ml-0.75 mt-8 whitespace-nowrap font-arial text-[clamp(.8rem,1.18vw,1.2rem)] font-bold leading-[1.65] text-white [text-shadow:0_2px_5px_rgba(0,0,0,.8)] max-[1090px]:text-[.74rem] max-[840px]:mt-6 max-[840px]:max-w-120 max-[840px]:whitespace-normal max-[840px]:text-[.83rem] max-[640px]:hidden">
-                    Connecting Temples <b className="px-[.15em] text-[.94em]">||</b> Supporting Communities <b
-                    className="px-[.15em] text-[.94em]">||</b> Preserving Tradition
-                </p>
+            {/* Flat 20% black over the photograph — shared by the login and registration screens,
+            so the temple reads slightly darker and the white hero copy keeps its contrast.
+            The green-gradient layer below still sits on top of it. */}
+            <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 bg-black/20"/>
 
-                <ul className="m-0 mt-[clamp(9rem,24vh,17rem)] flex list-none gap-[clamp(1.8rem,4vw,5rem)] p-0 max-[1090px]:gap-[1.4rem] max-[840px]:hidden"
-                    aria-label="System capabilities">
-                    {features.map((feature) => (
-                        <li className="group relative w-27.5 flex-none text-center text-[clamp(.78rem,1.05vw,1.06rem)] font-bold leading-[1.4] [text-shadow:0_2px_5px_rgba(0,0,0,.55)] after:absolute after:-right-7 after:top-0 after:h-36 after:w-px after:bg-white/80 after:content-[''] last:after:hidden max-[1090px]:w-23"
-                            key={feature.icon}>
+            <div
+                className="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(90deg,rgba(8,31,21,.15)_0%,rgba(9,35,23,.04)_46%,rgba(25,20,14,.03)_100%)] max-[1023px]:bg-[#061c1360]"/>
+
+            {/* TOP HEADER SECTION */}
+            <section
+                className="flex items-start px-[3.8vw] py-[7.5vw] max-[1023px]:block max-[1023px]:bg-linear-to-b max-[1023px]:from-[#0619103d] max-[1023px]:to-transparent max-[1023px]:px-7 max-[1023px]:pt-10 max-[1023px]:pb-5 max-[640px]:px-5.5 max-[640px]:pt-8 max-[640px]:pb-4 max-[450px]:px-4.5 max-[450px]:pt-6 max-[450px]:pb-3 lg:sticky lg:top-0 lg:h-svh lg:self-start lg:items-center">
+                <div className="w-full min-w-0 max-w-172.5 text-white lg:mt-[4vh]">
+                    <div>
+                        {/* DESKTOP VERSION - Hidden on mobile (<= 640px) */}
+                        <h1 className="m-0 hidden font-arial text-[clamp(2.3rem,3.85vw,4.5rem)] font-black leading-[.9] tracking-[-.035em] text-balance text-white [text-shadow:0_3px_0_rgba(0,0,0,.35),0_7px_12px_rgba(0,0,0,.68)] max-[1300px]:text-[clamp(2.05rem,3.25vw,3.1rem)] max-[1023px]:text-[clamp(2.4rem,6.4vw,3.4rem)] min-[641px]:block">
+                            {copy.desktop.map((line, index) => (
+                                <span key={line} className={index === 0 ? 'block' : 'mt-1 block'}>{line}</span>
+                            ))}
+                        </h1>
+
+                        {/* MOBILE VERSION */}
+                        <h1 className="m-0 flex flex-col items-center text-center gap-0.5 font-arial font-black leading-[1.05] text-white [text-shadow:0_3px_0_rgba(0,0,0,.35),0_7px_12px_rgba(0,0,0,.68)] max-[640px]:text-[clamp(2rem,8vw,2.6rem)] max-[450px]:text-[2.1rem] min-[641px]:hidden">
+                            {copy.mobile.map((line) => <span key={line}>{line}</span>)}
+                        </h1>
+                    </div>
+
+                    {/* SUBTITLE - Hidden on <= 640px */}
+                    <p className={`ml-0.75 font-arial font-bold leading-[1.65] text-white [text-shadow:0_2px_5px_rgba(0,0,0,.8)] mt-6 max-[1300px]:text-[.8rem] max-[1023px]:mt-4 max-[1023px]:max-w-120 max-[640px]:hidden ${
+                        variant === 'signup'
+                            ? 'max-w-108 text-[clamp(.85rem,1.15vw,1.15rem)]'
+                            : 'text-[clamp(.8rem,1.18vw,1.2rem)] min-[1301px]:whitespace-nowrap'
+                    }`}>
+                        {copy.subtitle.split('||').map((part, index) => (
+                            <span key={part}>
+                            {index > 0 &&
+                                <b className="px-[.15em] text-[.94em]">||</b>}{part.trim()}{index < copy.subtitle.split('||').length - 1 ? ' ' : ''}
+                        </span>
+                        ))}
+                    </p>
+
+                    <ul className={variant === 'signup'
+                        ? 'hidden'
+                        : 'm-0 mt-[clamp(5rem,16vh,13rem)] flex list-none gap-[clamp(1.5rem,3.4vw,5rem)] p-0 max-[1300px]:gap-[1.1rem] max-[1023px]:hidden'}
+                        aria-label="System capabilities">
+                        {features.map((feature) => (
+                            <li className="group relative w-27.5 flex-none text-center text-[clamp(.78rem,1.05vw,1.06rem)] font-bold leading-[1.4] [text-shadow:0_2px_5px_rgba(0,0,0,.55)] after:absolute after:-right-7 after:top-0 after:h-36 after:w-px after:bg-white/80 after:content-[''] last:after:hidden max-[1300px]:w-21"
+                                key={feature.icon}>
                             <span
                                 className="pointer-events-none absolute -top-12 left-1/2 w-40 -translate-x-1/2 rounded-md bg-[#123c2e]/95 px-2 py-1.5 text-[.62rem] font-normal leading-snug text-white opacity-0 shadow-lg transition-all duration-200 group-hover:-translate-y-1 group-hover:opacity-100">{feature.description}</span>
-                            <span
-                                className="mx-auto mb-5 grid h-17.5 w-17.5 place-items-center rounded-full border-2 border-white text-white transition-all duration-300 ease-out group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:border-[#f9d77b] group-hover:bg-white/20 group-hover:text-[#fff4c9] group-hover:shadow-[0_9px_18px_rgba(0,0,0,.3)]"><ShellIcon
-                                name={feature.icon}/></span>
-                            <span
-                                className="transition-colors duration-200 group-hover:text-[#fff4c9]">{feature.title.split('\n').map((line) =>
-                                <span className="block" key={line}>{line}</span>)}</span>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        </section>
+                                <span
+                                    className="mx-auto mb-5 grid h-17.5 w-17.5 place-items-center rounded-full border-2 border-white text-white transition-all duration-300 ease-out group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:border-[#f9d77b] group-hover:bg-white/20 group-hover:text-[#fff4c9] group-hover:shadow-[0_9px_18px_rgba(0,0,0,.3)]"><ShellIcon
+                                    name={feature.icon}/></span>
+                                <span
+                                    className="transition-colors duration-200 group-hover:text-[#fff4c9]">{feature.title.split('\n').map((line) =>
+                                    <span className="block" key={line}>{line}</span>)}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </section>
 
-        {/* FORM SECTION */}
-        <section
-            className="grid items-center justify-items-center py-[7vh] pr-[5.4vw] pl-[.4vw] max-[1090px]:pr-[3vw] max-[840px]:block max-[840px]:px-5 max-[840px]:pt-2 max-[840px]:pb-8 max-[640px]:px-4 max-[450px]:px-3">
-            {children}
-        </section>
-    </main>
-)
+            {/* FORM SECTION */}
+            <section
+                className="grid w-full min-w-0 items-center justify-items-center px-4 py-[6vh] max-[1023px]:block max-[1023px]:px-5 max-[1023px]:pt-1 max-[1023px]:pb-10 max-[640px]:px-4 max-[450px]:px-3 lg:pr-[5.4vw] lg:pl-[.4vw]">
+                {children}
+            </section>
+        </main>
+    )
+}
