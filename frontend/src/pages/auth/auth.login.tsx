@@ -1,6 +1,7 @@
 import {useState} from 'react'
 import {Link, useNavigate} from 'react-router-dom'
 import {useAuth} from '../../context/AuthContext'
+import {LotusMark} from '../../components/AuthIcons'
 import {AuthShell} from '../../layouts/AuthShell'
 import {authRoutes} from '../../routes/authRoutes'
 
@@ -41,23 +42,6 @@ const LoginIcon = ({name, size = 24, strokeWidth = 1.8}: LoginIconProps) => {
                 aria-hidden="true">{paths[name]}</svg>
 }
 
-const LotusIcon = () => (
-    <svg
-        className="mx-auto mb-0 block h-auto w-28 shrink-0 text-[#ad8b39]"
-        viewBox="0 0 112 72"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={3.3}
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="M56 67C35 66.8 20.5 54.2 18 31.7c18.4.4 31.8 11.7 38 35.3Z"/>
-        <path d="M56 67c20.9-.2 35.4-12.8 38-35.3C75.5 32.1 62.1 43.4 56 67Z"/>
-        <path d="M56 67C40.7 52.8 39.8 31.9 56 10c16.2 21.9 15.3 42.8 0 57Z"/>
-        <path d="M56 65.5C53.2 40.2 61.4 22.2 76.7 16c6.8 21.6-.8 39.7-20.7 49.5Z"/>
-        <path d="M56 65.5C58.8 40.2 50.6 22.2 35.3 16c-6.8 21.6.8 39.7 20.7 49.5Z"/>
-    </svg>
-)
 
 const GoogleIcon = () => (
     <svg className="h-7 w-7" viewBox="0 0 24 24" aria-hidden="true">
@@ -100,9 +84,9 @@ export const AuthLoginPage = () => {
     return (
         <AuthShell>
             <div
-                className="mt-2 min-h-223.5 w-full max-w-141.5 rounded-2xl border border-white/30 bg-[#fffdf4]/[.98] pb-11.5 pl-12 pr-9 pt-10 shadow-[0_22px_42px_rgba(9,20,13,.15)] max-[1090px]:px-9.5 max-[840px]:mx-auto max-[840px]:mt-0 max-[840px]:min-h-0 max-[840px]:px-8 max-[840px]:pb-9.5 max-[840px]:pt-9 max-[640px]:rounded-[24px] max-[640px]:px-6 max-[640px]:pb-7 max-[640px]:pt-8 max-[450px]:px-5.5 max-[450px]:pb-6 max-[450px]:pt-7">
+                className="mt-2 w-full max-w-141.5 rounded-2xl border border-white/30 bg-[#fffdf4]/98 px-8 pb-9.5 pt-9 shadow-[0_22px_42px_rgba(9,20,13,.15)] max-[1023px]:mx-auto max-[1023px]:mt-0 max-[640px]:rounded-3xl max-[640px]:px-6 max-[640px]:pb-7 max-[640px]:pt-8 max-[450px]:px-5 max-[450px]:pb-6 max-[450px]:pt-7 lg:min-h-[clamp(560px,86svh,894px)] lg:pb-11.5 lg:pl-12 lg:pr-9 lg:pt-10">
                 <header className="-ml-12 -mr-9 text-center max-[1090px]:-mx-9.5 max-[840px]:-mx-8 max-[450px]:-mx-5.5">
-                    <LotusIcon/>
+                    <LotusMark width={112} className="mx-auto mb-0"/>
                     <h2 className="-mt-1.75 mb-2.5 font-display text-[clamp(2.35rem,3vw,3.1rem)] leading-none tracking-tight text-[#123c2e] max-[450px]:text-[2.15rem]">Welcome
                         Back</h2>
                     <p className="m-0 text-[1.05rem] text-[#111]">Login to your account</p>
@@ -117,7 +101,7 @@ export const AuthLoginPage = () => {
                         <span
                             className="flex h-10.5 items-center gap-3.25 max-[640px]:h-12 rounded-[9px] border border-[#292B2B] bg-white px-2.75 text-[#292B2B] transition focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.12)]"><LoginIcon
                             name="person" size={22}/><input
-                            className="w-px flex-1 border-0 bg-transparent p-0 font-temple text-[.9rem] text-[#292B2B] max-[640px]:text-base outline-none placeholder:text-[#292B2B]"
+                            className="w-px flex-1 border-0 bg-transparent p-0 font-temple text-[.9rem] text-[#292B2B] max-[640px]:text-base outline-none"
                             id="identifier" type="email" autoComplete="email" placeholder="Enter your email address"
                             value={identifier} onChange={(event) => setIdentifier(event.target.value)} required/></span>
                     </label>
@@ -127,7 +111,7 @@ export const AuthLoginPage = () => {
                         <span
                             className="flex h-10.5 items-center gap-3.25 max-[640px]:h-12 rounded-[9px] border border-[#292B2B] bg-white px-2.75 text-[#292B2B] transition focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.12)]"><LoginIcon
                             name="key" size={21}/><input
-                            className="w-px flex-1 border-0 bg-transparent p-0 font-temple text-[.9rem] text-[#292B2B] max-[640px]:text-base outline-none placeholder:text-[#292B2B]"
+                            className="w-px flex-1 border-0 bg-transparent p-0 font-temple text-[.9rem] text-[#292B2B] max-[640px]:text-base outline-none"
                             id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password"
                             placeholder="Enter your password" value={password}
                             onChange={(event) => setPassword(event.target.value)} required/><button
