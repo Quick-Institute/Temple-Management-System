@@ -84,24 +84,24 @@ export const AuthLoginPage = () => {
     return (
         <AuthShell>
             <div
-                className="mt-2 w-full max-w-141.5 rounded-2xl border border-white/30 bg-[#fffdf4]/98 px-8 pb-9.5 pt-9 shadow-[0_22px_42px_rgba(9,20,13,.15)] max-[1023px]:mx-auto max-[1023px]:mt-0 max-[640px]:rounded-3xl max-[640px]:px-6 max-[640px]:pb-7 max-[640px]:pt-8 max-[450px]:px-5 max-[450px]:pb-6 max-[450px]:pt-7 lg:min-h-[clamp(560px,86svh,894px)] lg:pb-11.5 lg:pl-12 lg:pr-9 lg:pt-10">
-                <header className="-ml-12 -mr-9 text-center max-[1090px]:-mx-9.5 max-[840px]:-mx-8 max-[450px]:-mx-5.5">
-                    <LotusMark width={112} className="mx-auto mb-0"/>
-                    <h2 className="-mt-1.75 mb-2.5 font-display text-[clamp(2.35rem,3vw,3.1rem)] leading-none tracking-tight text-[#123c2e] max-[450px]:text-[2.15rem]">Welcome
+                className="mx-auto mt-0 w-full max-w-141.5 rounded-3xl border border-white/30 bg-[#fffdf4]/98 px-5 pb-7 pt-8 shadow-[0_22px_42px_rgba(9,20,13,.15)] sm:rounded-2xl sm:px-7 sm:pb-8 sm:pt-9 lg:min-h-[clamp(520px,80svh,860px)] lg:px-9 lg:pb-11.5 lg:pt-10">
+                <header className="text-center">
+                    <LotusMark width={112} className="mx-auto mb-0 w-24 sm:w-28"/>
+                    <h2 className="-mt-1.75 mb-2.5 font-display text-[2.15rem] leading-none tracking-tight text-[#123c2e] sm:text-[clamp(2.35rem,3vw,3.1rem)]">Welcome
                         Back</h2>
                     <p className="m-0 text-[1.05rem] text-[#111]">Login to your account</p>
                 </header>
 
-                <form className="mt-14 max-[640px]:mt-8 max-[450px]:mt-7" onSubmit={(event) => {
+                <form className="mt-7 sm:mt-12 lg:mt-14" onSubmit={(event) => {
                     event.preventDefault();
                     void handleSubmit()
                 }}>
                     <label className="mb-7.5 block" htmlFor="identifier">
                         <span className="mb-4 block text-base text-[#131313]">Email Address</span>
                         <span
-                            className="flex h-10.5 items-center gap-3.25 max-[640px]:h-12 rounded-[9px] border border-[#292B2B] bg-white px-2.75 text-[#292B2B] transition focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.12)]"><LoginIcon
+                            className="flex h-12 items-center gap-3 rounded-[9px] border border-[#292B2B] bg-white px-3 text-[#292B2B] transition focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.12)] lg:h-11"><LoginIcon
                             name="person" size={22}/><input
-                            className="w-px flex-1 border-0 bg-transparent p-0 font-temple text-[.9rem] text-[#292B2B] max-[640px]:text-base outline-none"
+                            className="w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 font-temple text-base text-[#292B2B] outline-none lg:text-[.9rem]"
                             id="identifier" type="email" autoComplete="email" placeholder="Enter your email address"
                             value={identifier} onChange={(event) => setIdentifier(event.target.value)} required/></span>
                     </label>
@@ -109,44 +109,45 @@ export const AuthLoginPage = () => {
                     <label className="mb-7.5 block" htmlFor="password">
                         <span className="mb-4 block text-base text-[#131313]">Password</span>
                         <span
-                            className="flex h-10.5 items-center gap-3.25 max-[640px]:h-12 rounded-[9px] border border-[#292B2B] bg-white px-2.75 text-[#292B2B] transition focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.12)]"><LoginIcon
+                            className="flex h-12 items-center gap-3 rounded-[9px] border border-[#292B2B] bg-white px-3 text-[#292B2B] transition focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.12)] lg:h-11"><LoginIcon
                             name="key" size={21}/><input
-                            className="w-px flex-1 border-0 bg-transparent p-0 font-temple text-[.9rem] text-[#292B2B] max-[640px]:text-base outline-none"
+                            className="w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 font-temple text-base text-[#292B2B] outline-none lg:text-[.9rem]"
                             id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password"
                             placeholder="Enter your password" value={password}
                             onChange={(event) => setPassword(event.target.value)} required/><button
-                            className="grid place-items-center border-0 bg-transparent p-0.75 text-[#292B2B] hover:text-[#1C4F3C]"
+                            className="grid h-11 w-11 shrink-0 place-items-center border-0 bg-transparent text-[#292B2B] hover:text-[#1C4F3C] lg:h-9 lg:w-9"
                             type="button" aria-label={showPassword ? 'Hide password' : 'Show password'}
                             onClick={() => setShowPassword((visible) => !visible)}><LoginIcon
                             name={showPassword ? 'eyeOff' : 'eye'} size={19}/></button></span>
                     </label>
 
                     <div
-                        className="-mt-2.5 mb-10 flex items-center justify-between gap-3.5 text-[.85rem] max-[450px]:mb-7.5">
+                        className="-mt-1 mb-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[.85rem] lg:mb-10">
                         <label className="inline-flex cursor-pointer items-center gap-2.5 text-[#222]"><input
-                            className="h-5 w-5 cursor-pointer rounded-[5px] border-[#292B2B] accent-[#1C4F3C]"
+                            className="h-6 w-6 cursor-pointer rounded-[5px] border-[#292B2B] accent-[#1C4F3C] lg:h-5 lg:w-5"
                             type="checkbox" checked={rememberMe}
                             onChange={(event) => setRememberMe(event.target.checked)}/><span>Remember me</span></label>
-                        <Link className="py-0.75 text-[.85rem] font-bold text-[#1C4F3C] hover:underline"
-                              to={authRoutes.forgotPassword}>Forgot password?</Link>
+                        <Link
+                            className="inline-flex min-h-11 items-center text-[.85rem] font-bold text-[#1C4F3C] hover:underline lg:min-h-0 lg:py-0.75"
+                            to={authRoutes.forgotPassword}>Forgot password?</Link>
                     </div>
 
                     <button
-                        className="flex min-h-12.75 w-full items-center justify-center gap-6 rounded-[10px] border border-[#1d5c46] bg-[#1d5c46] text-base font-bold text-white transition hover:-translate-y-px hover:bg-[#154935] hover:shadow-[0_8px_16px_rgba(24,80,61,.24)] disabled:cursor-wait disabled:opacity-75"
+                        className="flex min-h-13 w-full items-center justify-center gap-6 rounded-[10px] border border-[#1d5c46] bg-[#1d5c46] text-base font-bold text-white transition hover:-translate-y-px hover:bg-[#154935] hover:shadow-[0_8px_16px_rgba(24,80,61,.24)] disabled:cursor-wait disabled:opacity-75 lg:min-h-12.75"
                         type="submit" disabled={isSigningIn}>
                         <span>{isSigningIn ? 'Signing In…' : 'Sign In'}</span>{!isSigningIn &&
                         <LoginIcon name="arrow" size={25} strokeWidth={2}/>}</button>
-                    <div className="mt-4 space-y-4 max-[450px]:flex max-[450px]:gap-3 max-[450px]:space-y-0">
+                    <div className="mt-4 flex gap-3 sm:block sm:space-y-4">
                         <Link
-                            className="flex min-h-12.75 w-full items-center justify-center gap-4 rounded-[10px] border border-[#4157f4] bg-[#4157f4] text-base font-bold text-white transition hover:-translate-y-px hover:bg-[#3349e8] hover:shadow-[0_8px_16px_rgba(50,65,220,.25)] max-[450px]:min-h-12 max-[450px]:flex-1 max-[450px]:gap-0 max-[450px]:border-[#dce5ef] max-[450px]:bg-white max-[450px]:shadow-sm"
-                            to={authRoutes.google}><GoogleIcon/><span className="max-[450px]:sr-only">Continue with Google</span></Link>
+                            className="flex min-h-13 flex-1 items-center justify-center gap-0 rounded-[10px] border border-[#dce5ef] bg-white text-base font-bold text-white shadow-sm transition hover:-translate-y-px hover:shadow-[0_8px_16px_rgba(50,65,220,.25)] sm:min-h-12.75 sm:w-full sm:gap-4 sm:border-[#4157f4] sm:bg-[#4157f4] sm:shadow-none sm:hover:bg-[#3349e8]"
+                            to={authRoutes.google}><GoogleIcon/><span className="sr-only sm:not-sr-only">Continue with Google</span></Link>
                         <Link
-                            className="flex min-h-12.75 w-full items-center justify-center gap-4 rounded-[10px] border border-[#a9a9a9] bg-white text-base font-bold text-[#292B2B] transition hover:-translate-y-px hover:border-[#1877f2] hover:bg-[#f8fbff] hover:text-[#1877f2] max-[450px]:min-h-12 max-[450px]:flex-1 max-[450px]:gap-0 max-[450px]:border-[#dce5ef] max-[450px]:shadow-sm"
-                            to={authRoutes.facebook}><FacebookIcon/><span className="max-[450px]:sr-only">Continue with Facebook</span></Link>
+                            className="flex min-h-13 flex-1 items-center justify-center gap-0 rounded-[10px] border border-[#dce5ef] bg-white text-base font-bold text-[#292B2B] shadow-sm transition hover:-translate-y-px hover:border-[#1877f2] hover:bg-[#f8fbff] hover:text-[#1877f2] sm:min-h-12.75 sm:w-full sm:gap-4 sm:border-[#a9a9a9] sm:shadow-none"
+                            to={authRoutes.facebook}><FacebookIcon/><span className="sr-only sm:not-sr-only">Continue with Facebook</span></Link>
                     </div>
-                    <div className="my-8 text-center max-[450px]:my-6 text-[.84rem] font-bold text-[#656565]">OR</div>
+                    <div className="my-6 text-center text-[.84rem] font-bold text-[#656565] sm:my-8">OR</div>
                     <Link
-                        className="flex min-h-12.75 w-full items-center justify-center gap-3.25 rounded-[10px] border border-[#a9a9a9] bg-white text-base font-bold text-[#292B2B] transition hover:border-[#1d5c46] hover:bg-[#f4f7f4] hover:text-[#174634]"
+                        className="flex min-h-13 w-full items-center justify-center gap-3.25 rounded-[10px] border border-[#a9a9a9] bg-white text-base font-bold text-[#292B2B] transition hover:border-[#1d5c46] hover:bg-[#f4f7f4] hover:text-[#174634] lg:min-h-12.75"
                         to={authRoutes.register}><LoginIcon name="userPlus"
                                                             size={24}/><span>Create New Account</span></Link>
                 </form>

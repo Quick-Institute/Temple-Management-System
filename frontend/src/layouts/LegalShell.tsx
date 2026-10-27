@@ -117,8 +117,10 @@ export const LegalShell = ({title, subtitle, updated, sections}: {
                                 </h2>
                                 <span aria-hidden="true"
                                       className="mt-2.5 block h-0.5 w-12 rounded-full bg-[linear-gradient(90deg,#AE8A2E,#cfe0bf)]"/>
+                                {/* break-words: a long email address or URL used to sit wider than its
+                                    column and push the whole page into a horizontal scroll below 360px. */}
                                 <div
-                                    className="mt-3 space-y-3 text-[1rem] leading-[1.75] text-[#2a3b31] sm:text-[1.02rem] [&_b]:font-semibold">
+                                    className="mt-3 space-y-3 text-[1rem] leading-[1.75] wrap-break-word text-[#2a3b31] sm:text-[1.02rem] [&_b]:font-semibold">
                                     {section.body}
                                 </div>
                             </div>
@@ -156,7 +158,7 @@ export const LegalShell = ({title, subtitle, updated, sections}: {
 
             <div className="mt-6 text-center">
                 <a href="#top"
-                   className="inline-flex min-h-10 items-center gap-2 rounded-full px-4 text-[0.86rem] font-semibold text-[#6f5510] transition hover:bg-[#fdf8e6] hover:text-[#123c2e]">
+                   className="inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-[0.86rem] font-semibold text-[#6f5510] transition hover:bg-[#fdf8e6] hover:text-[#123c2e]">
                     <span aria-hidden="true" className="text-[#AE8A2E]">▲</span> Back to top
                 </a>
             </div>
