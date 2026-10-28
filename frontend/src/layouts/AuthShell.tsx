@@ -1,10 +1,33 @@
 import type {ReactNode} from 'react'
 
+import {CommunityMark, DonationMark, EventsMark, TempleMark} from '../components/AuthIcons'
+
 type ShellIconName = 'calendar' | 'community' | 'donation' | 'temple'
+
+/*
+ * The temple mark is shared with the "Temple Admin" tab on the register screen, so the two read as
+ * the same temple. It is drawn on a finer 31x31 grid and fills more of its box than the other three
+ * icons do, so it is rendered slightly smaller to sit at the same optical size inside the circle.
+ */
+const TEMPLE_MARK_SIZE = 30
+
+/*
+ * The three supplied marks are drawn on a 100x100 grid and each fills a different share of it, so
+ * they are sized per icon to land at the same optical size as the temple inside the circle. Measured
+ * at 1440px, the artwork of all four comes out between 28px and 31px wide inside the 64px circle.
+ */
+const COMMUNITY_MARK_SIZE = 44
+const EVENTS_MARK_SIZE = 56
+const DONATION_MARK_SIZE = 40
 
 type ShellIconProps = { name: ShellIconName; size?: number }
 
 const ShellIcon = ({name, size = 38}: ShellIconProps) => {
+    if (name === 'temple') return <TempleMark size={TEMPLE_MARK_SIZE}/>
+    if (name === 'community') return <CommunityMark size={COMMUNITY_MARK_SIZE}/>
+    if (name === 'calendar') return <EventsMark size={EVENTS_MARK_SIZE}/>
+    if (name === 'donation') return <DonationMark size={DONATION_MARK_SIZE}/>
+
     const paths = {
         temple: <>
             <path d="M3 10.5 12 3l9 7.5"/>
@@ -54,19 +77,6 @@ const COPY: Record<AuthVariant, { desktop: string[]; mobile: string[]; subtitle:
     },
 }
 
-/**
- * Shared shell for the sign-in, sign-up, reset and forgot-password screens.
- *
- * Mobile first: stacked, hero above the card. The two-column split starts at `lg` (1024px), and the
- * form column is a viewport-tall flex box so short cards (forgot / reset) sit centred instead of
- * clinging to the top. From `2xl` (1536px) the whole thing is capped and centred so a 2K or 4K
- * screen does not stretch the headline and the card to opposite edges - the photograph stays full
- * bleed behind it.
- *
- * The two overlays below the photograph are kept exactly as the original design had them: the flat
- * green wash only below `lg`, the light gradient at every width. Stacking both at `lg` and up was
- * what made the split screens look darker than before.
- */
 export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; variant?: AuthVariant }) => {
     const copy = COPY[variant]
     return (
@@ -110,11 +120,11 @@ export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; 
 
             {/* TOP HEADER SECTION */}
             <section
-                className="block bg-linear-to-b from-[#0619103d] to-transparent px-4 pt-8 pb-4 sm:px-6 sm:pt-10 sm:pb-5 lg:sticky lg:top-0 lg:flex lg:h-svh lg:items-center lg:self-start lg:bg-none lg:px-[3.8vw] lg:py-[7.5vw]">
-                <div className="w-full min-w-0 max-w-172.5 text-white lg:mt-[4vh]">
+                className="block bg-linear-to-b from-[#0619103d] to-transparent px-4 pt-8 pb-4 text-center sm:px-6 sm:pt-10 sm:pb-5 lg:sticky lg:top-0 lg:flex lg:h-svh lg:flex-col lg:items-center lg:justify-start lg:self-start lg:bg-none lg:px-6 lg:py-[5vh] roomy:px-[3.8vw] roomy:py-[7.5vw]">
+                <div className="mx-auto w-full min-w-0 max-w-172.5 text-white lg:my-auto roomy:mx-0">
                     <div>
                         {/* TABLET AND DESKTOP VERSION - from sm (640px) up */}
-                        <h1 className="m-0 hidden font-arial text-[2.35rem] font-black leading-[.95] tracking-[-.035em] text-balance text-white [text-shadow:0_3px_0_rgba(0,0,0,.35),0_7px_12px_rgba(0,0,0,.68)] sm:block md:text-[2.9rem] lg:text-[2.5rem] xl:text-[3.1rem] 2xl:text-[3.5rem]">
+                        <h1 className="m-0 hidden text-center font-arial text-[2.35rem] font-black leading-[.95] tracking-[-.035em] text-balance text-white [text-shadow:0_3px_0_rgba(0,0,0,.35),0_7px_12px_rgba(0,0,0,.68)] sm:block md:text-[2.9rem] lg:text-[2.5rem] xl:text-[3.1rem] 2xl:text-[3.5rem] roomy:text-left">
                             {copy.desktop.map((line, index) => (
                                 <span key={line} className={index === 0 ? 'block' : 'mt-1 block'}>{line}</span>
                             ))}
@@ -128,7 +138,7 @@ export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; 
 
                     {/* SUBTITLE - from sm (640px) up. Capped at 480px until lg so it does not stretch
                         across a whole tablet, then allowed to run full width beside the card. */}
-                    <p className={`ml-0.75 mt-4 hidden font-arial font-bold leading-[1.65] text-white [text-shadow:0_2px_5px_rgba(0,0,0,.8)] sm:mt-6 sm:block sm:max-w-120 sm:text-[.85rem] md:text-[.95rem] lg:max-w-none lg:text-[1rem] xl:text-[1.1rem] ${
+                    <p className={`mx-auto mt-4 hidden text-center font-arial font-bold leading-[1.65] text-white [text-shadow:0_2px_5px_rgba(0,0,0,.8)] sm:mt-6 sm:block sm:max-w-120 sm:text-[.85rem] md:text-[.95rem] lg:max-w-none lg:text-[1rem] xl:text-[1.1rem] roomy:mx-0 roomy:text-left ${
                         variant === 'signup' ? 'max-w-108' : ''
                     }`}>
                         {copy.subtitle.split('||').map((part, index) => (
@@ -139,12 +149,13 @@ export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; 
                         ))}
                     </p>
 
-                    <ul className={variant === 'signup'
-                        ? 'hidden'
-                        : 'm-0 hidden list-none p-0 lg:mt-[6vh] lg:flex lg:gap-6 xl:mt-[10vh] xl:gap-10 2xl:mt-[13vh] 2xl:gap-[3.2vw]'}
+                    {/* The four capability items. Hidden only while the layout is stacked, where the
+                        card sits underneath - from lg they fill the lower half of the hero on both
+                        the login and the register screens. */}
+                    <ul className="m-0 hidden list-none justify-center p-0 lg:mt-[4vh] lg:flex lg:gap-8 roomy:mt-[6vh] roomy:justify-start xl:gap-10 2xl:gap-[3.2vw]"
                         aria-label="System capabilities">
                         {features.map((feature) => (
-                            <li className="group relative w-27.5 flex-none text-center text-[clamp(.78rem,1.05vw,1.06rem)] font-bold leading-[1.4] [text-shadow:0_2px_5px_rgba(0,0,0,.55)] after:absolute after:-right-7 after:top-0 after:h-36 after:w-px after:bg-white/80 after:content-[''] last:after:hidden lg:w-21 xl:w-24 2xl:w-27.5"
+                            <li className="group relative w-27.5 text-center first:[&>span]:left-0 first:[&>span]:translate-x-0 last:[&>span]:right-0 text-[clamp(.78rem,1.05vw,1.06rem)] font-bold leading-[1.4] [text-shadow:0_2px_5px_rgba(0,0,0,.55)] after:absolute after:-right-7 after:top-0 after:h-36 after:w-px after:bg-white/80 after:content-[''] last:after:hidden lg:w-auto lg:min-w-0 lg:flex-1 lg:max-w-21 xl:max-w-24 2xl:max-w-27.5"
                                 key={feature.icon}>
                             <span
                                 className="pointer-events-none absolute -top-12 left-1/2 w-40 -translate-x-1/2 rounded-md bg-[#123c2e]/95 px-2 py-1.5 text-[.62rem] font-normal leading-snug text-white opacity-0 shadow-lg transition-all duration-200 group-hover:-translate-y-1 group-hover:opacity-100">{feature.description}</span>

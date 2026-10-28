@@ -2,6 +2,8 @@ import type {FormEvent, ReactNode} from 'react'
 import {useState} from 'react'
 import {Link, useNavigate, useSearchParams} from 'react-router-dom'
 import {LotusMark} from '../../components/AuthIcons'
+import {firstUnmetRule, passwordMeetsPolicy} from '../../components/PasswordRules'
+import {PasswordStrength} from '../../components/PasswordStrength'
 import {AuthShell} from '../../layouts/AuthShell'
 import {authRoutes} from '../../routes/authRoutes'
 
@@ -60,32 +62,13 @@ const INPUT = 'w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 font
 const PRIMARY = 'flex min-h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#1d5c46] bg-[#1d5c46] text-base font-bold text-white transition hover:-translate-y-px hover:bg-[#154935] hover:shadow-[0_8px_16px_rgba(24,80,61,.24)] disabled:cursor-wait disabled:opacity-75 lg:min-h-12.75'
 const ERROR_BORDER = 'border-status-rose shadow-[0_0_0_3px_rgba(173,28,3,.12)]'
 
-/* ------------------------------------------------------------------ */
-/* Password strength — advisory only, it never blocks the submit       */
-/* ------------------------------------------------------------------ */
-
-const RULES: { label: string; test: (value: string) => boolean }[] = [
-    {label: '8 or more characters', test: (value) => value.length >= 8},
-    {label: 'Upper and lower case', test: (value) => /[a-z]/.test(value) && /[A-Z]/.test(value)},
-    {label: 'A number', test: (value) => /\d/.test(value)},
-    {label: 'A symbol', test: (value) => /[^A-Za-z0-9]/.test(value)},
-]
-
-const strength = (value: string) => {
-    if (!value) return {label: '', bars: 0, color: '#1d5c46'}
-
-    const points = RULES.filter((rule) => rule.test(value)).length + (value.length >= 12 ? 1 : 0)
-    if (points <= 2) return {label: 'Weak', bars: 1, color: '#ad1c03'}
-    if (points === 3) return {label: 'Medium', bars: 2, color: '#a26a0c'}
-    return {label: 'Strong', bars: 3, color: '#1d5c46'}
-}
-
-const PasswordField = ({id, label, placeholder, value, onChange, error, autoFocus}: {
+const PasswordField = ({id, label, placeholder, value, onChange, onBlur, error, autoFocus}: {
     id: string
     label: string
     placeholder: string
     value: string
     onChange: (value: string) => void
+    onBlur?: () => void
     error?: string
     autoFocus?: boolean
 }) => {
@@ -106,6 +89,7 @@ const PasswordField = ({id, label, placeholder, value, onChange, error, autoFocu
                     value={value}
                     aria-invalid={Boolean(error) || undefined}
                     aria-describedby={error ? `${id}-error` : undefined}
+                    onBlur={onBlur}
                     onChange={(event) => onChange(event.target.value)}
                 />
                 <button
@@ -151,6 +135,7 @@ export const ResetPasswordPage = () => {
     const [errors, setErrors] = useState<{ password?: string; confirm?: string }>({})
     const [saving, setSaving] = useState(false)
     const [done, setDone] = useState(false)
+    const [touchedPassword, setTouchedPassword] = useState(false)
 
     /*
      * A real link carries a single-use token in the query string. There is no backend to check it
@@ -164,13 +149,11 @@ export const ResetPasswordPage = () => {
      */
     const unusable = token === 'expired' ? 'expired' : null
 
-    const level = strength(password)
-
     const validate = () => {
         const next: { password?: string; confirm?: string } = {}
 
         if (!password) next.password = 'Create a new password.'
-        else if (password.length < 8) next.password = 'Use at least 8 characters.'
+        else if (!passwordMeetsPolicy(password)) next.password = firstUnmetRule(password)?.hint
 
         if (!confirm) next.confirm = 'Confirm your new password.'
         else if (confirm !== password) next.confirm = 'Passwords do not match.'
@@ -300,40 +283,15 @@ export const ResetPasswordPage = () => {
                                     setPassword(value)
                                     setErrors((current) => ({...current, password: undefined}))
                                 }}
-                                error={errors.password}/>
+                                error={errors.password}
+                                onBlur={() => setTouchedPassword(true)}/>
 
-                            {/* Strength meter - advisory, it never blocks the form. */}
-                            <div className="mt-3" aria-hidden="true">
-                                <div className="flex items-center gap-3">
-                                    <span className="flex flex-1 gap-1.5">
-                                        {[0, 1, 2].map((index) => (
-                                            <span
-                                                key={index}
-                                                className="h-1.5 flex-1 rounded-full transition-colors duration-200"
-                                                style={{
-                                                    backgroundColor: index < level.bars ? level.color : '#e3ded0',
-                                                }}/>
-                                        ))}
-                                    </span>
-                                    <span className="w-14 flex-none text-right text-[.78rem] font-bold"
-                                          style={{color: level.bars ? level.color : '#8b8b8b'}}>
-                                        {level.bars ? level.label : '—'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <ul className="mt-3 flex list-none flex-wrap gap-x-4 gap-y-1.5 p-0 text-[.8rem] text-[#5d6b62]">
-                                {RULES.map((rule) => {
-                                    const passed = rule.test(password)
-                                    return (
-                                        <li key={rule.label}
-                                            className={`flex items-center gap-1.5 ${passed ? 'text-[#1d5c46]' : ''}`}>
-                                            <ResetIcon name={passed ? 'check' : 'dot'} size={13}/>
-                                            {rule.label}
-                                        </li>
-                                    )
-                                })}
-                            </ul>
+                            <PasswordStrength
+                                id="new-password"
+                                className="mt-3"
+                                value={password}
+                                confirm={confirm}
+                                touched={touchedPassword || Boolean(errors.password)}/>
                         </div>
 
                         <PasswordField

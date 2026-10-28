@@ -2,6 +2,8 @@ import type {FormEvent, ReactNode} from 'react'
 import {useEffect, useId, useRef, useState} from 'react'
 import {Link, useNavigate} from 'react-router-dom'
 import {LotusMark, TempleMark} from '../../components/AuthIcons'
+import {firstUnmetRule, passwordMeetsPolicy} from '../../components/PasswordRules'
+import {PasswordStrength} from '../../components/PasswordStrength'
 import {AuthShell} from '../../layouts/AuthShell'
 import {authRoutes} from '../../routes/authRoutes'
 
@@ -98,21 +100,22 @@ const Icon = ({name, size = 18}: { name: IconName; size?: number }) => {
 }
 
 
+/* The Google mark keeps its four brand colours, the same artwork the login screen uses. */
 const GoogleIcon = () => (
-    <svg className="h-6 w-6 flex-none" viewBox="0 0 24 24" aria-hidden="true">
-        <path fill="#fff"
+    <svg className="h-7 w-7 flex-none" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="#4285F4"
               d="M21.35 12.24c0-.71-.06-1.39-.18-2.04H12v3.86h5.24a4.48 4.48 0 0 1-1.94 2.94v2.5h3.14c1.84-1.7 2.91-4.2 2.91-7.26Z"/>
-        <path fill="#fff" opacity=".85"
+        <path fill="#34A853"
               d="M12 21.75c2.63 0 4.84-.87 6.45-2.36L15.3 16.9c-.87.59-1.98.94-3.3.94-2.54 0-4.69-1.72-5.46-4.03H3.3v2.58A9.75 9.75 0 0 0 12 21.75Z"/>
-        <path fill="#fff" opacity=".7"
+        <path fill="#FBBC05"
               d="M6.54 13.81A5.86 5.86 0 0 1 6.24 12c0-.63.11-1.24.3-1.81V7.61H3.3A9.75 9.75 0 0 0 2.25 12c0 1.58.38 3.08 1.05 4.39l3.24-2.58Z"/>
-        <path fill="#fff" opacity=".9"
+        <path fill="#EA4335"
               d="M12 6.16c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.84 3.27 14.63 2.25 12 2.25a9.75 9.75 0 0 0-8.7 5.36l3.24 2.58C7.31 7.88 9.46 6.16 12 6.16Z"/>
     </svg>
 )
 
 const FacebookIcon = () => (
-    <svg className="h-6 w-6 flex-none" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className="h-7 w-7 flex-none" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="12" r="10" fill="#1877F2"/>
         <path fill="#fff"
               d="M13.28 19v-6.1h2.05l.31-2.37h-2.36V9.02c0-.69.19-1.16 1.18-1.16h1.26V5.74a16.91 16.91 0 0 0-1.84-.1c-1.82 0-3.07 1.11-3.07 3.15v1.74H8.75v2.37h2.06V19h2.47Z"/>
@@ -221,12 +224,13 @@ const TextField = ({
     </div>
 )
 
-const PasswordField = ({id, label, placeholder, value, onChange, autoComplete, error, newRow}: {
+const PasswordField = ({id, label, placeholder, value, onChange, onBlur, autoComplete, error, newRow}: {
     id: string
     label: string
     placeholder: string
     value: string
     onChange: (value: string) => void
+    onBlur?: () => void
     autoComplete: string
     error?: string
     newRow?: boolean
@@ -247,6 +251,7 @@ const PasswordField = ({id, label, placeholder, value, onChange, autoComplete, e
                     value={value}
                     aria-invalid={Boolean(error) || undefined}
                     aria-describedby={error ? `${id}-error` : undefined}
+                    onBlur={onBlur}
                     onChange={(event) => onChange(event.target.value)}
                 />
                 <button
@@ -458,6 +463,7 @@ export const RegisterPage = () => {
     const [role, setRole] = useState<Role>('temple-admin')
     const [form, setForm] = useState<Form>(EMPTY)
     const [agreed, setAgreed] = useState(false)
+    const [touchedPassword, setTouchedPassword] = useState(false)
     const [errors, setErrors] = useState<Partial<Record<keyof Form | 'terms', string>>>({})
     const [submitting, setSubmitting] = useState(false)
 
@@ -509,7 +515,7 @@ export const RegisterPage = () => {
         }
 
         if (!form.password) next.password = 'Create a password.'
-        else if (form.password.length < 8) next.password = 'Use at least 8 characters.'
+        else if (!passwordMeetsPolicy(form.password)) next.password = firstUnmetRule(form.password)?.hint
         if (!form.confirmPassword) next.confirmPassword = 'Confirm your password.'
         else if (form.password !== form.confirmPassword) next.confirmPassword = 'Passwords do not match.'
 
@@ -659,12 +665,18 @@ export const RegisterPage = () => {
                             </>
                         )}
 
+                        {/* Password and Confirm Password share a row; the checklist spans the full
+                            width underneath, so it never splits the two fields apart. */}
                         <PasswordField id="password" label="Password" placeholder="Create a password" newRow
                                        autoComplete="new-password" value={form.password} onChange={set('password')}
+                                       onBlur={() => setTouchedPassword(true)}
                                        error={errors.password}/>
                         <PasswordField id="confirmPassword" label="Confirm Password" placeholder="Confirm your password"
                                        autoComplete="new-password" value={form.confirmPassword}
                                        onChange={set('confirmPassword')} error={errors.confirmPassword}/>
+                        <PasswordStrength id="password" className="sm:col-span-2"
+                                          value={form.password} confirm={form.confirmPassword}
+                                          touched={touchedPassword || Boolean(errors.password)}/>
                     </div>
 
                     <div className="mt-5">
@@ -709,15 +721,19 @@ export const RegisterPage = () => {
 
                     <div className="my-4 text-center text-[0.95rem] font-bold tracking-wide text-[#5d6b62]">OR</div>
 
-                    <Link to={authRoutes.google}
-                          className="flex min-h-14.5 w-full items-center justify-center gap-3 rounded-[10px] border border-[#4157f4] bg-[#4157f4] text-[1.02rem] font-bold text-white transition hover:-translate-y-px hover:bg-[#3349e8] hover:shadow-[0_8px_16px_rgba(50,65,220,.25)]">
-                        <GoogleIcon/> Continue with Google
-                    </Link>
+                    {/* Phones: two icon-only cards side by side, exactly like the login screen.
+                        From sm up: the register screen's own full-width buttons. */}
+                    <div className="mt-4 flex gap-3 sm:block sm:space-y-3.5">
+                        <Link to={authRoutes.google}
+                              className="flex min-h-13 flex-1 items-center justify-center gap-0 rounded-[10px] border border-[#dce5ef] bg-white text-base font-bold text-white shadow-sm transition hover:-translate-y-px hover:shadow-[0_8px_16px_rgba(50,65,220,.25)] sm:min-h-14.5 sm:w-full sm:gap-3 sm:rounded-[10px] sm:border-[#4157f4] sm:bg-[#4157f4] sm:text-[1.02rem] sm:shadow-none sm:hover:bg-[#3349e8]">
+                            <GoogleIcon/><span className="sr-only sm:not-sr-only">Continue with Google</span>
+                        </Link>
 
-                    <Link to={authRoutes.facebook}
-                          className="mt-3.5 flex min-h-14.5 w-full items-center justify-center gap-3 rounded-[10px] border border-[#c9cfd6] bg-white text-[1.02rem] font-bold text-[#1f2d26] transition hover:-translate-y-px hover:border-[#1877F2] hover:bg-[#f8fbff] hover:text-[#1877F2]">
-                        <FacebookIcon/> Continue with Facebook
-                    </Link>
+                        <Link to={authRoutes.facebook}
+                              className="flex min-h-13 flex-1 items-center justify-center gap-0 rounded-[10px] border border-[#dce5ef] bg-white text-base font-bold text-[#292B2B] shadow-sm transition hover:-translate-y-px hover:border-[#1877F2] hover:bg-[#f8fbff] hover:text-[#1877F2] sm:min-h-14.5 sm:w-full sm:gap-3 sm:border-[#c9cfd6] sm:text-[1.02rem] sm:text-[#1f2d26] sm:shadow-none">
+                            <FacebookIcon/><span className="sr-only sm:not-sr-only">Continue with Facebook</span>
+                        </Link>
+                    </div>
 
                     <div className="mt-5 text-center text-[0.96rem] text-[#1f2d26]">
                         Already have an account?{' '}

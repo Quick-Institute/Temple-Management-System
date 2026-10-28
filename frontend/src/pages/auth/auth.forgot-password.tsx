@@ -43,7 +43,7 @@ const FIELD = 'flex h-12 items-center gap-3 rounded-[9px] border border-[#292B2B
 const INPUT = 'w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 font-temple text-base text-[#292B2B] outline-none placeholder:text-[#292B2B] lg:text-[.95rem]'
 const PRIMARY = 'flex min-h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#1d5c46] bg-[#1d5c46] text-base font-bold text-white transition hover:-translate-y-px hover:bg-[#154935] hover:shadow-[0_8px_16px_rgba(24,80,61,.24)] disabled:cursor-wait disabled:opacity-75 lg:min-h-12.75'
 
-/** of***@domain.lk — enough to recognise, not enough to leak the whole address. */
+/** of***@domain.lk - enough to recognise, not enough to leak the whole address. */
 const mask = (value: string) => {
     const [user = '', domain = ''] = value.split('@')
     return `${user.slice(0, 2)}${'*'.repeat(Math.max(3, user.length - 2))}@${domain}`
@@ -59,7 +59,7 @@ export const ForgotPasswordPage = () => {
     const [resent, setResent] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
 
-    /* Resend cooldown — 30 seconds, counted down without another round trip. */
+    /* Resend cooldown - 30 seconds, counted down without another round trip. */
     useEffect(() => {
         if (cooldown <= 0) return
         const timer = window.setTimeout(() => setCooldown((n) => n - 1), 1000)
@@ -84,7 +84,7 @@ export const ForgotPasswordPage = () => {
 
         setError(undefined)
         setSending(true)
-        // Demo build: nothing is sent — the confirmation state is shown immediately.
+        // Demo build: nothing is sent - the confirmation state is shown immediately.
         window.setTimeout(() => {
             setSending(false)
             setSentTo(value)
