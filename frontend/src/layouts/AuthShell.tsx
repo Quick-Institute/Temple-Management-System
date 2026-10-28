@@ -1,5 +1,4 @@
 import type {ReactNode} from 'react'
-import {LotusMark} from '../components/AuthIcons'
 
 type ShellIconName = 'calendar' | 'community' | 'donation' | 'temple'
 
@@ -42,15 +41,15 @@ const features: { icon: ShellIconName; title: string; description: string }[] = 
 
 type AuthVariant = 'login' | 'signup'
 
-const BRAND = 'Temple Management System'
-
-const COPY: Record<AuthVariant, { desktop: string[]; subtitle: string }> = {
+const COPY: Record<AuthVariant, { desktop: string[]; mobile: string[]; subtitle: string }> = {
     login: {
         desktop: ['Temple Management', 'System'],
+        mobile: ['Temple', 'Management', 'System'],
         subtitle: 'Connecting Temples || Supporting Communities || Preserving Tradition',
     },
     signup: {
         desktop: ['Join Our', 'Temple', 'Community'],
+        mobile: ['Join Our', 'Temple', 'Community'],
         subtitle: 'Register your temple or become a member of our group',
     },
 }
@@ -58,14 +57,15 @@ const COPY: Record<AuthVariant, { desktop: string[]; subtitle: string }> = {
 /**
  * Shared shell for the sign-in, sign-up, reset and forgot-password screens.
  *
- * Mobile first: stacked, hero above the card. The two-column split starts at `lg` (1024px).
+ * Mobile first: stacked, hero above the card. The two-column split starts at `lg` (1024px), and the
+ * form column is a viewport-tall flex box so short cards (forgot / reset) sit centred instead of
+ * clinging to the top. From `2xl` (1536px) the whole thing is capped and centred so a 2K or 4K
+ * screen does not stretch the headline and the card to opposite edges - the photograph stays full
+ * bleed behind it.
  *
- * The hero itself has two sizes. Below `xl` (1280px) it is only the lotus mark and the temple name -
- * on a tablet or a small laptop the full headline, tagline and capability icons pushed the form too
- * far down the page. From `xl` up there is room for the whole hero beside the card.
- *
- * From `2xl` (1536px) the layout is capped and centred so a 2K or 4K screen does not stretch the
- * headline and the card to opposite edges - the photograph stays full bleed behind it.
+ * The two overlays below the photograph are kept exactly as the original design had them: the flat
+ * green wash only below `lg`, the light gradient at every width. Stacking both at `lg` and up was
+ * what made the split screens look darker than before.
  */
 export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; variant?: AuthVariant }) => {
     const copy = COPY[variant]
@@ -96,32 +96,39 @@ export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; 
                 />
             </div>
 
-            {/* Flat 20% black over the photograph - shared by the login and registration screens,
-            so the temple reads slightly darker and the white hero copy keeps its contrast.
-            The green-gradient layer below still sits on top of it. */}
+            {/* Flat 20% black over the photograph - shared by every auth screen, so the temple reads
+            slightly darker and the white hero copy keeps its contrast. */}
             <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 bg-black/20"/>
 
-            <div
-                className="pointer-events-none fixed inset-0 -z-10 bg-[#061c1360] lg:bg-[linear-gradient(90deg,rgba(8,31,21,.15)_0%,rgba(9,35,23,.04)_46%,rgba(25,20,14,.03)_100%)]"/>
+            {/* Green wash, below lg only - this is the layer that darkens the stacked screens. */}
+            <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 bg-[#061c1360] lg:hidden"/>
+
+            {/* Light left-to-right gradient, every width. Above lg this is the only overlay, which is
+            why the split screens look as bright as they did before. */}
+            <div aria-hidden="true"
+                 className="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(90deg,rgba(8,31,21,.15)_0%,rgba(9,35,23,.04)_46%,rgba(25,20,14,.03)_100%)]"/>
 
             {/* TOP HEADER SECTION */}
             <section
-                className="block bg-linear-to-b from-[#0619103d] to-transparent px-4 pt-6 pb-4 sm:px-6 sm:pt-9 sm:pb-6 lg:sticky lg:top-0 lg:flex lg:h-svh lg:items-center lg:self-start lg:bg-none lg:px-[3.8vw] lg:py-[7.5vw]">
+                className="block bg-linear-to-b from-[#0619103d] to-transparent px-4 pt-8 pb-4 sm:px-6 sm:pt-10 sm:pb-5 lg:sticky lg:top-0 lg:flex lg:h-svh lg:items-center lg:self-start lg:bg-none lg:px-[3.8vw] lg:py-[7.5vw]">
                 <div className="w-full min-w-0 max-w-172.5 text-white lg:mt-[4vh]">
-                    {/* COMPACT HERO - everything below xl (1280px): lotus mark and the temple name */}
-                    <h1 className="m-0 flex items-center justify-center gap-3 font-display text-[1.15rem] font-bold leading-tight tracking-tight text-white [text-shadow:0_2px_5px_rgba(0,0,0,.8)] sm:gap-4 sm:text-[1.4rem] lg:justify-start lg:text-[1.6rem] xl:hidden">
-                        <LotusMark width={48} className="flex-none"/>
-                        <span className="text-balance">{BRAND}</span>
-                    </h1>
+                    <div>
+                        {/* TABLET AND DESKTOP VERSION - from sm (640px) up */}
+                        <h1 className="m-0 hidden font-arial text-[2.35rem] font-black leading-[.95] tracking-[-.035em] text-balance text-white [text-shadow:0_3px_0_rgba(0,0,0,.35),0_7px_12px_rgba(0,0,0,.68)] sm:block md:text-[2.9rem] lg:text-[2.5rem] xl:text-[3.1rem] 2xl:text-[3.5rem]">
+                            {copy.desktop.map((line, index) => (
+                                <span key={line} className={index === 0 ? 'block' : 'mt-1 block'}>{line}</span>
+                            ))}
+                        </h1>
 
-                    {/* FULL HERO - from xl (1280px) up, beside the card */}
-                    <h1 className="m-0 hidden font-arial text-[3.1rem] font-black leading-[.95] tracking-[-.035em] text-balance text-white [text-shadow:0_3px_0_rgba(0,0,0,.35),0_7px_12px_rgba(0,0,0,.68)] xl:block 2xl:text-[3.5rem]">
-                        {copy.desktop.map((line, index) => (
-                            <span key={line} className={index === 0 ? 'block' : 'mt-1 block'}>{line}</span>
-                        ))}
-                    </h1>
+                        {/* PHONE VERSION - the original three centred lines, exactly as before */}
+                        <h1 className="m-0 flex flex-col items-center gap-0.5 text-center font-arial text-[clamp(2.1rem,8vw,2.6rem)] font-black leading-[1.05] text-white [text-shadow:0_3px_0_rgba(0,0,0,.35),0_7px_12px_rgba(0,0,0,.68)] sm:hidden">
+                            {copy.mobile.map((line) => <span key={line}>{line}</span>)}
+                        </h1>
+                    </div>
 
-                    <p className={`ml-0.75 mt-6 hidden font-arial text-[1.1rem] font-bold leading-[1.65] text-white [text-shadow:0_2px_5px_rgba(0,0,0,.8)] xl:block ${
+                    {/* SUBTITLE - from sm (640px) up. Capped at 480px until lg so it does not stretch
+                        across a whole tablet, then allowed to run full width beside the card. */}
+                    <p className={`ml-0.75 mt-4 hidden font-arial font-bold leading-[1.65] text-white [text-shadow:0_2px_5px_rgba(0,0,0,.8)] sm:mt-6 sm:block sm:max-w-120 sm:text-[.85rem] md:text-[.95rem] lg:max-w-none lg:text-[1rem] xl:text-[1.1rem] ${
                         variant === 'signup' ? 'max-w-108' : ''
                     }`}>
                         {copy.subtitle.split('||').map((part, index) => (
@@ -134,15 +141,15 @@ export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; 
 
                     <ul className={variant === 'signup'
                         ? 'hidden'
-                        : 'm-0 hidden list-none p-0 xl:mt-[10vh] xl:flex xl:gap-10 2xl:mt-[13vh] 2xl:gap-[3.2vw]'}
+                        : 'm-0 hidden list-none p-0 lg:mt-[6vh] lg:flex lg:gap-6 xl:mt-[10vh] xl:gap-10 2xl:mt-[13vh] 2xl:gap-[3.2vw]'}
                         aria-label="System capabilities">
                         {features.map((feature) => (
-                            <li className="group relative w-27.5 flex-none text-center text-[clamp(.78rem,1.05vw,1.06rem)] font-bold leading-[1.4] [text-shadow:0_2px_5px_rgba(0,0,0,.55)] after:absolute after:-right-7 after:top-0 after:h-36 after:w-px after:bg-white/80 after:content-[''] last:after:hidden xl:w-24 2xl:w-27.5"
+                            <li className="group relative w-27.5 flex-none text-center text-[clamp(.78rem,1.05vw,1.06rem)] font-bold leading-[1.4] [text-shadow:0_2px_5px_rgba(0,0,0,.55)] after:absolute after:-right-7 after:top-0 after:h-36 after:w-px after:bg-white/80 after:content-[''] last:after:hidden lg:w-21 xl:w-24 2xl:w-27.5"
                                 key={feature.icon}>
                             <span
                                 className="pointer-events-none absolute -top-12 left-1/2 w-40 -translate-x-1/2 rounded-md bg-[#123c2e]/95 px-2 py-1.5 text-[.62rem] font-normal leading-snug text-white opacity-0 shadow-lg transition-all duration-200 group-hover:-translate-y-1 group-hover:opacity-100">{feature.description}</span>
                                 <span
-                                    className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full border-2 border-white text-white transition-all duration-300 ease-out group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:border-[#f9d77b] group-hover:bg-white/20 group-hover:text-[#fff4c9] group-hover:shadow-[0_9px_18px_rgba(0,0,0,.3)] xl:h-16 xl:w-16 2xl:mb-5 2xl:h-17.5 2xl:w-17.5"><ShellIcon
+                                    className="mx-auto mb-5 grid h-17.5 w-17.5 place-items-center rounded-full border-2 border-white text-white transition-all duration-300 ease-out group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:border-[#f9d77b] group-hover:bg-white/20 group-hover:text-[#fff4c9] group-hover:shadow-[0_9px_18px_rgba(0,0,0,.3)] lg:mb-4 lg:h-14 lg:w-14 xl:h-16 xl:w-16 2xl:mb-5 2xl:h-17.5 2xl:w-17.5"><ShellIcon
                                     name={feature.icon}/></span>
                                 <span
                                     className="transition-colors duration-200 group-hover:text-[#fff4c9]">{feature.title.split('\n').map((line) =>
@@ -153,9 +160,11 @@ export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; 
                 </div>
             </section>
 
-            {/* FORM SECTION */}
+            {/* FORM SECTION - a viewport-tall flex box from lg so a short card is centred vertically.
+                `my-auto` on the card (not `items-center`) keeps a tall card reachable: when it is
+                taller than the window the auto margins collapse and it simply starts at the top. */}
             <section
-                className="grid w-full min-w-0 items-center justify-items-center px-4 pb-10 pt-1 sm:px-6 lg:py-[6vh] lg:pr-[5.4vw] lg:pl-[.4vw]">
+                className="grid w-full min-w-0 justify-items-center px-4 pb-10 pt-1 sm:px-6 lg:flex lg:min-h-svh lg:flex-col lg:items-center lg:py-[6vh] lg:pr-[5.4vw] lg:pl-[.4vw]">
                 {children}
             </section>
         </main>

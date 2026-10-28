@@ -128,7 +128,7 @@ export const TempleDashboardPage = () => {
                     <div className="mt-4 flex flex-wrap gap-2.5">
                         <button className="btn btn-gold btn-sm">Review bookings <ArrowRight size={16}/></button>
                         <button
-                            className="btn btn-outline btn-sm !border-white/40 !bg-white/10 !text-white hover:!bg-white/20">
+                            className="btn btn-outline btn-sm border-white/40! bg-white/10! text-white! hover:bg-white/20!">
                             Poya programme
                         </button>
                     </div>
@@ -174,7 +174,7 @@ export const TempleDashboardPage = () => {
                                         <span
                                             className="ml-auto font-bold text-sage-900">{s.families.length}/{s.capacity}</span>
                                         <span
-                                            className={`${badgeFor(sessionStatus(s))} !px-1.5 !py-0 !text-[0.62rem]`}>{sessionStatus(s)}</span>
+                                            className={`${badgeFor(sessionStatus(s))} px-1.5! py-0! text-[0.62rem]!`}>{sessionStatus(s)}</span>
                                     </button>
                                 ))}
                             </div>

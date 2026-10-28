@@ -84,7 +84,7 @@ export const AuthLoginPage = () => {
     return (
         <AuthShell>
             <div
-                className="mx-auto mt-0 w-full max-w-141.5 rounded-3xl border border-white/30 bg-[#fffdf4]/98 px-5 pb-7 pt-8 shadow-[0_22px_42px_rgba(9,20,13,.15)] sm:rounded-2xl sm:px-7 sm:pb-8 sm:pt-9 lg:min-h-[clamp(520px,80svh,860px)] lg:px-9 lg:pb-11.5 lg:pt-10">
+                className="mx-auto mt-0 w-full max-w-141.5 rounded-3xl border border-white/30 bg-[#fffdf4]/98 px-5 pb-7 pt-8 shadow-[0_22px_42px_rgba(9,20,13,.15)] sm:rounded-2xl sm:px-7 sm:pb-8 sm:pt-9 lg:my-auto lg:min-h-[clamp(520px,80svh,860px)] lg:px-9 lg:pb-11.5 lg:pt-10">
                 <header className="text-center">
                     <LotusMark width={112} className="mx-auto mb-0 w-24 sm:w-28"/>
                     <h2 className="-mt-1.75 mb-2.5 font-display text-[2.15rem] leading-none tracking-tight text-[#123c2e] sm:text-[clamp(2.35rem,3vw,3.1rem)]">Welcome
