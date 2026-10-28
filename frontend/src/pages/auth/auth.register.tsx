@@ -166,10 +166,10 @@ const DISTRICTS = [
 
 const labelClass = 'mb-2 block text-[1.02rem] leading-none text-[#16241c]'
 const boxClass =
-    'flex h-[42px] items-center gap-3 rounded-[8px] border border-[#2b3a30] bg-white px-3 text-[#2b3a30] transition ' +
-    'focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.14)]'
+    'flex h-12 items-center gap-3 rounded-[8px] border border-[#2b3a30] bg-white px-3 text-[#2b3a30] transition ' +
+    'focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.14)] lg:h-[42px]'
 const inputClass =
-    'w-px min-w-0 flex-1 border-0 bg-transparent p-0 text-[1rem] text-[#1f2d26] outline-none placeholder:text-[#8b8b8b] sm:text-[0.86rem]'
+    'w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 text-[1rem] text-[#1f2d26] outline-none placeholder:text-[#8b8b8b] lg:text-[0.86rem]'
 
 type TextFieldProps = {
     id: string
@@ -252,7 +252,7 @@ const PasswordField = ({id, label, placeholder, value, onChange, autoComplete, e
                 <button
                     type="button"
                     onClick={() => setVisible((current) => !current)}
-                    className="grid place-items-center rounded p-0.5 text-[#2b3a30] hover:text-[#14512f]"
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded text-[#2b3a30] hover:text-[#14512f] lg:h-9 lg:w-9"
                     aria-label={visible ? 'Hide password' : 'Show password'}
                     aria-pressed={visible}>
                     <Icon name={visible ? 'eye' : 'eyeOff'} size={17}/>
@@ -376,7 +376,7 @@ const SelectField = ({id, label, icon, placeholder, options, value, onChange, er
                         aria-describedby={error ? `${id}-error` : undefined}
                         onClick={() => (open ? setOpen(false) : openList())}
                         onKeyDown={onKeyDown}
-                        className={`flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 bg-transparent p-0 text-left text-[1rem] outline-none sm:text-[0.86rem] ${value ? 'text-[#1f2d26]' : 'text-[#8b8b8b]'}`}>
+                        className={`flex w-full min-w-0 flex-1 cursor-pointer items-center justify-between gap-2 self-stretch bg-transparent p-0 text-left text-[1rem] outline-none lg:text-[0.86rem] ${value ? 'text-[#1f2d26]' : 'text-[#8b8b8b]'}`}>
                         <span className="truncate">{value || placeholder}</span>
                         <Icon name="chevron" size={16}/>
                     </button>
@@ -404,7 +404,7 @@ const SelectField = ({id, label, icon, placeholder, options, value, onChange, er
                                     onMouseEnter={() => setActive(index)}
                                     onMouseDown={(event) => event.preventDefault()}
                                     onClick={() => choose(option)}
-                                    className={`flex cursor-pointer items-center justify-between gap-3 rounded-[7px] px-3 py-2.5 text-[1rem] leading-snug sm:text-[0.9rem] ${
+                                    className={`flex cursor-pointer items-center justify-between gap-3 rounded-[7px] px-3 py-3 text-[1rem] leading-snug sm:text-[0.9rem] lg:py-2.5 ${
                                         index === active ? 'bg-[#eef4ee]' : 'bg-transparent'
                                     } ${isPlaceholder ? 'text-[#6f7d74]' : 'text-[#1f2d26]'} ${
                                         isSelected ? 'font-semibold' : 'font-normal'
@@ -534,11 +534,11 @@ export const RegisterPage = () => {
     return (
         <AuthShell variant="signup">
             <div
-                className="mt-2 w-full max-w-236 rounded-[26px] border border-white/30 bg-[#fffdf4] px-6 pb-8 pt-8 shadow-[0_22px_42px_rgba(9,20,13,.15)] max-[1023px]:mx-auto max-[1023px]:mt-0 max-[640px]:rounded-[22px] max-[640px]:px-5 max-[640px]:pb-7 sm:px-8 sm:pt-9 lg:px-11 lg:pb-9">
+                className="mx-auto mt-0 w-full max-w-236 rounded-[22px] border border-white/30 bg-[#fffdf4] px-5 pb-7 pt-7 shadow-[0_22px_42px_rgba(9,20,13,.15)] sm:rounded-[26px] sm:px-8 sm:pb-8 sm:pt-9 lg:px-11 lg:pb-9">
 
                 <header className="text-center">
                     <LotusMark width={112} className="mx-auto mb-0"/>
-                    <h2 className="mt-1 font-display text-[clamp(2rem,2.4vw,2.55rem)] leading-tight font-bold tracking-tight text-[#123c2e]">
+                    <h2 className="mt-1 font-display text-[2rem] leading-tight font-bold tracking-tight text-[#123c2e] sm:text-[clamp(2rem,2.4vw,2.55rem)]">
                         Create Your Account
                     </h2>
                     <p className="mt-2 text-[1.02rem] text-[#2c3a31]">
@@ -679,18 +679,18 @@ export const RegisterPage = () => {
                                 }}
                                 aria-invalid={Boolean(errors.terms) || undefined}
                                 aria-describedby={errors.terms ? 'terms-error' : undefined}
-                                className="mt-0.5 h-4.5 w-4.5 flex-none cursor-pointer rounded-[3px] border-[#2b3a30] accent-[#14512f]"/>
+                                className="mt-0.5 h-6 w-6 flex-none cursor-pointer rounded-[3px] border-[#2b3a30] accent-[#14512f] lg:h-4.5 lg:w-4.5"/>
                             <span>
                                 I agree to the{' '}
                                 <Link
                                     to={authRoutes.terms}
-                                    className="font-bold text-[#14512f] no-underline transition-colors hover:text-[#0f4226]">
+                                    className="py-1 font-bold text-[#14512f] no-underline transition-colors hover:text-[#0f4226]">
                                     Terms and Conditions
                                 </Link>{' '}
                                 and{' '}
                                 <Link
                                     to={authRoutes.privacy}
-                                    className="font-bold text-[#14512f] no-underline transition-colors hover:text-[#0f4226]">
+                                    className="py-1 font-bold text-[#14512f] no-underline transition-colors hover:text-[#0f4226]">
                                     Privacy Policy
                                 </Link>
                             </span>
@@ -721,7 +721,8 @@ export const RegisterPage = () => {
 
                     <div className="mt-5 text-center text-[0.96rem] text-[#1f2d26]">
                         Already have an account?{' '}
-                        <Link to={authRoutes.login} className="font-bold text-[#14512f] hover:underline">Login</Link>
+                        <Link to={authRoutes.login}
+                              className="px-1.5 py-2 font-bold text-[#14512f] hover:underline">Login</Link>
                     </div>
                 </form>
             </div>

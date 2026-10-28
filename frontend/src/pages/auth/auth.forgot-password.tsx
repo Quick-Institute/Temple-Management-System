@@ -38,10 +38,10 @@ const ResetIcon = ({name, size = 22}: { name: ResetIconName; size?: number }) =>
 
 
 /** Card shell matching the login screen: cream card, gold lotus, Petrona heading. */
-const CARD = 'mt-2 w-full max-w-141.5 rounded-2xl border border-white/30 bg-[#fffdf4]/[.98] px-8 pb-9.5 pt-9 shadow-[0_22px_42px_rgba(9,20,13,.15)] max-[1023px]:mx-auto max-[1023px]:mt-0 max-[640px]:rounded-[24px] max-[640px]:px-6 max-[640px]:pb-7 max-[640px]:pt-8 max-[450px]:px-5 max-[450px]:pb-6 max-[450px]:pt-7 lg:px-12 lg:pb-11 lg:pt-10'
-const FIELD = 'flex h-11 items-center gap-3.25 rounded-[9px] border border-[#292B2B] bg-white px-2.75 text-[#292B2B] transition focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.12)] max-[640px]:h-12'
-const INPUT = 'w-px min-w-0 flex-1 border-0 bg-transparent p-0 font-temple text-[.95rem] text-[#292B2B] outline-none placeholder:text-[#292B2B] max-[640px]:text-base'
-const PRIMARY = 'flex min-h-12.75 w-full items-center justify-center gap-3 rounded-[10px] border border-[#1d5c46] bg-[#1d5c46] text-base font-bold text-white transition hover:-translate-y-px hover:bg-[#154935] hover:shadow-[0_8px_16px_rgba(24,80,61,.24)] disabled:cursor-wait disabled:opacity-75'
+const CARD = 'mx-auto mt-0 w-full max-w-141.5 rounded-[24px] border border-white/30 bg-[#fffdf4]/[.98] px-5 pb-7 pt-8 shadow-[0_22px_42px_rgba(9,20,13,.15)] sm:rounded-2xl sm:px-7 sm:pb-8 sm:pt-9 lg:px-12 lg:pb-11 lg:pt-10'
+const FIELD = 'flex h-12 items-center gap-3 rounded-[9px] border border-[#292B2B] bg-white px-3 text-[#292B2B] transition focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.12)] lg:h-11'
+const INPUT = 'w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 font-temple text-base text-[#292B2B] outline-none placeholder:text-[#292B2B] lg:text-[.95rem]'
+const PRIMARY = 'flex min-h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#1d5c46] bg-[#1d5c46] text-base font-bold text-white transition hover:-translate-y-px hover:bg-[#154935] hover:shadow-[0_8px_16px_rgba(24,80,61,.24)] disabled:cursor-wait disabled:opacity-75 lg:min-h-12.75'
 
 /** of***@domain.lk — enough to recognise, not enough to leak the whole address. */
 const mask = (value: string) => {
@@ -99,7 +99,7 @@ export const ForgotPasswordPage = () => {
                 <div className={CARD}>
                     <header className="text-center">
                         <LotusMark width={112} className="mx-auto mb-0"/>
-                        <h1 className="mb-2.5 mt-1 font-display text-[clamp(2rem,2.6vw,2.7rem)] leading-none tracking-tight text-[#123c2e] max-[450px]:text-[1.9rem]">
+                        <h1 className="mb-2.5 mt-1 font-display text-[1.9rem] leading-none tracking-tight text-[#123c2e] sm:text-[clamp(2rem,2.6vw,2.7rem)]">
                             Check your inbox
                         </h1>
                         <p className="m-0 text-[1.02rem] leading-relaxed text-[#111]">
@@ -153,12 +153,14 @@ export const ForgotPasswordPage = () => {
                         </p>}
 
                     <div
-                        className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-[#d9d3bf] pt-5 text-[.94rem]">
-                        <Link to={authRoutes.login} className="font-bold text-[#14512f] hover:underline">
+                        className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-[#d9d3bf] pt-5 text-[.94rem]">
+                        <Link to={authRoutes.login}
+                              className="inline-flex min-h-11 items-center px-1 font-bold text-[#14512f] hover:underline lg:min-h-0">
                             Back to sign in
                         </Link>
                         <span aria-hidden="true" className="text-[#9a9484]">·</span>
-                        <button type="button" className="font-bold text-[#14512f] hover:underline"
+                        <button type="button"
+                                className="inline-flex min-h-11 items-center px-1 font-bold text-[#14512f] hover:underline lg:min-h-0"
                                 onClick={() => {
                                     setSentTo(null)
                                     setResent(false)
@@ -180,7 +182,7 @@ export const ForgotPasswordPage = () => {
             <div className={CARD}>
                 <header className="text-center">
                     <LotusMark width={112} className="mx-auto mb-0"/>
-                    <h1 className="mb-2.5 mt-1 font-display text-[clamp(2rem,2.6vw,2.7rem)] leading-none tracking-tight text-[#123c2e] max-[450px]:text-[1.9rem]">
+                    <h1 className="mb-2.5 mt-1 font-display text-[1.9rem] leading-none tracking-tight text-[#123c2e] sm:text-[clamp(2rem,2.6vw,2.7rem)]">
                         Reset your password
                     </h1>
                     <p className="m-0 text-[1.02rem] text-[#111]">
@@ -188,7 +190,7 @@ export const ForgotPasswordPage = () => {
                     </p>
                 </header>
 
-                <form className="mt-9 max-[640px]:mt-7" onSubmit={submit} noValidate>
+                <form className="mt-7 sm:mt-9" onSubmit={submit} noValidate>
                     <label className="block" htmlFor="reset-identifier">
                         <span className="mb-3 block text-base text-[#131313]">Email Address</span>
                         <span
@@ -223,18 +225,20 @@ export const ForgotPasswordPage = () => {
 
                     <p className="mt-4 text-center text-[.88rem] leading-relaxed text-[#5d6b62]">
                         The reset link is sent to your registered email address.
-                        <br className="max-[450px]:hidden"/> If it has not arrived in a few minutes, check the spam
+                        <br className="hidden sm:inline"/> If it has not arrived in a few minutes, check the spam
                         folder.
                     </p>
                 </form>
 
                 <div
-                    className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-[#d9d3bf] pt-5 text-[.94rem]">
-                    <Link to={authRoutes.login} className="font-bold text-[#14512f] hover:underline">
+                    className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-[#d9d3bf] pt-5 text-[.94rem]">
+                    <Link to={authRoutes.login}
+                          className="inline-flex min-h-11 items-center px-1 font-bold text-[#14512f] hover:underline lg:min-h-0">
                         Back to sign in
                     </Link>
                     <span aria-hidden="true" className="text-[#9a9484]">·</span>
-                    <button type="button" className="font-bold text-[#14512f] hover:underline"
+                    <button type="button"
+                            className="inline-flex min-h-11 items-center px-1 font-bold text-[#14512f] hover:underline lg:min-h-0"
                             onClick={() => navigate(authRoutes.register)}>
                         Create an account
                     </button>

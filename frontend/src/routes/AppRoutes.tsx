@@ -2,6 +2,7 @@ import {Navigate, Route, Routes} from 'react-router-dom'
 import {ForgotPasswordPage} from '../pages/auth/auth.forgot-password'
 import {AuthLoginPage} from '../pages/auth/auth.login'
 import {RegisterPage} from '../pages/auth/auth.register'
+import {ResetPasswordPage} from '../pages/auth/auth.reset-password'
 import {PrivacyPage} from '../pages/legal/legal.privacy'
 import {TermsPage} from '../pages/legal/legal.terms'
 import {TempleDashboardPage} from '../pages/temple/temple.dashboard'
@@ -12,6 +13,7 @@ export const AppRoutes = () => (
         <Route path={authRoutes.login} element={<AuthLoginPage/>}/>
         <Route path={authRoutes.register} element={<RegisterPage/>}/>
         <Route path={authRoutes.forgotPassword} element={<ForgotPasswordPage/>}/>
+        <Route path={authRoutes.resetPassword} element={<ResetPasswordPage/>}/>
 
         {/* Public legal pages, linked from the sign-up consent line. */}
         <Route path={authRoutes.terms} element={<TermsPage/>}/>
