@@ -38,7 +38,7 @@ const ResetIcon = ({name, size = 22}: { name: ResetIconName; size?: number }) =>
 
 
 /** Card shell matching the login screen: cream card, gold lotus, Petrona heading. */
-const CARD = 'mx-auto mt-0 w-full max-w-141.5 rounded-[24px] border border-white/30 bg-[#fffdf4]/[.98] px-5 pb-7 pt-8 shadow-[0_22px_42px_rgba(9,20,13,.15)] sm:rounded-2xl sm:px-7 sm:pb-8 sm:pt-9 lg:px-12 lg:pb-11 lg:pt-10'
+const CARD = 'mx-auto mt-0 w-full max-w-141.5 rounded-[24px] border border-white/30 bg-[#fffdf4]/[.98] px-5 pb-7 pt-8 shadow-[0_22px_42px_rgba(9,20,13,.15)] sm:rounded-2xl sm:px-7 sm:pb-8 sm:pt-9 lg:my-auto lg:px-12 lg:pb-11 lg:pt-10'
 const FIELD = 'flex h-12 items-center gap-3 rounded-[9px] border border-[#292B2B] bg-white px-3 text-[#292B2B] transition focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.12)] lg:h-11'
 const INPUT = 'w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 font-temple text-base text-[#292B2B] outline-none placeholder:text-[#292B2B] lg:text-[.95rem]'
 const PRIMARY = 'flex min-h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#1d5c46] bg-[#1d5c46] text-base font-bold text-white transition hover:-translate-y-px hover:bg-[#154935] hover:shadow-[0_8px_16px_rgba(24,80,61,.24)] disabled:cursor-wait disabled:opacity-75 lg:min-h-12.75'

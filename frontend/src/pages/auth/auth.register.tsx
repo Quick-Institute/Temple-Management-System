@@ -534,7 +534,7 @@ export const RegisterPage = () => {
     return (
         <AuthShell variant="signup">
             <div
-                className="mx-auto mt-0 w-full max-w-236 rounded-[22px] border border-white/30 bg-[#fffdf4] px-5 pb-7 pt-7 shadow-[0_22px_42px_rgba(9,20,13,.15)] sm:rounded-[26px] sm:px-8 sm:pb-8 sm:pt-9 lg:px-11 lg:pb-9">
+                className="mx-auto mt-0 w-full max-w-236 rounded-[22px] border border-white/30 bg-[#fffdf4] px-5 pb-7 pt-7 shadow-[0_22px_42px_rgba(9,20,13,.15)] sm:rounded-[26px] sm:px-8 sm:pb-8 sm:pt-9 lg:my-auto lg:px-11 lg:pb-9">
 
                 <header className="text-center">
                     <LotusMark width={112} className="mx-auto mb-0"/>
