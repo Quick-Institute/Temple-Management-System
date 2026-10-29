@@ -1,3 +1,6 @@
+export const MIN_PASSWORD_LENGTH = 8
+export const MAX_PASSWORD_LENGTH = 64
+
 export type PasswordRule = {
     /** Short wording for the checklist. */
     label: string
@@ -8,9 +11,9 @@ export type PasswordRule = {
 
 export const PASSWORD_RULES: PasswordRule[] = [
     {
-        label: '8 to 64 characters',
-        hint: 'Use between 8 and 64 characters.',
-        met: (value) => value.length >= 8 && value.length <= 64,
+        label: `${MIN_PASSWORD_LENGTH} to ${MAX_PASSWORD_LENGTH} characters`,
+        hint: `Use between ${MIN_PASSWORD_LENGTH} and ${MAX_PASSWORD_LENGTH} characters.`,
+        met: (value) => value.length >= MIN_PASSWORD_LENGTH && value.length <= MAX_PASSWORD_LENGTH,
     },
     {
         label: 'Upper and lower case',
@@ -34,9 +37,19 @@ export const PASSWORD_RULES: PasswordRule[] = [
     },
 ]
 
-/** Every rule must hold before the form can be submitted. */
+/** True when every rule is satisfied - shown as "Strong" and used to tint the panel. Never blocks. */
 export const passwordMeetsPolicy = (value: string) =>
     PASSWORD_RULES.every((rule) => rule.met(value))
+
+/**
+ * The only hard check. Returns the message to show under the field, or null when the length is
+ * acceptable. Everything else in the list is advice.
+ */
+export const passwordLengthError = (value: string): string | null => {
+    if (value.length < MIN_PASSWORD_LENGTH) return `Use at least ${MIN_PASSWORD_LENGTH} characters.`
+    if (value.length > MAX_PASSWORD_LENGTH) return `Use no more than ${MAX_PASSWORD_LENGTH} characters.`
+    return null
+}
 
 /** The first rule that is not satisfied yet, or null when the password is acceptable. */
 export const firstUnmetRule = (value: string): PasswordRule | null =>
@@ -48,6 +61,9 @@ export const firstUnmetRule = (value: string): PasswordRule | null =>
  */
 export const passwordStrength = (value: string) => {
     if (!value) return {label: 'Empty', bars: 0, color: '#8b8b8b', tone: 'idle' as const}
+
+    const tooShort = value.length < MIN_PASSWORD_LENGTH
+    if (tooShort) return {label: 'Too short', bars: 1, color: '#ad1c03', tone: 'weak' as const}
 
     const passed = PASSWORD_RULES.filter((rule) => rule.met(value)).length
     const points = passed + (value.length >= 12 ? 1 : 0)

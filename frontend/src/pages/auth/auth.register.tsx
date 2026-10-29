@@ -2,7 +2,16 @@ import type {FormEvent, ReactNode} from 'react'
 import {useEffect, useId, useRef, useState} from 'react'
 import {Link, useNavigate} from 'react-router-dom'
 import {LotusMark, TempleMark} from '../../components/AuthIcons'
-import {firstUnmetRule, passwordMeetsPolicy} from '../../components/PasswordRules'
+import {passwordLengthError} from '../../components/PasswordRules'
+import {TempleCombobox} from '../../components/TempleCombobox'
+import {
+    detectLanguage,
+    districtOptions,
+    findTempleByCode,
+    findTempleByNameAndDistrict,
+    type Temple,
+    type TempleLanguage,
+} from '../../data/temples'
 import {PasswordStrength} from '../../components/PasswordStrength'
 import {AuthShell} from '../../layouts/AuthShell'
 import {authRoutes} from '../../routes/authRoutes'
@@ -13,7 +22,7 @@ import {authRoutes} from '../../routes/authRoutes'
 
 type IconName =
     | 'briefcase' | 'chevron' | 'eye' | 'eyeOff' | 'hash' | 'home' | 'key' | 'mail'
-    | 'check' | 'map' | 'pin' | 'mailbox' | 'person' | 'phone' | 'temple' | 'user' | 'userPlus' | 'users'
+    | 'check' | 'map' | 'pin' | 'mailbox' | 'person' | 'phone' | 'search' | 'temple' | 'user' | 'userPlus' | 'users'
 
 const Icon = ({name, size = 18}: { name: IconName; size?: number }) => {
     /* The Temple Admin tab and the Temple Code field use the supplied temple mark. */
@@ -38,6 +47,10 @@ const Icon = ({name, size = 18}: { name: IconName; size?: number }) => {
             <path d="M3 10.5 12 3.5l9 7"/>
             <path d="M5.5 9.8V20.5h13V9.8"/>
             <path d="M9.5 20.5v-5.7h5v5.7"/>
+        </>,
+        search: <>
+            <circle cx="11" cy="11" r="6.4"/>
+            <path d="M15.9 15.9 20.4 20.4"/>
         </>,
         mail: <>
             <rect x="2.8" y="5" width="18.4" height="14" rx="2"/>
@@ -157,11 +170,11 @@ const COMMITTEE_DESIGNATIONS = [
     'President', 'Vice-President', 'Secretary', 'Assistant Secretary', 'Treasurer', 'Committee Member', 'Other',
 ]
 
-const DISTRICTS = [
-    'Ampara', 'Anuradhapura', 'Badulla', 'Batticaloa', 'Colombo', 'Galle', 'Gampaha', 'Hambantota', 'Jaffna',
-    'Kalutara', 'Kandy', 'Kegalle', 'Kilinochchi', 'Kurunegala', 'Mannar', 'Matale', 'Matara', 'Monaragala',
-    'Mullaitivu', 'Nuwara Eliya', 'Polonnaruwa', 'Puttalam', 'Ratnapura', 'Trincomalee', 'Vavuniya',
-]
+/* Districts now come from the temple registry so they can be shown in Sinhala or English. */
+const districtsIn = (language: TempleLanguage) => districtOptions(language)
+
+/* Sri Lanka uses both: the old nine digits plus V or X, and the newer twelve digits. */
+const NIC_PATTERN = /^(?:\d{9}[vVxX]|\d{12})$/
 
 /* ------------------------------------------------------------------ */
 /* Field primitives                                                    */
@@ -183,6 +196,7 @@ type TextFieldProps = {
     autoComplete?: string
     value: string
     onChange: (value: string) => void
+    onBlur?: () => void
     error?: string
     full?: boolean
 }
@@ -200,6 +214,7 @@ const TextField = ({
                        autoComplete,
                        value,
                        onChange,
+                       onBlur,
                        error,
                        full
                    }: TextFieldProps) => (
@@ -217,6 +232,7 @@ const TextField = ({
                 value={value}
                 aria-invalid={Boolean(error) || undefined}
                 aria-describedby={error ? `${id}-error` : undefined}
+                onBlur={onBlur}
                 onChange={(event) => onChange(event.target.value)}
             />
         </div>
@@ -276,7 +292,7 @@ const PasswordField = ({id, label, placeholder, value, onChange, onBlur, autoCom
  * listbox draws the panel itself: 10px panel padding, 14px/10px option padding, a scroll area
  * capped at 16rem, and it flips above the field when there is not enough room below.
  */
-const SelectField = ({id, label, icon, placeholder, options, value, onChange, error, full}: {
+const SelectField = ({id, label, icon, placeholder, options, value, onChange, error, full, searchable}: {
     id: string
     label: string
     icon: IconName
@@ -286,15 +302,28 @@ const SelectField = ({id, label, icon, placeholder, options, value, onChange, er
     onChange: (value: string) => void
     error?: string
     full?: boolean
+    /** Force the search box on or off. Left unset it appears once a list is long enough to scroll. */
+    searchable?: boolean
 }) => {
     const [open, setOpen] = useState(false)
     const [flipUp, setFlipUp] = useState(false)
     const [active, setActive] = useState(-1)
+    const [query, setQuery] = useState('')
     const wrapRef = useRef<HTMLDivElement>(null)
     const buttonRef = useRef<HTMLButtonElement>(null)
+    const searchRef = useRef<HTMLInputElement>(null)
     const listRef = useRef<HTMLDivElement>(null)
     const listId = useId()
     const all = [placeholder, ...options]
+    /* A three-item committee list reads better without a search box; the 25 districts do not. */
+    const searchOn = searchable ?? options.length > 8
+    const needle = query.trim().toLowerCase()
+
+    /* Rows keep their index in `all`, so the highlighted row keeps its id while the list filters. */
+    const visible = needle && searchOn
+        ? all.map((option, index) => ({option, index}))
+            .filter(({option, index}) => index > 0 && option.toLowerCase().includes(needle))
+        : all.map((option, index) => ({option, index}))
 
     /* Close on an outside press or Escape, exactly like the dashboard popovers. */
     useEffect(() => {
@@ -322,10 +351,16 @@ const SelectField = ({id, label, icon, placeholder, options, value, onChange, er
         document.getElementById(`${listId}-${active}`)?.scrollIntoView({block: 'nearest'})
     }, [open, active, listId])
 
+    /* Put the caret in the search box as the panel opens, so typing filters straight away. */
+    useEffect(() => {
+        if (open && searchOn) searchRef.current?.focus()
+    }, [open, searchOn])
+
     const openList = () => {
         const box = wrapRef.current?.getBoundingClientRect()
         /* Flip above when the field sits too low for a 16rem panel to fit under it. */
         if (box) setFlipUp(box.bottom + 288 > window.innerHeight && box.top > window.innerHeight - box.bottom)
+        setQuery('')
         setActive(Math.max(0, all.indexOf(value)))
         setOpen(true)
     }
@@ -334,6 +369,24 @@ const SelectField = ({id, label, icon, placeholder, options, value, onChange, er
         onChange(option === placeholder ? '' : option)
         setOpen(false)
         buttonRef.current?.focus()
+    }
+
+    /* Walk the rows that are on screen, not the full list, so arrows skip the filtered-out ones. */
+    const move = (delta: number) => {
+        if (!visible.length) return
+        setActive((index) => {
+            const position = visible.findIndex((row) => row.index === index)
+            const next = position < 0 ? 0 : (position + delta + visible.length) % visible.length
+            return visible[next].index
+        })
+    }
+
+    const onSearchChange = (text: string) => {
+        setQuery(text)
+        const wanted = text.trim().toLowerCase()
+        /* +1 because `all` leads with the placeholder. */
+        const first = wanted ? options.findIndex((option) => option.toLowerCase().includes(wanted)) : -1
+        setActive(first < 0 ? -1 : first + 1)
     }
 
     const onKeyDown = (event: React.KeyboardEvent) => {
@@ -346,16 +399,14 @@ const SelectField = ({id, label, icon, placeholder, options, value, onChange, er
         }
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault()
-            setActive((index) => {
-                const next = event.key === 'ArrowDown' ? index + 1 : index - 1
-                return (next + all.length) % all.length
-            })
+            move(event.key === 'ArrowDown' ? 1 : -1)
         } else if (event.key === 'Home' || event.key === 'End') {
             event.preventDefault()
-            setActive(event.key === 'Home' ? 0 : all.length - 1)
+            const row = event.key === 'Home' ? visible[0] : visible[visible.length - 1]
+            setActive(row ? row.index : -1)
         } else if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault()
-            choose(all[active] ?? placeholder)
+            if (active >= 0 && all[active] !== undefined) choose(all[active])
         } else if (event.key === 'Tab') {
             setOpen(false)
         }
@@ -397,7 +448,22 @@ const SelectField = ({id, label, icon, placeholder, options, value, onChange, er
                         className={`absolute inset-x-0 z-50 max-h-64 overflow-y-auto overscroll-contain rounded-[10px] border border-[#2b3a30]/30 bg-white p-2.5 shadow-[0_18px_38px_rgba(9,20,13,.20)] ${
                             flipUp ? 'bottom-[calc(100%+8px)]' : 'top-[calc(100%+8px)]'
                         }`}>
-                        {all.map((option, index) => {
+                        {searchOn &&
+                            <div
+                                className="sticky top-0 z-10 mb-1.5 flex items-center gap-2 rounded-lg border border-[#2b3a30]/20 bg-[#f5faf6] px-2.5 py-2">
+                                <span className="flex-none text-[#6f7d74]"><Icon name="search" size={15}/></span>
+                                <input
+                                    ref={searchRef}
+                                    type="text"
+                                    value={query}
+                                    onChange={(event) => onSearchChange(event.target.value)}
+                                    onKeyDown={onKeyDown}
+                                    placeholder={`Search ${label.toLowerCase()}...`}
+                                    aria-label={`Search ${label}`}
+                                    autoComplete="off"
+                                    className="min-w-0 flex-1 bg-transparent text-[0.92rem] text-[#1f2d26] outline-none"/>
+                            </div>}
+                        {visible.map(({option, index}) => {
                             const isPlaceholder = index === 0
                             const isSelected = option === value || (isPlaceholder && !value)
                             return (
@@ -421,6 +487,10 @@ const SelectField = ({id, label, icon, placeholder, options, value, onChange, er
                                 </div>
                             )
                         })}
+                        {!visible.length &&
+                            <p className="px-3 py-3 text-[0.9rem] text-[#6f7d74]">
+                                No {label.toLowerCase()} matches what you typed.
+                            </p>}
                     </div>
                 )}
             </div>
@@ -448,6 +518,8 @@ type Form = {
     village: string
     district: string
     postalCode: string
+    /** Family users only — the NIC is the primary key for a family record. */
+    nic: string
     password: string
     confirmPassword: string
 }
@@ -455,7 +527,7 @@ type Form = {
 const EMPTY: Form = {
     templeName: '', templeCode: '', firstName: '', lastName: '', email: '', phone: '', designation: '',
     committee: '', committeeOther: '', designationOther: '', address: '', village: '', district: '',
-    postalCode: '', password: '', confirmPassword: '',
+    postalCode: '', nic: '', password: '', confirmPassword: '',
 }
 
 export const RegisterPage = () => {
@@ -464,6 +536,53 @@ export const RegisterPage = () => {
     const [form, setForm] = useState<Form>(EMPTY)
     const [agreed, setAgreed] = useState(false)
     const [touchedPassword, setTouchedPassword] = useState(false)
+    /* Which script the temple fields are in. Follows whatever the user typed, so a temple is never
+       half Sinhala and half English. */
+    const [language, setLanguage] = useState<TempleLanguage>('en')
+
+    /*
+     * Fill the temple fields from a registry entry. The village only belongs to the temple for a
+     * committee member — for a family user it is their home village, so it is left alone.
+     */
+    const fillTemple = (temple: Temple) => {
+        const withVillage = role === 'committee-member'
+        setForm((current) => ({
+            ...current,
+            templeName: temple.name[language],
+            templeCode: temple.code,
+            district: temple.district[language],
+            village: withVillage ? temple.village[language] : current.village,
+        }))
+        setErrors((current) => ({
+            ...current,
+            templeName: undefined,
+            templeCode: undefined,
+            district: undefined,
+            ...(withVillage ? {village: undefined} : {}),
+        }))
+    }
+
+    /* Typing a full code fills the rest straight away. */
+    const onTempleCodeChange = (value: string) => {
+        setForm((current) => ({...current, templeCode: value}))
+        setErrors((current) => ({...current, templeCode: undefined}))
+        const temple = findTempleByCode(value)
+        if (temple) fillTemple(temple)
+    }
+
+    /* Leaving the name field resolves whatever was typed, narrowed by the district. */
+    const onTempleNameCommit = (value: string) => {
+        const temple = findTempleByNameAndDistrict(value, form.district)
+        if (temple) fillTemple(temple)
+    }
+
+    /* Name plus district is enough to pin down a temple, so choosing a district fills the code too —
+       which matters when two temples share a name. */
+    const onDistrictChange = (value: string) => {
+        set('district')(value)
+        const temple = findTempleByNameAndDistrict(form.templeName, value)
+        if (temple) fillTemple(temple)
+    }
     const [errors, setErrors] = useState<Partial<Record<keyof Form | 'terms', string>>>({})
     const [submitting, setSubmitting] = useState(false)
 
@@ -500,6 +619,8 @@ export const RegisterPage = () => {
         }
 
         if (role === 'committee-member') {
+            required('village', 'Enter your village.')
+            required('district', 'Select your district.')
             required('committee', 'Select your committee.')
             if (form.committee === 'Other') required('committeeOther', 'Enter the committee name.')
             required('designation', 'Select your designation.')
@@ -512,10 +633,22 @@ export const RegisterPage = () => {
             required('district', 'Select your district.')
             if (!form.postalCode.trim()) next.postalCode = 'Enter your postal code.'
             else if (!/^\d{5}$/.test(form.postalCode.trim())) next.postalCode = 'Postal codes have five digits.'
+
+            if (!form.nic.trim()) next.nic = 'Enter your NIC number.'
+            else if (!NIC_PATTERN.test(form.nic.trim()))
+                next.nic = 'Enter a valid NIC - 9 digits with V or X, or 12 digits.'
         }
 
+        /*
+         * Only assign when there is something wrong. Writing `next.password = undefined` would
+         * still create the key, and validate() decides from Object.keys(next).length - so the
+         * form would never submit at all.
+         */
         if (!form.password) next.password = 'Create a password.'
-        else if (!passwordMeetsPolicy(form.password)) next.password = firstUnmetRule(form.password)?.hint
+        else {
+            const lengthError = passwordLengthError(form.password)
+            if (lengthError) next.password = lengthError
+        }
         if (!form.confirmPassword) next.confirmPassword = 'Confirm your password.'
         else if (form.password !== form.confirmPassword) next.confirmPassword = 'Passwords do not match.'
 
@@ -529,11 +662,16 @@ export const RegisterPage = () => {
         event.preventDefault()
         if (!validate()) return
 
-        // Demo build: no account is created — the details are not sent anywhere.
+        /*
+         * Demo build: no account is created yet, so the details are not sent anywhere. Once the
+         * screen is valid it lands on the dashboard, the same place a sign-in goes — nobody should
+         * be sent back to the login form they have just filled in a registration for.
+         * When the API exists this becomes: call it, and only navigate on success.
+         */
         setSubmitting(true)
         window.setTimeout(() => {
             setSubmitting(false)
-            navigate(authRoutes.login)
+            navigate(authRoutes.dashboard)
         }, 700)
     }
 
@@ -581,14 +719,26 @@ export const RegisterPage = () => {
                         {/* Committee member / family user join an existing temple */}
                         {role !== 'temple-admin' && (
                             <>
-                                <TextField id="templeName" label="Temple Name" icon="temple"
-                                           placeholder="Enter temple name"
-                                           autoComplete="organization" value={form.templeName}
-                                           onChange={set('templeName')}
-                                           error={errors.templeName}/>
+                                {/* Type the temple name and the registered temples are offered;
+                                    picking one fills the code, district and village below. */}
+                                <TempleCombobox
+                                    id="templeName"
+                                    label="Temple Name"
+                                    icon={<Icon name="temple" size={17}/>}
+                                    placeholder="Enter temple name"
+                                    value={form.templeName}
+                                    language={language}
+                                    onChange={(value) => {
+                                        setLanguage(detectLanguage(value))
+                                        set('templeName')(value)
+                                    }}
+                                    onPick={(temple) => fillTemple(temple)}
+                                    onCommit={onTempleNameCommit}
+                                    error={errors.templeName}/>
                                 <TextField id="templeCode" label="Temple Code" icon="temple"
                                            placeholder="Enter temple code"
-                                           value={form.templeCode} onChange={set('templeCode')}
+                                           value={form.templeCode} onChange={onTempleCodeChange}
+                                           onBlur={() => onTempleCodeChange(form.templeCode)}
                                            error={errors.templeCode}/>
                             </>
                         )}
@@ -603,13 +753,18 @@ export const RegisterPage = () => {
                         <TextField id="email" label="Email Address" icon="mail" placeholder="Enter your email address"
                                    type="email" autoComplete="email" value={form.email} onChange={set('email')}
                                    error={errors.email}/>
-                        <TextField id="phone" label={role === 'family-user' ? 'Phone No.' : 'Phone Number'} icon="phone"
+                        <TextField id="phone" label="Phone Number" icon="phone"
                                    placeholder="Enter your phone number" type="tel" autoComplete="tel"
                                    value={form.phone} onChange={set('phone')} error={errors.phone}/>
 
                         {/* Committee Member — committee name and designation */}
                         {role === 'committee-member' && (
                             <>
+                                <TextField id="village" label="Village" icon="home" placeholder="Enter your village"
+                                           value={form.village} onChange={set('village')} error={errors.village}/>
+                                <SelectField id="district" label="District" icon="map" placeholder="Select district"
+                                             options={districtsIn(language)} value={form.district}
+                                             onChange={onDistrictChange} error={errors.district}/>
                                 <SelectField id="committee" label="Committee Name" icon="users"
                                              placeholder="Select committee"
                                              options={COMMITTEES} value={form.committee} onChange={set('committee')}
@@ -649,14 +804,17 @@ export const RegisterPage = () => {
                         {/* Family User — address block */}
                         {role === 'family-user' && (
                             <>
+                                <TextField id="nic" label="NIC Number" icon="user" placeholder="901234567V"
+                                           autoComplete="off" value={form.nic} onChange={set('nic')}
+                                           error={errors.nic}/>
                                 <TextField id="address" label="Address" icon="pin" placeholder="Enter your address"
                                            autoComplete="street-address" value={form.address} onChange={set('address')}
                                            error={errors.address} full/>
                                 <TextField id="village" label="Village" icon="home" placeholder="Enter your village"
                                            value={form.village} onChange={set('village')} error={errors.village}/>
                                 <SelectField id="district" label="District" icon="map" placeholder="Select district"
-                                             options={DISTRICTS} value={form.district} onChange={set('district')}
-                                             error={errors.district}/>
+                                             options={districtsIn(language)} value={form.district}
+                                             onChange={onDistrictChange} error={errors.district}/>
                                 <TextField id="postalCode" label="Postal Code" icon="mailbox"
                                            placeholder="Enter postal code"
                                            autoComplete="postal-code" value={form.postalCode}

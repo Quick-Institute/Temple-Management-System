@@ -2,7 +2,7 @@ import type {FormEvent, ReactNode} from 'react'
 import {useState} from 'react'
 import {Link, useNavigate, useSearchParams} from 'react-router-dom'
 import {LotusMark} from '../../components/AuthIcons'
-import {firstUnmetRule, passwordMeetsPolicy} from '../../components/PasswordRules'
+import {passwordLengthError} from '../../components/PasswordRules'
 import {PasswordStrength} from '../../components/PasswordStrength'
 import {AuthShell} from '../../layouts/AuthShell'
 import {authRoutes} from '../../routes/authRoutes'
@@ -153,7 +153,10 @@ export const ResetPasswordPage = () => {
         const next: { password?: string; confirm?: string } = {}
 
         if (!password) next.password = 'Create a new password.'
-        else if (!passwordMeetsPolicy(password)) next.password = firstUnmetRule(password)?.hint
+        else {
+            const lengthError = passwordLengthError(password)
+            if (lengthError) next.password = lengthError
+        }
 
         if (!confirm) next.confirm = 'Confirm your new password.'
         else if (confirm !== password) next.confirm = 'Passwords do not match.'

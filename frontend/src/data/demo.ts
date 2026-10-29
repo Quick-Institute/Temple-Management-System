@@ -4,13 +4,22 @@
 
 export const DEMO_TODAY = '2026-10-26'
 
+/*
+ * The temple this demo session belongs to. It is the same temple the registration screen offers
+ * (SMB-VIH-0042 in src/data/temples.ts), so the Sinhala and English names, village and district
+ * always agree — nothing here is translated twice.
+ */
 export const currentTemple = {
     id: 'TMP-2026-0042',
     name: 'Sri Sambodhi Maha Viharaya',
+    nameSi: 'ශ්‍රී සම්බෝධි මහා විහාරය',
     registerCode: 'SMB-VIH-0042',
     village: 'Kadolkele',
+    villageSi: 'කදොල්කැලේ',
     district: 'Gampaha',
+    districtSi: 'ගම්පහ',
     province: 'Western',
+    provinceSi: 'බස්නාහිර',
     postalCode: '11500',
     phone: '+94 31 223 4478',
     email: 'office@sambodhiviharaya.lk',
@@ -26,6 +35,7 @@ export const currentUser = {
     designation: 'Chief Incumbent Monk',
     initials: 'DT',
     temple: currentTemple.name,
+    templeSi: currentTemple.nameSi,
 }
 
 /**
@@ -64,6 +74,10 @@ const NAMES: [string, string][] = [
     ['FAM-1102', 'Ajith’s family'],
     ['FAM-1118', 'Kapila’s family'],
     ['FAM-1126', 'Sandya’s family'],
+    ['FAM-1134', 'Wasantha’s family'],
+    ['FAM-1141', 'Padma’s family'],
+    ['FAM-1157', 'Sujatha’s family'],
+    ['FAM-1163', 'Chaminda’s family'],
 ]
 
 const FAMILY_NAMES: Record<string, string> = {
@@ -77,6 +91,28 @@ const FAMILY_NAMES: Record<string, string> = {
     'FAM-1102': 'Kumara Family',
     'FAM-1118': 'Dissanayake Family',
     'FAM-1126': 'Herath Family',
+    'FAM-1134': 'Ratnayake Family',
+    'FAM-1141': 'Gunawardena Family',
+    'FAM-1157': 'Wickramasinghe Family',
+    'FAM-1163': 'Abeysekara Family',
+}
+
+/** The same family names in Sinhala, so a family is never shown in two scripts at once. */
+export const FAMILY_NAMES_SI: Record<string, string> = {
+    'FAM-1024': 'පෙරේරා පවුල',
+    'FAM-1031': 'ප්‍රනාන්දු පවුල',
+    'FAM-1044': 'සිල්වා පවුල',
+    'FAM-1052': 'ජයසිංහ පවුල',
+    'FAM-1067': 'විජේසූරිය පවුල',
+    'FAM-1078': 'බණ්ඩාර පවුල',
+    'FAM-1095': 'රත්නායක පවුල',
+    'FAM-1102': 'කුමාර පවුල',
+    'FAM-1118': 'දිසානායක පවුල',
+    'FAM-1126': 'හේරත් පවුල',
+    'FAM-1134': 'රත්නායක පවුල',
+    'FAM-1141': 'ගුණවර්ධන පවුල',
+    'FAM-1157': 'වික්‍රමසිංහ පවුල',
+    'FAM-1163': 'අබේසේකර පවුල',
 }
 
 const buildSession = (key: DanaSession['key'], count: number, capacity: number): DanaSession => ({
@@ -111,6 +147,9 @@ export const danaDays: DanaDay[] = [
     day('2026-10-30', 6, 9, 'Donor Council meeting'),
     day('2026-10-31', 2, 5),
     day('2026-11-01', 7, 4),
+    day('2026-11-02', 3, 6),
+    day('2026-11-03', 9, 10, 'Katina robe offering'),
+    day('2026-11-04', 4, 7),
 ]
 
 const bookedInWeek = danaDays.reduce((total, d) => total + d.sessions.reduce((n, s) => n + s.families.length, 0), 0)
