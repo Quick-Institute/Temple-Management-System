@@ -78,10 +78,15 @@ export const PasswordStrength = ({
                             style={{backgroundColor: index < level.bars ? level.color : '#e6e1d3'}}/>
                     ))}
                 </span>
+                <span
+                    className="w-16 flex-none text-right text-[.76rem] font-bold tracking-wide transition-colors duration-300"
+                    style={{color: typed ? level.color : '#9a9a8f'}}>
+                    {typed ? level.label : '—'}
+                </span>
             </div>
 
             <p className="mt-2.5 mb-0 text-[.76rem] font-bold uppercase tracking-[.06em] text-[#8b8b7f]">
-                Your password must have
+                A stronger password has
             </p>
 
             <ul /* One rule per row on phones, two columns once there is width for it. The card is at its
