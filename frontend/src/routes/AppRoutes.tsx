@@ -1,27 +1,44 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthLoginPage } from '../pages/auth/auth.login';
+import {ForgotPasswordPage} from '../pages/auth/auth.forgot-password';
+import {RegisterPage} from '../pages/auth/auth.register';
+import {ResetPasswordPage} from '../pages/auth/auth.reset-password';
+import {PrivacyPage} from '../pages/legal/legal.privacy';
+import {TermsPage} from '../pages/legal/legal.terms';
+import {TempleDashboardPage} from '../pages/temple/temple.dashboard';
 import { authRoutes } from './authRoutes';
 import DonationPage from '../pages/DonationPage';
 import DonationSuccessPage from '../pages/DonationSuccessPage';
 import SuggestionsPage from '../pages/SuggestionsPage';
 import AdminSuggestionsPage from '../pages/admin/AdminSuggestionsPage';
 
-export const AppRoutes = () => ( <Routes>
-{/* Login */}
-<Route path={authRoutes.login} element={<AuthLoginPage />} />
+export const AppRoutes = () => (
+    <Routes>
+        <Route path={authRoutes.login} element={<AuthLoginPage/>}/>
+        <Route path={authRoutes.register} element={<RegisterPage/>}/>
+        <Route path={authRoutes.forgotPassword} element={<ForgotPasswordPage/>}/>
+        <Route path={authRoutes.resetPassword} element={<ResetPasswordPage/>}/>
 
+        {/* Public legal pages, linked from the sign-up consent line. */}
+        <Route path={authRoutes.terms} element={<TermsPage/>}/>
+        <Route path={authRoutes.privacy} element={<PrivacyPage/>}/>
 
-{/* Donation Module */}
-<Route path="/donation" element={<DonationPage />} />
-<Route path="/donation/success" element={<DonationSuccessPage />} />
+        {/* Social sign-in is not connected yet - it opens the temple admin dashboard. */}
+        <Route path={authRoutes.google} element={<Navigate to={authRoutes.dashboard} replace/>}/>
+        <Route path={authRoutes.facebook} element={<Navigate to={authRoutes.dashboard} replace/>}/>
 
-{/*Community Suggestions Section*/}
-<Route path="/suggestions" element={<SuggestionsPage />} />
-<Route path="/admin/suggestions" element={<AdminSuggestionsPage />} />
+        <Route path={authRoutes.dashboard} element={<TempleDashboardPage/>}/>
 
-{/* Fallback Route */}
-<Route path="*" element={<Navigate to={authRoutes.login} replace />} />
+        {/* Donation Module */}
+        <Route path="/donation" element={<DonationPage />} />
+        <Route path="/donation/success" element={<DonationSuccessPage />} />
 
+        {/*Community Suggestions Section*/}
+        <Route path="/suggestions" element={<SuggestionsPage />} />
+        <Route path="/admin/suggestions" element={<AdminSuggestionsPage />} />
 
-  </Routes>
+        <Route path="/" element={<Navigate to={authRoutes.login} replace/>}/>
+        <Route path="*" element={<Navigate to={authRoutes.dashboard} replace/>}/>
+    </Routes>
 );
+
