@@ -1,9 +1,8 @@
-import type {ReactNode} from 'react'
-
-import {CommunityMark, DonationMark, EventsMark, TempleMark} from '../components/AuthIcons'
+import type { ReactNode } from 'react';
+import {CommunityMark, DonationMark, EventsMark, TempleMark} from '../components/AuthIcons';
+import LanguageToggle from '../components/LanguageToggle';
 
 type ShellIconName = 'calendar' | 'community' | 'donation' | 'temple'
-
 /*
  * The temple mark is shared with the "Temple Admin" tab on the register screen, so the two read as
  * the same temple. It is drawn on a finer 31x31 grid and fills more of its box than the other three
@@ -19,40 +18,14 @@ const TEMPLE_MARK_SIZE = 30
 const COMMUNITY_MARK_SIZE = 44
 const EVENTS_MARK_SIZE = 56
 const DONATION_MARK_SIZE = 40
-
 type ShellIconProps = { name: ShellIconName; size?: number }
 
-const ShellIcon = ({name, size = 38}: ShellIconProps) => {
+const ShellIcon = ({name}: ShellIconProps) => {
     if (name === 'temple') return <TempleMark size={TEMPLE_MARK_SIZE}/>
     if (name === 'community') return <CommunityMark size={COMMUNITY_MARK_SIZE}/>
     if (name === 'calendar') return <EventsMark size={EVENTS_MARK_SIZE}/>
     if (name === 'donation') return <DonationMark size={DONATION_MARK_SIZE}/>
-
-    const paths = {
-        temple: <>
-            <path d="M3 10.5 12 3l9 7.5"/>
-            <path d="M5.5 9.5V21h13V9.5"/>
-            <path d="M9 21v-6h6v6"/>
-        </>,
-        community: <>
-            <circle cx="12" cy="8" r="3.5"/>
-            <path d="M4.5 21c.3-4.2 3-6.5 7.5-6.5s7.2 2.3 7.5 6.5"/>
-            <path d="M18.3 5.4a3.2 3.2 0 0 1 0 5.9M22 19.4c-.2-2.7-1.4-4.5-3.7-5.3"/>
-        </>,
-        calendar: <>
-            <rect x="4" y="5.5" width="16" height="15" rx="1.8"/>
-            <path d="M8 3.5v4M16 3.5v4M4 10h16"/>
-            <path d="M8 14h.01M12 14h.01M16 14h.01"/>
-        </>,
-        donation: <>
-            <path
-                d="M19.5 12.5c.1 4.8-2.5 7.5-7.5 7.5H8.7L3.5 16.3l2.7-2.7 2.2 1.8h4.3c1.8 0 2.6-.8 2.4-1.8-.1-.8-.8-1.3-1.9-1.3H10l-1.6-1.7c1.7-2.2 4-3.1 6.9-2.6 1.9.3 3.3 1.8 4.2 4.5Z"/>
-            <path d="m15.5 4.2.8-1.3.8 1.3 1.5.4-1 .9.1 1.5-1.4-.5-1.4.5.1-1.5-1-.9 1.5-.4Z"/>
-        </>,
-    }
-
-    return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.45"
-                strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
+    return null
 }
 
 const features: { icon: ShellIconName; title: string; description: string }[] = [
@@ -87,7 +60,12 @@ export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; 
                     : 'lg:grid lg:items-start lg:grid-cols-[minmax(0,1.02fr)_minmax(0,.98fr)]'
             }`}
         >
-            {/*
+             {/* Language Toggle - Fixed Top Right */}
+        <div className="absolute top-4 right-4 z-20 lg:top-6 lg:right-8">
+            <LanguageToggle />
+        </div>
+
+             {/*
           The photograph sits in a viewport-fixed layer instead of on <main>. Previously the image was
           a background of <main>, whose height grows with the form inside the card - so the long Temple
           Admin form scaled and re-cropped the photo compared with the shorter Committee Member and
@@ -181,3 +159,11 @@ export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; 
         </main>
     )
 }
+
+
+
+    
+
+
+           
+

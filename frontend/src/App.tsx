@@ -1,6 +1,10 @@
+
 import type {ErrorInfo, ReactNode} from 'react'
 import {Component} from 'react'
-import {AppRoutes} from './routes/AppRoutes'
+import { AuthProvider } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
+import {AppRoutes} from './routes/AppRoutes';
+
 
 /**
  * Keeps a render error from leaving a blank page: the router and the provider tree live in
@@ -38,9 +42,13 @@ class ScreenErrorBoundary extends Component<{ children: ReactNode }, { error: Er
 }
 
 const App = () => (
+    <AuthProvider>
+        <LanguageProvider>
     <ScreenErrorBoundary>
         <AppRoutes/>
     </ScreenErrorBoundary>
-)
+    </LanguageProvider>
+    </AuthProvider>
+);
 
-export default App
+export default App;

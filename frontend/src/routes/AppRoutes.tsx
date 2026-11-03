@@ -1,12 +1,16 @@
-import {Navigate, Route, Routes} from 'react-router-dom'
-import {ForgotPasswordPage} from '../pages/auth/auth.forgot-password'
-import {AuthLoginPage} from '../pages/auth/auth.login'
-import {RegisterPage} from '../pages/auth/auth.register'
-import {ResetPasswordPage} from '../pages/auth/auth.reset-password'
-import {PrivacyPage} from '../pages/legal/legal.privacy'
-import {TermsPage} from '../pages/legal/legal.terms'
-import {TempleDashboardPage} from '../pages/temple/temple.dashboard'
-import {authRoutes} from './authRoutes'
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { AuthLoginPage } from '../pages/auth/auth.login';
+import {ForgotPasswordPage} from '../pages/auth/auth.forgot-password';
+import {RegisterPage} from '../pages/auth/auth.register';
+import {ResetPasswordPage} from '../pages/auth/auth.reset-password';
+import {PrivacyPage} from '../pages/legal/legal.privacy';
+import {TermsPage} from '../pages/legal/legal.terms';
+import {TempleDashboardPage} from '../pages/temple/temple.dashboard';
+import { authRoutes } from './authRoutes';
+import DonationPage from '../pages/DonationPage';
+import DonationSuccessPage from '../pages/DonationSuccessPage';
+import SuggestionsPage from '../pages/SuggestionsPage';
+import AdminSuggestionsPage from '../pages/admin/AdminSuggestionsPage';
 
 export const AppRoutes = () => (
     <Routes>
@@ -25,7 +29,16 @@ export const AppRoutes = () => (
 
         <Route path={authRoutes.dashboard} element={<TempleDashboardPage/>}/>
 
+        {/* Donation Module */}
+        <Route path="/donation" element={<DonationPage />} />
+        <Route path="/donation/success" element={<DonationSuccessPage />} />
+
+        {/*Community Suggestions Section*/}
+        <Route path="/suggestions" element={<SuggestionsPage />} />
+        <Route path="/admin/suggestions" element={<AdminSuggestionsPage />} />
+
         <Route path="/" element={<Navigate to={authRoutes.login} replace/>}/>
         <Route path="*" element={<Navigate to={authRoutes.dashboard} replace/>}/>
     </Routes>
-)
+);
+
