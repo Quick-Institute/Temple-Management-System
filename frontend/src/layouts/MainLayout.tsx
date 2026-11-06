@@ -51,7 +51,7 @@ function MainLayout({
   const closeMobileNav = () => setMobileNavOpen(false);
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-[#FFFDF8]">
+    <div className="portal-scope flex h-dvh w-full overflow-hidden bg-[#FFFDF8]">
       {/* Shared navigation: collapsible drawer on mobile/tablet, fixed sidebar on wide desktop. */}
       <Sidebar
         role={role}

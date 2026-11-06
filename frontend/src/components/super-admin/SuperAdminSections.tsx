@@ -216,12 +216,11 @@ function UsersByRole() {
   const radius = 46;
   const circumference = 2 * Math.PI * radius;
   const overlap = 0.5; // hidden under the next segment, removes anti-aliasing seams
-  let offset = 0;
   const segments = roles.map((r, i) => {
     const length = (r.count / total) * circumference;
-    const segment = { ...r, dash: length + (i < roles.length - 1 ? overlap : 0), offset };
-    offset += length;
-    return segment;
+    // Each segment starts where the previous ones end (computed from the preceding counts, no reassignment).
+    const offset = roles.slice(0, i).reduce((sum, prev) => sum + (prev.count / total) * circumference, 0);
+    return { ...r, dash: length + (i < roles.length - 1 ? overlap : 0), offset };
   });
 
   return (

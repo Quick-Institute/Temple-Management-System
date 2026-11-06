@@ -1,10 +1,11 @@
-import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import {defineConfig} from 'vite'
 
+// Tailwind is processed through PostCSS (see postcss.config.cjs), so no Vite Tailwind plugin is needed.
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
+    plugins: [react()],
+    server: {
+        host: '0.0.0.0',
+        allowedHosts: true,
+    },
 })

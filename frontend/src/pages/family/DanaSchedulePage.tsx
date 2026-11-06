@@ -76,7 +76,7 @@ function DanaSchedulePage({ user }: UserPageProps) {
       } catch { /* keep the previous data */ }
       setSubmitting(false);
     }
-  }, [bookingRequest, query, user?.id]);
+  }, [bookingRequest, query, user]);
 
   // -m-5 cancels MainLayout's <main> p-5 so the banner runs edge to edge; the content wrapper re-insets the rest.
   return (
