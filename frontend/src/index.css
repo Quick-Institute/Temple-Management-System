@@ -241,3 +241,17 @@
         @apply h-2 w-full overflow-hidden rounded-full bg-cream-deep;
     }
 }
+/* ------------------------------------------------------------------
+   Portal screens (family / temple admin / co-admin / super admin)
+   Fonts + base look used by MainLayout and the dashboard components.
+   ------------------------------------------------------------------ */
+@theme {
+    --font-georgia: Georgia, 'Times New Roman', Times, serif;
+    --font-lora: 'Lora', Georgia, 'Times New Roman', serif;
+}
+
+.portal-scope {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    color: #234936;
+    background-color: #fffdf8;
+}

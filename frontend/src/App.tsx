@@ -1,8 +1,7 @@
-
 import type {ErrorInfo, ReactNode} from 'react'
 import {Component} from 'react'
-import { AuthProvider } from './context/AuthContext';
-import { LanguageProvider } from './context/LanguageContext';
+import {AuthProvider} from './context/AuthContext';
+import {LanguageProvider} from './context/LanguageContext';
 import {AppRoutes} from './routes/AppRoutes';
 
 
@@ -44,10 +43,10 @@ class ScreenErrorBoundary extends Component<{ children: ReactNode }, { error: Er
 const App = () => (
     <AuthProvider>
         <LanguageProvider>
-    <ScreenErrorBoundary>
-        <AppRoutes/>
-    </ScreenErrorBoundary>
-    </LanguageProvider>
+            <ScreenErrorBoundary>
+                <AppRoutes/>
+            </ScreenErrorBoundary>
+        </LanguageProvider>
     </AuthProvider>
 );
 

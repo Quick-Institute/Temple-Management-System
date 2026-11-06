@@ -51,6 +51,7 @@ export const AuthLoginPage = () => {
             await signIn({identifier, password, remember: rememberMe})
             navigate(authRoutes.dashboard)
         } catch {
+            // Sign-in failures are handled by the auth layer; stay on this page.
         }
     }
 

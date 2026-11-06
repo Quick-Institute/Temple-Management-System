@@ -1,0 +1,8 @@
+/* Real Lora bold, used by dashboard values and headings. Existing weights are unchanged. */
+@font-face {
+  font-family: "Lora";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/lora-latin-700-normal.woff2") format("woff2");
+}

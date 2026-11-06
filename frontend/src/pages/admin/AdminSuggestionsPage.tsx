@@ -33,6 +33,7 @@ const load = () => {
 
 // Load suggestions when page opens
 useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch
     load();
 }, []);
 
