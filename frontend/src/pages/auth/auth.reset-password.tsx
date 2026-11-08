@@ -2,7 +2,7 @@ import type {FormEvent, ReactNode} from 'react'
 import {useState} from 'react'
 import {Link, useNavigate, useSearchParams} from 'react-router-dom'
 import {LotusMark} from '../../components/AuthIcons'
-import {passwordLengthError} from '../../components/PasswordRules'
+import {passwordLengthError, withLimits} from '../../components/PasswordRules'
 import {PasswordStrength} from '../../components/PasswordStrength'
 import {AUTH_HEADING, AUTH_SUBTITLE, AuthShell} from '../../layouts/AuthShell'
 import {LanguageToggle} from '../../components/LanguageToggle'
@@ -74,6 +74,7 @@ const PasswordField = ({id, label, placeholder, value, onChange, onBlur, error, 
     error?: string
     autoFocus?: boolean
 }) => {
+    const {t} = useTranslation()
     const [visible, setVisible] = useState(false)
 
     return (
@@ -97,7 +98,7 @@ const PasswordField = ({id, label, placeholder, value, onChange, onBlur, error, 
                 <button
                     className="grid h-11 w-11 shrink-0 place-items-center border-0 bg-transparent text-[#33566c] hover:text-sage-600 lg:h-9 lg:w-9"
                     type="button"
-                    aria-label={visible ? 'Hide password' : 'Show password'}
+                    aria-label={visible ? t('auth.hidePassword') : t('auth.showPassword')}
                     aria-pressed={visible}
                     onClick={() => setVisible((current) => !current)}>
                     <ResetIcon name={visible ? 'eye' : 'eyeOff'} size={19}/>
@@ -110,18 +111,23 @@ const PasswordField = ({id, label, placeholder, value, onChange, onBlur, error, 
 }
 
 /** Divider with the sign-in and sign-up links - same as the forgot-password screen. */
-const FooterLinks = () => (
-    <div
-        className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-[#d9d3bf] pt-5 text-[.94rem]">
-        <Link to={authRoutes.login}
-              className="inline-flex min-h-11 items-center px-1 font-bold text-sage-700 hover:underline lg:min-h-0">Back
-            to sign in</Link>
-        <span aria-hidden="true" className="text-[#9a9484]">·</span>
-        <Link to={authRoutes.register}
-              className="inline-flex min-h-11 items-center px-1 font-bold text-sage-700 hover:underline lg:min-h-0">Create
-            an account</Link>
-    </div>
-)
+const FooterLinks = () => {
+    const {t} = useTranslation()
+    return (
+        <div
+            className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-[#d9d3bf] pt-5 text-[.94rem]">
+            <Link to={authRoutes.login}
+                  className="inline-flex min-h-11 items-center px-1 font-bold text-sage-700 hover:underline lg:min-h-0">
+                {t('auth.backToSignIn')}
+            </Link>
+            <span aria-hidden="true" className="text-[#9a9484]">·</span>
+            <Link to={authRoutes.register}
+                  className="inline-flex min-h-11 items-center px-1 font-bold text-sage-700 hover:underline lg:min-h-0">
+                {t('auth.createAccountLink')}
+            </Link>
+        </div>
+    )
+}
 
 /* ------------------------------------------------------------------ */
 /* Page                                                                */
@@ -155,14 +161,14 @@ export const ResetPasswordPage = () => {
     const validate = () => {
         const next: { password?: string; confirm?: string } = {}
 
-        if (!password) next.password = 'Create a new password.'
+        if (!password) next.password = t('auth.errCreatePassword')
         else {
             const lengthError = passwordLengthError(password)
-            if (lengthError) next.password = lengthError
+            if (lengthError) next.password = withLimits(t(lengthError))
         }
 
-        if (!confirm) next.confirm = 'Confirm your new password.'
-        else if (confirm !== password) next.confirm = 'Passwords do not match.'
+        if (!confirm) next.confirm = t('auth.errConfirmNewPassword')
+        else if (confirm !== password) next.confirm = t('auth.errPasswordsDiffer')
 
         setErrors(next)
         return Object.keys(next).length === 0
@@ -192,7 +198,7 @@ export const ResetPasswordPage = () => {
                             {t('auth.reset')}
                         </h1>
                         <p className={AUTH_SUBTITLE}>
-                            Your new password is active from now. Use it the next time you sign in.
+                            {t('auth.resetDoneBody')}
                         </p>
                     </header>
 
@@ -200,7 +206,7 @@ export const ResetPasswordPage = () => {
                          className="mt-7 flex items-start gap-3 rounded-[10px] border border-sage-600/25 bg-[#eef6ef] px-4 py-3.5 text-ink">
                         <span className="mt-0.5 flex-none text-sage-600"><ResetIcon name="check" size={20}/></span>
                         <span className="text-[.92rem] leading-relaxed">
-                            Other devices signed in to this account have been signed out for safety.
+                            {t('auth.resetDoneNote')}
                         </span>
                     </div>
 
@@ -208,19 +214,18 @@ export const ResetPasswordPage = () => {
                         <li className="flex gap-2.5">
                             <span className="mt-0.5 flex-none text-sage-600"><ResetIcon name="shield"
                                                                                          size={18}/></span>
-                            <span>The link you used is now spent - asking for another reset starts a new request.</span>
+                            <span>{t('auth.resetDone1')}</span>
                         </li>
                         <li className="flex gap-2.5">
                             <span className="mt-0.5 flex-none text-sage-600"><ResetIcon name="lock"
                                                                                          size={18}/></span>
-                            <span>Nobody from the temple or the system provider will ever ask you for your
-                                password.</span>
+                            <span>{t('auth.resetDone2')}</span>
                         </li>
                     </ul>
 
                     <button className={`${PRIMARY} mt-7`} type="button"
                             onClick={() => navigate(authRoutes.login)}>
-                        <ResetIcon name="arrow" size={19}/> Continue to sign in
+                        <ResetIcon name="arrow" size={19}/> {t('auth.continueSignIn')}
                     </button>
 
                     <FooterLinks/>
@@ -238,10 +243,10 @@ export const ResetPasswordPage = () => {
                     <header className="text-center">
                         <LotusMark width={168} className="mx-auto mb-1"/>
                         <h1 className="mb-2.5 mt-1 font-display text-[1.9rem] leading-none tracking-tight text-sage-900 sm:text-[clamp(2rem,2.6vw,2.7rem)]">
-                            {unusable === 'expired' ? 'This link has expired' : 'This link is not valid'}
+                            {unusable === 'expired' ? t('auth.linkExpiredTitle') : t('auth.linkInvalidTitle')}
                         </h1>
                         <p className="m-0 text-[1.02rem] leading-relaxed text-ink">
-                            Reset links can be used once and expire 30 minutes after they are sent.
+                            {t('auth.linkExpiredBody')}
                         </p>
                     </header>
 
@@ -249,13 +254,12 @@ export const ResetPasswordPage = () => {
                          className="mt-7 flex items-start gap-3 rounded-[10px] border border-status-rose/25 bg-[#fdf2f0] px-4 py-3.5 text-ink">
                         <span className="mt-0.5 flex-none text-status-rose"><ResetIcon name="alert" size={20}/></span>
                         <span className="text-[.92rem] leading-relaxed">
-                            Open the link from the most recent email, or request a new one and use it within
-                            30 minutes.
+                            {t('auth.linkExpiredNote')}
                         </span>
                     </div>
 
                     <Link className={`${PRIMARY} mt-7`} to={authRoutes.forgotPassword}>
-                        <ResetIcon name="mail" size={19}/> Request a new link
+                        <ResetIcon name="mail" size={19}/> {t('auth.requestNewLink')}
                     </Link>
 
                     <FooterLinks/>
@@ -285,7 +289,7 @@ export const ResetPasswordPage = () => {
                             <PasswordField
                                 id="new-password"
                                 label={t('auth.newPassword')}
-                                placeholder={t('auth.newPassword')}
+                                placeholder={t('auth.newPasswordPlaceholder')}
                                 value={password}
                                 autoFocus
                                 onChange={(value) => {
@@ -305,8 +309,8 @@ export const ResetPasswordPage = () => {
 
                         <PasswordField
                             id="confirm-password"
-                            label="Confirm Password"
-                            placeholder="Re-enter your new password"
+                            label={t('auth.confirmPassword')}
+                            placeholder={t('auth.confirmNewPasswordPlaceholder')}
                             value={confirm}
                             onChange={(value) => {
                                 setConfirm(value)
@@ -316,11 +320,11 @@ export const ResetPasswordPage = () => {
                     </div>
 
                     <button className={`${PRIMARY} mt-7`} type="submit" disabled={saving}>
-                        {saving ? 'Updating…' : 'Update password'} <ResetIcon name="arrow" size={19}/>
+                        {saving ? t('auth.updating') : t('auth.updatePassword')} <ResetIcon name="arrow" size={19}/>
                     </button>
 
                     <p className="mt-4 text-center text-[.88rem] leading-relaxed text-[#5b7b8f]">
-                        Your current password keeps working until the new one is saved.
+                        {t('auth.currentKeepsWorking')}
                     </p>
                 </form>
 

@@ -74,13 +74,13 @@ export const ForgotPasswordPage = () => {
         const value = identifier.trim()
 
         if (!value) {
-            setError('Enter your registered email address.')
+            setError(t('auth.errEmailRequired'))
             inputRef.current?.focus()
             return
         }
         const looksEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)
         if (!looksEmail) {
-            setError('Enter a valid email address, for example you@example.com.')
+            setError(t('auth.errEmailInvalid'))
             inputRef.current?.focus()
             return
         }
@@ -104,12 +104,16 @@ export const ForgotPasswordPage = () => {
                     <header className="text-center">
                         <LotusMark width={168} className="mx-auto mb-1"/>
                         <h1 className={AUTH_HEADING}>
-                            Check your inbox
+                            {t('auth.checkInbox')}
                         </h1>
+                        {/*
+                          * "%%" marks where the masked address goes, so the sentence can be reordered in
+                          * Sinhala without splitting the markup in two hard-coded halves.
+                          */}
                         <p className={AUTH_SUBTITLE}>
-                            If an account matches <b className="font-bold">{mask(sentTo)}</b>, a password reset link is
-                            on
-                            its way.
+                            {t('auth.checkInboxBody').split('%%')[0]}
+                            <b className="font-bold">{mask(sentTo)}</b>
+                            {t('auth.checkInboxBody').split('%%')[1]}
                         </p>
                     </header>
 
@@ -117,28 +121,26 @@ export const ForgotPasswordPage = () => {
                          className="mt-7 flex items-start gap-3 rounded-[10px] border border-sage-600/25 bg-[#eef6ef] px-4 py-3.5 text-ink">
                         <span className="mt-0.5 flex-none text-sage-600"><ResetIcon name="check" size={20}/></span>
                         <span className="text-[.92rem] leading-relaxed">
-                            The link can be used once and expires in <b className="font-bold">30 minutes</b>. If it has not
-                            arrived in a few minutes, check the spam folder.
+                            {t('auth.linkExpiry').split('%%')[0]}
+                            <b className="font-bold">30</b>
+                            {t('auth.linkExpiry').split('%%')[1]}
                         </span>
                     </div>
 
                     <ul className="mt-6 space-y-2.5 text-[.92rem] leading-relaxed text-[#33566c]">
                         <li className="flex gap-2.5">
                             <span className="mt-0.5 flex-none text-sage-600"><ResetIcon name="mail" size={18}/></span>
-                            <span>The link opens a page where you choose a new password. Your current password keeps working
-                                until then.</span>
+                            <span>{t('auth.inboxNote1')}</span>
                         </li>
                         <li className="flex gap-2.5">
                             <span className="mt-0.5 flex-none text-sage-600"><ResetIcon name="shield"
                                                                                          size={18}/></span>
-                            <span>Nobody from the temple or the system provider will ever ask you for your password or for
-                                the reset link.</span>
+                            <span>{t('auth.inboxNote2')}</span>
                         </li>
                         <li className="flex gap-2.5">
                             <span className="mt-0.5 flex-none text-sage-600"><ResetIcon name="person"
                                                                                          size={18}/></span>
-                            <span>No access to that inbox or phone number? Ask your temple’s Temple Admin or
-                                Co-Administrator to recover the account for you.</span>
+                            <span>{t('auth.inboxNote3')}</span>
                         </li>
                     </ul>
 
@@ -148,19 +150,21 @@ export const ForgotPasswordPage = () => {
                                 setCooldown(30)
                             }}>
                         <ResetIcon name="mail" size={19}/>
-                        {cooldown > 0 ? `Send again in ${cooldown}s` : 'Send the link again'}
+                        {cooldown > 0
+                            ? t('auth.resendIn').replace('%%', String(cooldown))
+                            : t('auth.resend')}
                     </button>
 
                     {resent && cooldown > 0 &&
                         <p role="status" className="mt-2.5 text-center text-[.86rem] text-[#3d6b52]">
-                            A new link has been sent to {mask(sentTo)}.
+                            {t('auth.resentTo').replace('%%', mask(sentTo))}
                         </p>}
 
                     <div
                         className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-[#d9d3bf] pt-5 text-[.94rem]">
                         <Link to={authRoutes.login}
                               className="inline-flex min-h-11 items-center px-1 font-bold text-sage-700 hover:underline lg:min-h-0">
-                            Back to sign in
+                            {t('auth.backToSignIn')}
                         </Link>
                         <span aria-hidden="true" className="text-[#9a9484]">·</span>
                         <button type="button"
@@ -172,7 +176,7 @@ export const ForgotPasswordPage = () => {
                                     setIdentifier('')
                                     window.setTimeout(() => inputRef.current?.focus(), 0)
                                 }}>
-                            Use a different address
+                            {t('auth.useDifferent')}
                         </button>
                     </div>
                 </div>
@@ -229,9 +233,8 @@ export const ForgotPasswordPage = () => {
                     </button>
 
                     <p className="mt-4 text-center text-[.88rem] leading-relaxed text-[#5b7b8f]">
-                        The reset link is sent to your registered email address.
-                        <br className="hidden sm:inline"/> If it has not arrived in a few minutes, check the spam
-                        folder.
+                        {t('auth.forgotHint1')}
+                        <br className="hidden sm:inline"/> {t('auth.forgotHint2')}
                     </p>
                 </form>
 
@@ -245,7 +248,7 @@ export const ForgotPasswordPage = () => {
                     <button type="button"
                             className="inline-flex min-h-11 items-center px-1 font-bold text-sage-700 hover:underline lg:min-h-0"
                             onClick={() => navigate(authRoutes.register)}>
-                        Create an account
+                        {t('auth.createAccountLink')}
                     </button>
                 </div>
             </div>

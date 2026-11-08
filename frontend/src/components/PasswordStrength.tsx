@@ -1,4 +1,5 @@
-import {PASSWORD_RULES, passwordStrength} from './PasswordRules'
+import {useTranslation} from 'react-i18next'
+import {PASSWORD_RULES, passwordStrength, withLimits} from './PasswordRules'
 
 const TONE = {
     idle: {text: 'text-[#8ba3b0]', icon: 'text-[#b9cdd8]'},
@@ -41,10 +42,11 @@ export const PasswordStrength = ({
     confirm?: string
     className?: string
 }) => {
+    const {t} = useTranslation()
     const level = passwordStrength(value)
 
     const rows: Row[] = PASSWORD_RULES.map((rule) => ({
-        label: rule.label,
+        label: withLimits(t(rule.labelKey)),
         met: rule.met(value),
         showUnmet: touched,
     }))
@@ -53,7 +55,7 @@ export const PasswordStrength = ({
        field - before that the user simply has not got there yet. */
     if (confirm !== undefined) {
         rows.push({
-            label: 'Both passwords match',
+            label: t('auth.pw.match'),
             met: value.length > 0 && confirm === value,
             showUnmet: confirm.length > 0,
         })
@@ -81,12 +83,12 @@ export const PasswordStrength = ({
                 <span
                     className="w-16 flex-none text-right text-[.76rem] font-bold tracking-wide transition-colors duration-300"
                     style={{color: typed ? level.color : '#9db4c2'}}>
-                    {typed ? level.label : '-'}
+                    {typed ? t(level.labelKey) : '-'}
                 </span>
             </div>
 
             <p className="mt-2.5 mb-0 text-[.76rem] font-bold uppercase tracking-[.06em] text-[#8ba3b0]">
-                A stronger password has
+                {t('auth.pw.heading')}
             </p>
 
             <ul /* One rule per row on phones, two columns once there is width for it. The card is at its
@@ -104,7 +106,7 @@ export const PasswordStrength = ({
                                 <StatusIcon state={state}/>
                             </span>
                             <span>
-                                <span className="sr-only">{row.met ? 'Requirement met: ' : 'Still needed: '}</span>
+                                <span className="sr-only">{row.met ? t('auth.pw.met') : t('auth.pw.unmet')}</span>
                                 {row.label}
                             </span>
                         </li>
