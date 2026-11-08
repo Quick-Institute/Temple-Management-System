@@ -2,20 +2,18 @@ import type {ReactElement} from 'react'
 import {Navigate, Outlet, useParams} from 'react-router-dom'
 import MainLayout from '../layouts/MainLayout'
 import FamilyDashboard from '../pages/family/FamilyDashboard'
-import TempleAdminDashboard from '../pages/temple/TempleAdminDashboard'
+import {TempleDashboardContent} from '../pages/temple/temple.dashboard'
 import SuperAdminDashboard from '../pages/admin/SuperAdminDashboard'
-import {portalUser as currentUser, usePortalContext} from './portalContext'
+import {useAuth} from '../context/AuthContext'
+import {usePortalContext, usePortalUser} from './portalContext'
 
-/** Shared shell (sidebar + top bar) for every portal route. */
+/** Shared shell (our side menu + top bar) for every portal route. */
 export const PortalLayout = () => {
-    const {role, basePath} = usePortalContext()
+    const {role} = usePortalContext()
+    const {user} = useAuth()
     return (
-        <MainLayout
-            role={role}
-            basePath={basePath}
-            userName={currentUser?.name}
-            avatarSrc={role === 'coAdmin' ? currentUser?.avatarSrc || '/co-admin-avatar.svg' : undefined}
-        >
+        <MainLayout role={role} userName={user?.name}
+                    avatarSrc={user && ['coAdmin', 'committeeRepresentative', 'religiousRepresentative'].includes(user.role) ? '/co-admin-avatar.svg' : undefined}>
             <Outlet/>
         </MainLayout>
     )
@@ -34,14 +32,29 @@ export const PlaceholderPage = () => {
         .split('-')
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ')
-    return <h1 className="text-3xl font-bold text-[#234936]">{title}</h1>
+    return (
+        <div className="mx-auto max-w-7xl">
+            <div className="card p-6">
+                <h1 className="font-temple text-[1.6rem] text-sage-900">{title}</h1>
+                <p className="mt-2 text-[0.95rem] text-ink-soft">
+                    This screen is not built yet. Everything in the side menu works - this one simply has
+                    no content to show at the moment.
+                </p>
+            </div>
+        </div>
+    )
 }
 
-
-/** /dashboard - shows the dashboard that matches the current role (family by default). */
+/**
+ * /dashboard - the dashboard that belongs to the signed-in user type:
+ *   family member  -> upstream family dashboard (Dana cards, family overview)
+ *   temple admin   -> temple admin dashboard (stats, schedule, notices)
+ *   committee      -> the co-admin view of the same dashboard
+ */
 export const DashboardRoute = () => {
     const {role} = usePortalContext()
-    if (role === 'superAdmin') return <SuperAdminDashboard user={currentUser}/>
-    if (role === 'templeAdmin' || role === 'coAdmin') return <TempleAdminDashboard role={role} user={currentUser}/>
-    return <FamilyDashboard user={currentUser}/>
+    const user = usePortalUser()
+    if (role === 'superAdmin') return <SuperAdminDashboard user={user}/>
+    if (role === 'templeAdmin' || role === 'coAdmin') return <TempleDashboardContent/>
+    return <FamilyDashboard user={user}/>
 }

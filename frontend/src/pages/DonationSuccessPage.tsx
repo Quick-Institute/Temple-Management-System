@@ -1,41 +1,42 @@
-import { Link, useSearchParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import {Link, useSearchParams} from 'react-router-dom';
+import {useTranslation} from 'react-i18next';
 
 const DonationSuccessPage = () => {
-const [searchParams] = useSearchParams();
-const { t, i18n } = useTranslation();
+    const [searchParams] = useSearchParams();
+    const {t, i18n} = useTranslation();
 
-const language = i18n.resolvedLanguage || i18n.language;
+    const language = i18n.resolvedLanguage || i18n.language;
 
-const changeLang = (lang: 'en' | 'si') => {
-void i18n.changeLanguage(lang);
-localStorage.setItem('temple_lang', lang);
-};
+    const changeLang = (lang: 'en' | 'si') => {
+        void i18n.changeLanguage(lang);
+        localStorage.setItem('temple_lang', lang);
+    };
 
 // Transaction details from URL
-const amount = searchParams.get('amount') || '0.00';
-const txnRef = searchParams.get('ref') || 'Not Available';
-const purpose = searchParams.get('purpose') || 'Not Available';
-const date = searchParams.get('date') || 'Not Available';
+    const amount = searchParams.get('amount') || '0.00';
+    const txnRef = searchParams.get('ref') || 'Not Available';
+    const purpose = searchParams.get('purpose') || 'Not Available';
+    const date = searchParams.get('date') || 'Not Available';
 
 // Payment status must come from server verification.
 // URL parameters alone cannot establish successful payment.
-const isVerified = false;
+    const isVerified = false;
 
-return (
-<> <style>{`
+    return (
+        <>
+            <style>{`
 * { box-sizing: border-box; }
     .dsp-body {
       font-family: Arial, Helvetica, sans-serif;
-      background-color: #f8f6f0;
-      color: #18382d;
+      background-color: #f7fcff;
+      color: #0c4a6e;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
 
     .dsp-header {
-      background-color: #18382d;
+      background-color: #0c4a6e;
       color: white;
       padding: 20px 8%;
       display: flex;
@@ -50,7 +51,7 @@ return (
       white-space: nowrap;
     }
 
-    .dsp-logo span { color: #e8bd63; }
+    .dsp-logo span { color: #38bdf8; }
 
     .dsp-header-right {
       display: flex;
@@ -80,11 +81,11 @@ return (
 
     .dsp-language-active {
       background-color: white;
-      color: #18382d;
+      color: #0c4a6e;
     }
 
     .dsp-language-inactive {
-      background-color: #2a5a4a;
+      background-color: #0369a1;
       color: white;
     }
 
@@ -114,12 +115,12 @@ return (
       width: 85px;
       height: 85px;
       margin: 0 auto 24px;
-      background-color: #e4f5e9;
+      background-color: #e7f7ee;
       border-radius: 50%;
       display: flex;
       justify-content: center;
       align-items: center;
-      border: 2px solid #b8e4c6;
+      border: 2px solid #b8e8cd;
     }
 
     .dsp-success-icon span {
@@ -131,7 +132,7 @@ return (
     .dsp-h1 {
       font-size: 28px;
       margin-bottom: 12px;
-      color: #18382d;
+      color: #0c4a6e;
     }
 
     .dsp-success-message {
@@ -142,7 +143,7 @@ return (
     }
 
     .dsp-amount-box {
-      background-color: #f8f6f0;
+      background-color: #f7fcff;
       border: 1px solid #e9e3d5;
       padding: 24px;
       border-radius: 16px;
@@ -158,11 +159,11 @@ return (
     .dsp-amount {
       font-size: 36px;
       font-weight: bold;
-      color: #18382d;
+      color: #0c4a6e;
     }
 
     .dsp-thank-you {
-      color: #a47a2c;
+      color: #0284c7;
       font-size: 14px;
       margin-top: 10px;
     }
@@ -186,7 +187,7 @@ return (
     .dsp-detail-label { color: #6b7280; }
 
     .dsp-detail-value {
-      color: #18382d;
+      color: #0c4a6e;
       font-weight: 600;
       text-align: right;
       overflow-wrap: anywhere;
@@ -201,7 +202,7 @@ return (
     }
 
     .dsp-status-verified {
-      background-color: #e4f5e9;
+      background-color: #e7f7ee;
       color: #237743;
     }
 
@@ -229,22 +230,22 @@ return (
     }
 
     .dsp-primary-button {
-      background-color: #18382d;
+      background-color: #0c4a6e;
       color: white;
     }
 
     .dsp-primary-button:hover {
-      background-color: #2a5a4a;
+      background-color: #0369a1;
     }
 
     .dsp-secondary-button {
-      border: 1px solid #18382d;
-      color: #18382d;
+      border: 1px solid #0c4a6e;
+      color: #0c4a6e;
       background-color: white;
     }
 
     .dsp-secondary-button:hover {
-      background-color: #f0f5f1;
+      background-color: #f1f9fe;
     }
 
     .dsp-security-note {
@@ -255,7 +256,7 @@ return (
     }
 
     .dsp-footer {
-      background-color: #18382d;
+      background-color: #0c4a6e;
       color: #d1d5db;
       text-align: center;
       padding: 20px;
@@ -298,175 +299,175 @@ return (
     }
   `}</style>
 
-  <div className="dsp-body">
+            <div className="dsp-body">
 
-    {/* Header */}
-    <header className="dsp-header">
-      <div className="dsp-logo">
-        Temple<span>TMS</span>
-      </div>
+                {/* Header */}
+                <header className="dsp-header">
+                    <div className="dsp-logo">
+                        Temple<span>TMS</span>
+                    </div>
 
-      <div className="dsp-header-right">
-        <div className="dsp-header-label">
-          {t('receiptTitle')}
-        </div>
+                    <div className="dsp-header-right">
+                        <div className="dsp-header-label">
+                            {t('receiptTitle')}
+                        </div>
 
-        {/* Language Selector */}
-        <div className="dsp-language-buttons">
-          <button
-            type="button"
-            onClick={() => changeLang('en')}
-            aria-pressed={language === 'en'}
-            className={`dsp-language-button ${
-              language === 'en'
-                ? 'dsp-language-active'
-                : 'dsp-language-inactive'
-            }`}
-          >
-            English
-          </button>
+                        {/* Language Selector */}
+                        <div className="dsp-language-buttons">
+                            <button
+                                type="button"
+                                onClick={() => changeLang('en')}
+                                aria-pressed={language === 'en'}
+                                className={`dsp-language-button ${
+                                    language === 'en'
+                                        ? 'dsp-language-active'
+                                        : 'dsp-language-inactive'
+                                }`}
+                            >
+                                English
+                            </button>
 
-          <button
-            type="button"
-            onClick={() => changeLang('si')}
-            aria-pressed={language === 'si'}
-            className={`dsp-language-button ${
-              language === 'si'
-                ? 'dsp-language-active'
-                : 'dsp-language-inactive'
-            }`}
-          >
-            සිංහල
-          </button>
-        </div>
-      </div>
-    </header>
+                            <button
+                                type="button"
+                                onClick={() => changeLang('si')}
+                                aria-pressed={language === 'si'}
+                                className={`dsp-language-button ${
+                                    language === 'si'
+                                        ? 'dsp-language-active'
+                                        : 'dsp-language-inactive'
+                                }`}
+                            >
+                                සිංහල
+                            </button>
+                        </div>
+                    </div>
+                </header>
 
-    {/* Main Content */}
-    <main className="dsp-main">
-      <section
-        className="dsp-success-card"
-        aria-labelledby="success-heading"
-      >
-        <div className="dsp-success-icon" aria-hidden="true">
-          <span>{isVerified ? '✓' : '!'}</span>
-        </div>
+                {/* Main Content */}
+                <main className="dsp-main">
+                    <section
+                        className="dsp-success-card"
+                        aria-labelledby="success-heading"
+                    >
+                        <div className="dsp-success-icon" aria-hidden="true">
+                            <span>{isVerified ? '✓' : '!'}</span>
+                        </div>
 
-        <h1 id="success-heading" className="dsp-h1">
-          {isVerified
-            ? t('donationSuccessful')
-            : t('donationPending')}
-        </h1>
+                        <h1 id="success-heading" className="dsp-h1">
+                            {isVerified
+                                ? t('donationSuccessful')
+                                : t('donationPending')}
+                        </h1>
 
-        <p className="dsp-success-message">
-          {isVerified
-            ? t('successMessage')
-            : t('pendingMessage')}
-        </p>
+                        <p className="dsp-success-message">
+                            {isVerified
+                                ? t('successMessage')
+                                : t('pendingMessage')}
+                        </p>
 
-        {/* Donation Amount */}
-        <div className="dsp-amount-box">
-          <p className="dsp-amount-label">
-            {t('donationAmountLabel')}
-          </p>
+                        {/* Donation Amount */}
+                        <div className="dsp-amount-box">
+                            <p className="dsp-amount-label">
+                                {t('donationAmountLabel')}
+                            </p>
 
-          <p className="dsp-amount">
-            Rs. {amount}
-          </p>
+                            <p className="dsp-amount">
+                                Rs. {amount}
+                            </p>
 
-          <p className="dsp-thank-you">
-            {t('blessings')}
-          </p>
-        </div>
+                            <p className="dsp-thank-you">
+                                {t('blessings')}
+                            </p>
+                        </div>
 
-        {/* Transaction Details */}
-        <div className="dsp-details">
+                        {/* Transaction Details */}
+                        <div className="dsp-details">
 
-          <div className="dsp-detail-row">
+                            <div className="dsp-detail-row">
             <span className="dsp-detail-label">
               {t('transactionReference')}
             </span>
 
-            <span className="dsp-detail-value">
+                                <span className="dsp-detail-value">
               {txnRef}
             </span>
-          </div>
+                            </div>
 
-          <div className="dsp-detail-row">
+                            <div className="dsp-detail-row">
             <span className="dsp-detail-label">
               {t('donationPurposeLabel')}
             </span>
 
-            <span className="dsp-detail-value">
+                                <span className="dsp-detail-value">
               {purpose}
             </span>
-          </div>
+                            </div>
 
-          <div className="dsp-detail-row">
+                            <div className="dsp-detail-row">
             <span className="dsp-detail-label">
               {t('paymentDate')}
             </span>
 
-            <span className="dsp-detail-value">
+                                <span className="dsp-detail-value">
               {date}
             </span>
-          </div>
+                            </div>
 
-          <div className="dsp-detail-row">
+                            <div className="dsp-detail-row">
             <span className="dsp-detail-label">
               {t('paymentStatus')}
             </span>
 
-            <span className="dsp-detail-value">
+                                <span className="dsp-detail-value">
               <span
-                className={`dsp-status ${
-                  isVerified
-                    ? 'dsp-status-verified'
-                    : 'dsp-status-pending'
-                }`}
+                  className={`dsp-status ${
+                      isVerified
+                          ? 'dsp-status-verified'
+                          : 'dsp-status-pending'
+                  }`}
               >
                 {isVerified ? t('verified') : t('pending')}
               </span>
             </span>
-          </div>
+                            </div>
 
-        </div>
+                        </div>
 
-        {/* Navigation Buttons */}
-        <div className="dsp-button-group">
-          <Link
-            to="/"
-            className="dsp-button dsp-primary-button"
-          >
-            {t('backToHome')}
-          </Link>
+                        {/* Navigation Buttons */}
+                        <div className="dsp-button-group">
+                            <Link
+                                to="/"
+                                className="dsp-button dsp-primary-button"
+                            >
+                                {t('backToHome')}
+                            </Link>
 
-          <Link
-            to="/donation"
-            className="dsp-button dsp-secondary-button"
-          >
-            {t('anotherDonation')}
-          </Link>
-        </div>
+                            <Link
+                                to="/donation"
+                                className="dsp-button dsp-secondary-button"
+                            >
+                                {t('anotherDonation')}
+                            </Link>
+                        </div>
 
-        {/* Security Note */}
-        <p className="dsp-security-note">
-          {t('securityNote')}
-        </p>
+                        {/* Security Note */}
+                        <p className="dsp-security-note">
+                            {t('securityNote')}
+                        </p>
 
-      </section>
-    </main>
+                    </section>
+                </main>
 
-    {/* Footer */}
-    <footer className="dsp-footer">
-      © 2026 Temple Management System. All rights reserved.
-    </footer>
+                {/* Footer */}
+                <footer className="dsp-footer">
+                    © 2026 Temple Management System. All rights reserved.
+                </footer>
 
-  </div>
-</>
+            </div>
+        </>
 
 
-);
+    );
 };
 
 export default DonationSuccessPage;

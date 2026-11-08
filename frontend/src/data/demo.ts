@@ -7,7 +7,7 @@ export const DEMO_TODAY = '2026-10-26'
 /*
  * The temple this demo session belongs to. It is the same temple the registration screen offers
  * (SMB-VIH-0042 in src/data/temples.ts), so the Sinhala and English names, village and district
- * always agree — nothing here is translated twice.
+ * always agree - nothing here is translated twice.
  */
 export const currentTemple = {
     id: 'TMP-2026-0042',
@@ -25,6 +25,9 @@ export const currentTemple = {
     email: 'office@sambodhiviharaya.lk',
     domain: 'sambodhiviharaya.lk',
     families: 486,
+    /** Shown on the dashboard temple card and the temple details header. */
+    chiefIncumbent: 'Ven. Kamburugamuwa Dhammika Thero',
+    status: 'Active',
 }
 
 export const currentUser = {
@@ -118,7 +121,7 @@ export const FAMILY_NAMES_SI: Record<string, string> = {
 const buildSession = (key: DanaSession['key'], count: number, capacity: number): DanaSession => ({
     key,
     label: key === 'morning' ? 'Morning Dana' : 'Afternoon Dana',
-    time: key === 'morning' ? '6:00 AM – 9:00 AM' : '11:00 AM – 1:00 PM',
+    time: key === 'morning' ? '6:00 AM - 9:00 AM' : '11:00 AM - 1:00 PM',
     capacity,
     families: Array.from({length: count}, (_, index) => {
         const [id, familiarName] = NAMES[index % NAMES.length]
@@ -181,7 +184,7 @@ export const attentionItems: AttentionItem[] = [
     {
         id: 'AT-1',
         title: '3 Dana bookings awaiting approval',
-        detail: 'Morning and afternoon sessions, 27–28 October',
+        detail: 'Morning and afternoon sessions, 27-28 October',
         action: 'Review',
         tone: 'dana'
     },
@@ -296,7 +299,7 @@ export const events: TempleEvent[] = [
         id: 'EV-202',
         title: 'Daham Pasal Annual Examination',
         date: '2026-10-29',
-        time: '8:00 AM – 12:00 PM',
+        time: '8:00 AM - 12:00 PM',
         venue: 'Daham Pasal Hall',
         category: 'Daham Pasal',
         status: 'Published'
@@ -305,7 +308,7 @@ export const events: TempleEvent[] = [
         id: 'EV-203',
         title: 'Donor Council Quarterly Meeting',
         date: '2026-10-30',
-        time: '4:00 PM – 6:00 PM',
+        time: '4:00 PM - 6:00 PM',
         venue: 'Chapter House',
         category: 'Meeting',
         status: 'Pending'
@@ -314,7 +317,7 @@ export const events: TempleEvent[] = [
         id: 'EV-204',
         title: 'Katina Robe Offering Ceremony',
         date: '2026-11-08',
-        time: '7:00 AM – 3:00 PM',
+        time: '7:00 AM - 3:00 PM',
         venue: 'Main Shrine',
         category: 'Religious',
         status: 'Published'
@@ -323,7 +326,7 @@ export const events: TempleEvent[] = [
         id: 'EV-201',
         title: 'Il Poya Observance Programme',
         date: '2026-11-24',
-        time: '6:00 AM – 8:00 PM',
+        time: '6:00 AM - 8:00 PM',
         venue: 'Main Shrine & Bodhiya',
         category: 'Poya',
         status: 'Published'
@@ -339,6 +342,8 @@ export type Notification = {
     time: string
     tone: 'success' | 'info' | 'warning'
     read: boolean
+    /** Where clicking the notification takes you. */
+    to: string
 }
 
 export const notifications: Notification[] = [
@@ -348,7 +353,8 @@ export const notifications: Notification[] = [
         body: 'Morning Dana booking for 27 October is confirmed.',
         time: '10:15 AM',
         tone: 'success',
-        read: false
+        read: false,
+        to: '/my-bookings'
     },
     {
         id: 'NT-02',
@@ -356,7 +362,8 @@ export const notifications: Notification[] = [
         body: 'The annual examination begins at 8.00 AM in the Daham Pasal Hall.',
         time: '08:30 AM',
         tone: 'info',
-        read: false
+        read: false,
+        to: '/event-management'
     },
     {
         id: 'NT-03',
@@ -364,7 +371,8 @@ export const notifications: Notification[] = [
         body: 'Kumara family requested a temporary transfer to this temple.',
         time: 'Yesterday',
         tone: 'warning',
-        read: false
+        read: false,
+        to: '/temple'
     },
     {
         id: 'NT-04',
@@ -372,7 +380,8 @@ export const notifications: Notification[] = [
         body: '“Start a Sunday evening meditation class for youth”.',
         time: 'Yesterday',
         tone: 'info',
-        read: true
+        read: true,
+        to: '/admin/suggestions'
     },
 ]
 

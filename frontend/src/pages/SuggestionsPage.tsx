@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import {type FormEvent, useState} from 'react';
+import {Link} from 'react-router-dom';
 
 export interface Suggestion {
     id: string;
@@ -78,7 +78,7 @@ export default function SuggestionsPage() {
         return (
             <div style={{
                 minHeight: '100vh',
-                background: '#F8F7F2',
+                background: '#F7FCFF',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -93,14 +93,14 @@ export default function SuggestionsPage() {
                     borderRadius: '18px',
                     textAlign: 'center',
                     boxShadow: '0 10px 35px rgba(0,0,0,0.07)',
-                    border: '1px solid #EAE7DC',
+                    border: '1px solid #D7E8F3',
                 }}>
 
                     <div style={{
                         width: '75px',
                         height: '75px',
-                        background: '#E8F3EA',
-                        color: '#267044',
+                        background: '#E8F5FD',
+                        color: '#0284C7',
                         borderRadius: '50%',
                         display: 'flex',
                         alignItems: 'center',
@@ -112,7 +112,7 @@ export default function SuggestionsPage() {
                     </div>
 
                     <h2 style={{
-                        color: '#18382D',
+                        color: '#0C4A6E',
                         fontSize: '27px',
                         marginBottom: '12px',
                     }}>
@@ -134,7 +134,7 @@ export default function SuggestionsPage() {
                         style={{
                             width: '100%',
                             padding: '14px',
-                            background: '#18382D',
+                            background: '#0C4A6E',
                             color: '#FFFFFF',
                             border: 'none',
                             borderRadius: '9px',
@@ -151,7 +151,7 @@ export default function SuggestionsPage() {
                         to="/admin/suggestions"
                         style={{
                             display: 'inline-block',
-                            color: '#9B7936',
+                            color: '#0E7490',
                             fontSize: '14px',
                             fontWeight: 'bold',
                             textDecoration: 'none',
@@ -169,7 +169,7 @@ export default function SuggestionsPage() {
     return (
         <div style={{
             minHeight: '100vh',
-            background: '#F8F7F2',
+            background: '#F7FCFF',
             padding: '55px 20px',
             fontFamily: 'Arial, sans-serif',
             boxSizing: 'border-box',
@@ -188,8 +188,8 @@ export default function SuggestionsPage() {
 
                     <div style={{
                         display: 'inline-block',
-                        background: '#F0E8D5',
-                        color: '#92702F',
+                        background: '#E0F2FE',
+                        color: '#0369A1',
                         padding: '7px 16px',
                         borderRadius: '20px',
                         fontSize: '12px',
@@ -201,7 +201,7 @@ export default function SuggestionsPage() {
                     </div>
 
                     <h1 style={{
-                        color: '#18382D',
+                        color: '#0C4A6E',
                         fontSize: '32px',
                         fontWeight: 'bold',
                         margin: '0 0 12px',
@@ -226,12 +226,12 @@ export default function SuggestionsPage() {
                     background: '#FFFFFF',
                     padding: '35px',
                     borderRadius: '16px',
-                    border: '1px solid #EAE7DC',
+                    border: '1px solid #D7E8F3',
                     boxShadow: '0 8px 30px rgba(0,0,0,0.05)',
                 }}>
 
                     <h2 style={{
-                        color: '#18382D',
+                        color: '#0C4A6E',
                         fontSize: '20px',
                         margin: '0 0 8px',
                     }}>
@@ -260,11 +260,11 @@ export default function SuggestionsPage() {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '10px',
-                            background: '#F8F7F2',
+                            background: '#F7FCFF',
                             padding: '15px',
                             borderRadius: '9px',
-                            border: '1px solid #EAE7DC',
-                            color: '#34483B',
+                            border: '1px solid #D7E8F3',
+                            color: '#33566C',
                             fontSize: '14px',
                             cursor: 'pointer',
                         }}>
@@ -275,11 +275,11 @@ export default function SuggestionsPage() {
                                 style={{
                                     width: '17px',
                                     height: '17px',
-                                    accentColor: '#18382D',
+                                    accentColor: '#0C4A6E',
                                     cursor: 'pointer',
                                 }}
                             />
-                            <span style={{ fontWeight: 'bold' }}>
+                            <span style={{fontWeight: 'bold'}}>
                                 Submit as Anonymous
                             </span>
                         </label>
@@ -372,7 +372,7 @@ export default function SuggestionsPage() {
                             />
 
                             <p style={{
-                                color: '#9AA39C',
+                                color: '#6B8798',
                                 fontSize: '12px',
                                 textAlign: 'right',
                                 marginTop: '6px',
@@ -386,7 +386,7 @@ export default function SuggestionsPage() {
                             type="submit"
                             style={{
                                 padding: '15px',
-                                background: '#18382D',
+                                background: '#0C4A6E',
                                 color: '#FFFFFF',
                                 border: 'none',
                                 borderRadius: '9px',
@@ -406,7 +406,7 @@ export default function SuggestionsPage() {
                 {/* Footer Note */}
                 <p style={{
                     textAlign: 'center',
-                    color: '#929A92',
+                    color: '#6B8798',
                     fontSize: '12px',
                     marginTop: '25px',
                     lineHeight: '1.6',
@@ -423,7 +423,7 @@ export default function SuggestionsPage() {
 // Reusable Input Styles
 const labelStyle: React.CSSProperties = {
     display: 'block',
-    color: '#34483B',
+    color: '#33566C',
     fontSize: '14px',
     fontWeight: 'bold',
     marginBottom: '9px',
@@ -432,7 +432,7 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '13px 14px',
-    border: '1px solid #DDE2DA',
+    border: '1px solid #DCECF7',
     borderRadius: '8px',
     background: '#FFFFFF',
     color: '#26372D',

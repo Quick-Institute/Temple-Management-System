@@ -1,6 +1,6 @@
 import type {FormEvent, ReactNode} from 'react'
-import {useEffect, useId, useRef, useState} from 'react'
-import {Link, useNavigate} from 'react-router-dom'
+import {useState} from 'react'
+import {Link, Navigate, useNavigate, useParams} from 'react-router-dom'
 import {LotusMark, TempleMark} from '../../components/AuthIcons'
 import {passwordLengthError} from '../../components/PasswordRules'
 import {TempleCombobox} from '../../components/TempleCombobox'
@@ -13,11 +13,14 @@ import {
     type TempleLanguage,
 } from '../../data/temples'
 import {PasswordStrength} from '../../components/PasswordStrength'
-import {AuthShell} from '../../layouts/AuthShell'
+import {SelectField} from '../../components/SelectField'
+import {AUTH_HEADING, AUTH_SUBTITLE, AuthShell} from '../../layouts/AuthShell'
+import {LanguageToggle} from '../../components/LanguageToggle'
+import {useTranslation} from 'react-i18next'
 import {authRoutes} from '../../routes/authRoutes'
 
 /* ------------------------------------------------------------------ */
-/* Icons — hand-drawn to match the line icons used on the login screen */
+/* Icons - hand-drawn to match the line icons used on the login screen */
 /* ------------------------------------------------------------------ */
 
 type IconName =
@@ -141,26 +144,46 @@ const FacebookIcon = () => (
 
 type Role = 'temple-admin' | 'committee-member' | 'family-user'
 
-const ROLES: { key: Role; label: string; icon: IconName; blurb: string }[] = [
+const ROLES: { key: Role; labelKey: string; icon: IconName; blurbKey: string }[] = [
     {
         key: 'temple-admin',
-        label: 'Temple Admin',
+        labelKey: 'auth.roleTempleAdmin',
         icon: 'temple',
-        blurb: 'Registers the temple and becomes its Main Admin.'
+        blurbKey: 'auth.roleTempleAdminBlurb'
     },
     {
         key: 'committee-member',
-        label: 'Committee Member',
+        labelKey: 'auth.roleCommittee',
         icon: 'users',
-        blurb: 'Joins a temple that has already registered.'
+        blurbKey: 'auth.roleCommitteeBlurb'
     },
     {
         key: 'family-user',
-        label: 'Family User',
+        labelKey: 'auth.roleFamily',
         icon: 'user',
-        blurb: 'Books Dana and follows temple news with your family.'
+        blurbKey: 'auth.roleFamilyBlurb'
     },
 ]
+
+/**
+ * Each account type has its own URL, so a tab is a page: /register/admin,
+ * /register/familyuser and /register/committeemember. The param is the single source of truth -
+ * the form below reads it instead of keeping a local `role` state, which means a shared link
+ * always opens the right form and the browser back button walks through the tabs.
+ */
+const ROLE_SLUG: Record<Role, string> = {
+    'temple-admin': 'admin',
+    'committee-member': 'committeemember',
+    'family-user': 'familyuser',
+}
+
+const ROUTE_FOR_SLUG: Record<string, string> = Object.fromEntries(
+    Object.values(ROLE_SLUG).map((slug) => [slug, `/register/${slug}`]),
+)
+
+/** The inverse of ROLE_SLUG - which account type a slug belongs to, if any. */
+const roleFromSlug = (slug?: string): Role | null =>
+    (Object.keys(ROLE_SLUG) as Role[]).find((key) => ROLE_SLUG[key] === slug) ?? null
 
 const ADMIN_DESIGNATIONS = ['Chief Incumbent Monk', 'Authorized Religious Representative', 'Designated Technical Administrator']
 
@@ -180,12 +203,12 @@ const NIC_PATTERN = /^(?:\d{9}[vVxX]|\d{12})$/
 /* Field primitives                                                    */
 /* ------------------------------------------------------------------ */
 
-const labelClass = 'mb-2 block text-[1.02rem] leading-none text-[#16241c]'
+const labelClass = 'mb-2 block text-[1.02rem] leading-none text-[#0f2b3d]'
 const boxClass =
-    'flex h-12 items-center gap-3 rounded-[8px] border border-[#2b3a30] bg-white px-3 text-[#2b3a30] transition ' +
-    'focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.14)] lg:h-[42px]'
+    'flex h-12 items-center gap-3 rounded-[8px] border border-[#6f9db8] bg-white px-3 text-[#0f2b3d] transition placeholder:text-[#8299a8] ' +
+    'focus-within:shadow-[0_0_0_3px_rgba(2,132,199,.16)] lg:h-[42px]'
 const inputClass =
-    'w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 text-[1rem] text-[#1f2d26] outline-none placeholder:text-[#8b8b8b] lg:text-[0.86rem]'
+    'w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 text-[1rem] text-[#0f2b3d] outline-none placeholder:text-[#8ba3b0] lg:text-[0.86rem]'
 
 type TextFieldProps = {
     id: string
@@ -273,226 +296,11 @@ const PasswordField = ({id, label, placeholder, value, onChange, onBlur, autoCom
                 <button
                     type="button"
                     onClick={() => setVisible((current) => !current)}
-                    className="grid h-11 w-11 shrink-0 place-items-center rounded text-[#2b3a30] hover:text-[#14512f] lg:h-9 lg:w-9"
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded text-[#33566c] hover:text-sage-700 lg:h-9 lg:w-9"
                     aria-label={visible ? 'Hide password' : 'Show password'}
                     aria-pressed={visible}>
                     <Icon name={visible ? 'eye' : 'eyeOff'} size={17}/>
                 </button>
-            </div>
-            <FieldError id={id} message={error}/>
-        </div>
-    )
-}
-
-/**
- * Padded, responsive replacement for a native <select>.
- *
- * A native select popup is painted by the operating system, so its row padding, width and z-order
- * cannot be styled — on Windows it renders tight, borderless rows that overhang the field. This
- * listbox draws the panel itself: 10px panel padding, 14px/10px option padding, a scroll area
- * capped at 16rem, and it flips above the field when there is not enough room below.
- */
-const SelectField = ({id, label, icon, placeholder, options, value, onChange, error, full, searchable}: {
-    id: string
-    label: string
-    icon: IconName
-    placeholder: string
-    options: string[]
-    value: string
-    onChange: (value: string) => void
-    error?: string
-    full?: boolean
-    /** Force the search box on or off. Left unset it appears once a list is long enough to scroll. */
-    searchable?: boolean
-}) => {
-    const [open, setOpen] = useState(false)
-    const [flipUp, setFlipUp] = useState(false)
-    const [active, setActive] = useState(-1)
-    const [query, setQuery] = useState('')
-    const wrapRef = useRef<HTMLDivElement>(null)
-    const buttonRef = useRef<HTMLButtonElement>(null)
-    const searchRef = useRef<HTMLInputElement>(null)
-    const listRef = useRef<HTMLDivElement>(null)
-    const listId = useId()
-    const all = [placeholder, ...options]
-    /* A three-item committee list reads better without a search box; the 25 districts do not. */
-    const searchOn = searchable ?? options.length > 8
-    const needle = query.trim().toLowerCase()
-
-    /* Rows keep their index in `all`, so the highlighted row keeps its id while the list filters. */
-    const visible = needle && searchOn
-        ? all.map((option, index) => ({option, index}))
-            .filter(({option, index}) => index > 0 && option.toLowerCase().includes(needle))
-        : all.map((option, index) => ({option, index}))
-
-    /* Close on an outside press or Escape, exactly like the dashboard popovers. */
-    useEffect(() => {
-        if (!open) return
-        const onPointerDown = (event: PointerEvent) => {
-            if (!wrapRef.current?.contains(event.target as Node)) setOpen(false)
-        }
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                setOpen(false)
-                buttonRef.current?.focus()
-            }
-        }
-        document.addEventListener('pointerdown', onPointerDown)
-        document.addEventListener('keydown', onKeyDown)
-        return () => {
-            document.removeEventListener('pointerdown', onPointerDown)
-            document.removeEventListener('keydown', onKeyDown)
-        }
-    }, [open])
-
-    /* Keep the highlighted row visible inside the scroll area. */
-    useEffect(() => {
-        if (!open || active < 0) return
-        document.getElementById(`${listId}-${active}`)?.scrollIntoView({block: 'nearest'})
-    }, [open, active, listId])
-
-    /* Put the caret in the search box as the panel opens, so typing filters straight away. */
-    useEffect(() => {
-        if (open && searchOn) searchRef.current?.focus()
-    }, [open, searchOn])
-
-    const openList = () => {
-        const box = wrapRef.current?.getBoundingClientRect()
-        /* Flip above when the field sits too low for a 16rem panel to fit under it. */
-        if (box) setFlipUp(box.bottom + 288 > window.innerHeight && box.top > window.innerHeight - box.bottom)
-        setQuery('')
-        setActive(Math.max(0, all.indexOf(value)))
-        setOpen(true)
-    }
-
-    const choose = (option: string) => {
-        onChange(option === placeholder ? '' : option)
-        setOpen(false)
-        buttonRef.current?.focus()
-    }
-
-    /* Walk the rows that are on screen, not the full list, so arrows skip the filtered-out ones. */
-    const move = (delta: number) => {
-        if (!visible.length) return
-        setActive((index) => {
-            const position = visible.findIndex((row) => row.index === index)
-            const next = position < 0 ? 0 : (position + delta + visible.length) % visible.length
-            return visible[next].index
-        })
-    }
-
-    const onSearchChange = (text: string) => {
-        setQuery(text)
-        const wanted = text.trim().toLowerCase()
-        /* +1 because `all` leads with the placeholder. */
-        const first = wanted ? options.findIndex((option) => option.toLowerCase().includes(wanted)) : -1
-        setActive(first < 0 ? -1 : first + 1)
-    }
-
-    const onKeyDown = (event: React.KeyboardEvent) => {
-        if (!open) {
-            if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
-                event.preventDefault()
-                openList()
-            }
-            return
-        }
-        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-            event.preventDefault()
-            move(event.key === 'ArrowDown' ? 1 : -1)
-        } else if (event.key === 'Home' || event.key === 'End') {
-            event.preventDefault()
-            const row = event.key === 'Home' ? visible[0] : visible[visible.length - 1]
-            setActive(row ? row.index : -1)
-        } else if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault()
-            if (active >= 0 && all[active] !== undefined) choose(all[active])
-        } else if (event.key === 'Tab') {
-            setOpen(false)
-        }
-    }
-
-    return (
-        <div className={full ? 'sm:col-span-2' : undefined}>
-            <label className={labelClass} htmlFor={id}>{label}</label>
-            <div className="relative" ref={wrapRef}>
-                <div
-                    className={`${boxClass} ${error ? 'border-status-rose shadow-[0_0_0_3px_rgba(173,28,3,.12)]' : ''} ${open ? 'border-[#14512f] shadow-[0_0_0_3px_rgba(27,98,75,.14)]' : ''}`}>
-                    <Icon name={icon} size={17}/>
-                    <button
-                        id={id}
-                        ref={buttonRef}
-                        type="button"
-                        role="combobox"
-                        aria-haspopup="listbox"
-                        aria-expanded={open}
-                        aria-controls={open ? listId : undefined}
-                        aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
-                        aria-invalid={Boolean(error) || undefined}
-                        aria-describedby={error ? `${id}-error` : undefined}
-                        onClick={() => (open ? setOpen(false) : openList())}
-                        onKeyDown={onKeyDown}
-                        className={`flex w-full min-w-0 flex-1 cursor-pointer items-center justify-between gap-2 self-stretch bg-transparent p-0 text-left text-[1rem] outline-none lg:text-[0.86rem] ${value ? 'text-[#1f2d26]' : 'text-[#8b8b8b]'}`}>
-                        <span className="truncate">{value || placeholder}</span>
-                        <Icon name="chevron" size={16}/>
-                    </button>
-                </div>
-
-                {open && (
-                    <div
-                        id={listId}
-                        role="listbox"
-                        aria-label={label}
-                        ref={listRef}
-                        onKeyDown={onKeyDown}
-                        className={`absolute inset-x-0 z-50 max-h-64 overflow-y-auto overscroll-contain rounded-[10px] border border-[#2b3a30]/30 bg-white p-2.5 shadow-[0_18px_38px_rgba(9,20,13,.20)] ${
-                            flipUp ? 'bottom-[calc(100%+8px)]' : 'top-[calc(100%+8px)]'
-                        }`}>
-                        {searchOn &&
-                            <div
-                                className="sticky top-0 z-10 mb-1.5 flex items-center gap-2 rounded-lg border border-[#2b3a30]/20 bg-[#f5faf6] px-2.5 py-2">
-                                <span className="flex-none text-[#6f7d74]"><Icon name="search" size={15}/></span>
-                                <input
-                                    ref={searchRef}
-                                    type="text"
-                                    value={query}
-                                    onChange={(event) => onSearchChange(event.target.value)}
-                                    onKeyDown={onKeyDown}
-                                    placeholder={`Search ${label.toLowerCase()}...`}
-                                    aria-label={`Search ${label}`}
-                                    autoComplete="off"
-                                    className="min-w-0 flex-1 bg-transparent text-[0.92rem] text-[#1f2d26] outline-none"/>
-                            </div>}
-                        {visible.map(({option, index}) => {
-                            const isPlaceholder = index === 0
-                            const isSelected = option === value || (isPlaceholder && !value)
-                            return (
-                                <div
-                                    id={`${listId}-${index}`}
-                                    key={option}
-                                    role="option"
-                                    aria-selected={isSelected}
-                                    onMouseEnter={() => setActive(index)}
-                                    onMouseDown={(event) => event.preventDefault()}
-                                    onClick={() => choose(option)}
-                                    className={`flex cursor-pointer items-center justify-between gap-3 rounded-[7px] px-3 py-3 text-[1rem] leading-snug sm:text-[0.9rem] lg:py-2.5 ${
-                                        index === active ? 'bg-[#eef4ee]' : 'bg-transparent'
-                                    } ${isPlaceholder ? 'text-[#6f7d74]' : 'text-[#1f2d26]'} ${
-                                        isSelected ? 'font-semibold' : 'font-normal'
-                                    }`}>
-                                    <span className="min-w-0 truncate">{option}</span>
-                                    {isSelected && !isPlaceholder &&
-                                        <span className="flex-none text-[#14512f]"><Icon name="check"
-                                                                                         size={16}/></span>}
-                                </div>
-                            )
-                        })}
-                        {!visible.length &&
-                            <p className="px-3 py-3 text-[0.9rem] text-[#6f7d74]">
-                                No {label.toLowerCase()} matches what you typed.
-                            </p>}
-                    </div>
-                )}
             </div>
             <FieldError id={id} message={error}/>
         </div>
@@ -518,7 +326,7 @@ type Form = {
     village: string
     district: string
     postalCode: string
-    /** Family users only — the NIC is the primary key for a family record. */
+    /** Family users only - the NIC is the primary key for a family record. */
     nic: string
     password: string
     confirmPassword: string
@@ -531,8 +339,11 @@ const EMPTY: Form = {
 }
 
 export const RegisterPage = () => {
+    const {t} = useTranslation()
     const navigate = useNavigate()
-    const [role, setRole] = useState<Role>('temple-admin')
+    const {role: roleSlug} = useParams<{ role: string }>()
+    /* An unknown or missing slug is sent to the admin form rather than rendering a blank tab. */
+    const role = roleFromSlug(roleSlug)
     const [form, setForm] = useState<Form>(EMPTY)
     const [agreed, setAgreed] = useState(false)
     const [touchedPassword, setTouchedPassword] = useState(false)
@@ -542,7 +353,7 @@ export const RegisterPage = () => {
 
     /*
      * Fill the temple fields from a registry entry. The village only belongs to the temple for a
-     * committee member — for a family user it is their home village, so it is left alone.
+     * committee member - for a family user it is their home village, so it is left alone.
      */
     const fillTemple = (temple: Temple) => {
         const withVillage = role === 'committee-member'
@@ -576,7 +387,7 @@ export const RegisterPage = () => {
         if (temple) fillTemple(temple)
     }
 
-    /* Name plus district is enough to pin down a temple, so choosing a district fills the code too —
+    /* Name plus district is enough to pin down a temple, so choosing a district fills the code too -
        which matters when two temples share a name. */
     const onDistrictChange = (value: string) => {
         set('district')(value)
@@ -591,10 +402,9 @@ export const RegisterPage = () => {
         setErrors((current) => ({...current, [key]: undefined}))
     }
 
-    const switchRole = (next: Role) => {
-        setRole(next)
-        setErrors({})
-    }
+    /* Same route, new param, so the form keeps everything the user has typed; only the errors
+       raised by the previous tab are cleared. The Link below does the navigating. */
+    const switchRole = () => setErrors({})
 
     const validate = () => {
         const next: Partial<Record<keyof Form | 'terms', string>> = {}
@@ -664,7 +474,7 @@ export const RegisterPage = () => {
 
         /*
          * Demo build: no account is created yet, so the details are not sent anywhere. Once the
-         * screen is valid it lands on the dashboard, the same place a sign-in goes — nobody should
+         * screen is valid it lands on the dashboard, the same place a sign-in goes - nobody should
          * be sent back to the login form they have just filled in a registration for.
          * When the API exists this becomes: call it, and only navigate on success.
          */
@@ -675,43 +485,43 @@ export const RegisterPage = () => {
         }, 700)
     }
 
+    if (!role) return <Navigate to={authRoutes.registerAdmin} replace/>
+
     return (
         <AuthShell variant="signup">
             <div
-                className="mx-auto mt-0 w-full max-w-236 rounded-[22px] border border-white/30 bg-[#fffdf4] px-5 pb-7 pt-7 shadow-[0_22px_42px_rgba(9,20,13,.15)] sm:rounded-[26px] sm:px-8 sm:pb-8 sm:pt-9 lg:my-auto lg:px-11 lg:pb-9">
+                className="relative mx-auto mt-0 w-full max-w-236 rounded-[22px] border border-white/30 bg-[linear-gradient(180deg,#f2fafe_0%,#e8f6fe_100%)] px-5 pb-7 pt-7 shadow-[0_22px_42px_rgba(8,47,73,.15)] sm:rounded-[26px] sm:px-8 sm:pb-8 sm:pt-9 lg:my-auto lg:px-11 lg:pb-9">
+
+                <LanguageToggle tone="card" label={false} className="absolute top-3 right-3 z-10"/>
 
                 <header className="text-center">
-                    <LotusMark width={112} className="mx-auto mb-0"/>
-                    <h2 className="mt-1 font-display text-[2rem] leading-tight font-bold tracking-tight text-[#123c2e] sm:text-[clamp(2rem,2.4vw,2.55rem)]">
-                        Create Your Account
-                    </h2>
-                    <p className="mt-2 text-[1.02rem] text-[#2c3a31]">
-                        Register to manage your temple or join as a community member.
-                    </p>
+                    <LotusMark width={168} className="mx-auto mb-1"/>
+                    <h1 className={AUTH_HEADING}>{t('auth.registerTitle')}</h1>
+                    <p className={AUTH_SUBTITLE}>{t('auth.registerSubtitle')}</p>
                 </header>
 
                 {/* Role selector */}
-                <div role="tablist" aria-label="Account type"
+                <div role="tablist" aria-label={t('auth.accountType')}
                      className="mt-7 grid gap-2.5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-                    {ROLES.map(({key, label, icon}) => (
-                        <button
+                    {ROLES.map(({key, labelKey, icon}) => (
+                        <Link
                             key={key}
-                            type="button"
+                            to={ROUTE_FOR_SLUG[ROLE_SLUG[key]]}
                             role="tab"
                             aria-selected={role === key}
-                            onClick={() => switchRole(key)}
+                            onClick={switchRole}
                             className={`flex min-h-13.5 items-center justify-center gap-2.5 rounded-[10px] border px-3 text-center text-[0.95rem] leading-tight transition ${
                                 role === key
-                                    ? 'border-[#14512f] bg-[#14512f] text-white shadow-sm'
-                                    : 'border-[#2b3a30] bg-white text-[#1f2d26] hover:border-[#14512f] hover:bg-[#f6faf6]'
+                                    ? 'border-sage-700 bg-sage-700 text-white shadow-sm'
+                                    : 'border-[#6f9db8] bg-white text-ink hover:border-sage-700 hover:bg-[#eff8ff]'
                             }`}>
                             <Icon name={icon} size={19}/>
-                            {label}
-                        </button>
+                            {t(labelKey)}
+                        </Link>
                     ))}
                 </div>
-                <p className="mt-2.5 text-center text-[0.82rem] text-[#5d6b62]">
-                    {ROLES.find((item) => item.key === role)!.blurb}
+                <p className="mt-2.5 text-center text-[0.82rem] text-[#5b7b8f]">
+                    {t(ROLES.find((item) => item.key === role)!.blurbKey)}
                 </p>
 
                 <form className="mt-6" onSubmit={handleSubmit} noValidate>
@@ -723,9 +533,9 @@ export const RegisterPage = () => {
                                     picking one fills the code, district and village below. */}
                                 <TempleCombobox
                                     id="templeName"
-                                    label="Temple Name"
+                                    label={t('auth.templeName')}
                                     icon={<Icon name="temple" size={17}/>}
-                                    placeholder="Enter temple name"
+                                    placeholder={t('auth.templeNamePlaceholder')}
                                     value={form.templeName}
                                     language={language}
                                     onChange={(value) => {
@@ -735,88 +545,104 @@ export const RegisterPage = () => {
                                     onPick={(temple) => fillTemple(temple)}
                                     onCommit={onTempleNameCommit}
                                     error={errors.templeName}/>
-                                <TextField id="templeCode" label="Temple Code" icon="temple"
-                                           placeholder="Enter temple code"
+                                <TextField id="templeCode" label={t('auth.templeCode')} icon="temple"
+                                           placeholder={t('auth.templeCodePlaceholder')}
                                            value={form.templeCode} onChange={onTempleCodeChange}
                                            onBlur={() => onTempleCodeChange(form.templeCode)}
                                            error={errors.templeCode}/>
                             </>
                         )}
 
-                        <TextField id="firstName" label="First Name" icon="person" placeholder="Enter your first name"
+                        <TextField id="firstName" label={t('auth.firstName')} icon="person"
+                                   placeholder={t('auth.firstNamePlaceholder')}
                                    autoComplete="given-name" value={form.firstName} onChange={set('firstName')}
                                    error={errors.firstName}/>
-                        <TextField id="lastName" label="Last Name" icon="person" placeholder="Enter your last name"
+                        <TextField id="lastName" label={t('auth.lastName')} icon="person"
+                                   placeholder={t('auth.lastNamePlaceholder')}
                                    autoComplete="family-name" value={form.lastName} onChange={set('lastName')}
                                    error={errors.lastName}/>
 
-                        <TextField id="email" label="Email Address" icon="mail" placeholder="Enter your email address"
+                        <TextField id="email" label={t('auth.email')} icon="mail"
+                                   placeholder={t('auth.emailPlaceholder')}
                                    type="email" autoComplete="email" value={form.email} onChange={set('email')}
                                    error={errors.email}/>
-                        <TextField id="phone" label="Phone Number" icon="phone"
-                                   placeholder="Enter your phone number" type="tel" autoComplete="tel"
+                        <TextField id="phone" label={t('auth.phoneNumber')} icon="phone"
+                                   placeholder={t('auth.phonePlaceholder')} type="tel" autoComplete="tel"
                                    value={form.phone} onChange={set('phone')} error={errors.phone}/>
 
-                        {/* Committee Member — committee name and designation */}
+                        {/* Committee Member - committee name and designation */}
                         {role === 'committee-member' && (
                             <>
-                                <TextField id="village" label="Village" icon="home" placeholder="Enter your village"
+                                <TextField id="village" label={t('auth.village')} icon="home"
+                                           placeholder={t('auth.villagePlaceholder')}
                                            value={form.village} onChange={set('village')} error={errors.village}/>
-                                <SelectField id="district" label="District" icon="map" placeholder="Select district"
+                                <SelectField id="district" label={t('auth.district')}
+                                             icon={<Icon name="map" size={17}/>} placeholder={t('auth.selectDistrict')}
                                              options={districtsIn(language)} value={form.district}
                                              onChange={onDistrictChange} error={errors.district}/>
-                                <SelectField id="committee" label="Committee Name" icon="users"
-                                             placeholder="Select committee"
+                                <SelectField id="committee" label={t('auth.committeeName')}
+                                             icon={<Icon name="users" size={17}/>}
+                                             placeholder={t('auth.selectCommittee')}
                                              options={COMMITTEES} value={form.committee} onChange={set('committee')}
                                              error={errors.committee}/>
-                                <SelectField id="designation" label="Designation" icon="briefcase"
-                                             placeholder="Select designation"
+                                <SelectField id="designation" label={t('auth.designation')}
+                                             icon={<Icon name="briefcase" size={17}/>}
+                                             placeholder={t('auth.selectDesignation')}
                                              options={COMMITTEE_DESIGNATIONS} value={form.designation}
                                              onChange={set('designation')} error={errors.designation}/>
                                 {form.committee === 'Other' && (
-                                    <TextField id="committeeOther" label="Committee Name (specify)" icon="users"
-                                               placeholder="Enter the committee name" value={form.committeeOther}
+                                    <TextField id="committeeOther"
+                                               label={`${t('auth.committeeName')} (${t('auth.specify')})`} icon="users"
+                                               placeholder={t('auth.committeeOther')} value={form.committeeOther}
                                                onChange={set('committeeOther')} error={errors.committeeOther}/>
                                 )}
                                 {form.designation === 'Other' && (
-                                    <TextField id="designationOther" label="Designation (specify)" icon="briefcase"
-                                               placeholder="Enter your designation" value={form.designationOther}
+                                    <TextField id="designationOther"
+                                               label={`${t('auth.designation')} (${t('auth.specify')})`}
+                                               icon="briefcase"
+                                               placeholder={t('auth.designationOther')} value={form.designationOther}
                                                onChange={set('designationOther')} error={errors.designationOther}/>
                                 )}
                             </>
                         )}
 
-                        {/* Temple Admin — designation only */}
+                        {/* Temple Admin - designation only */}
                         {role === 'temple-admin' && (
                             <>
-                                <SelectField id="designation" label="Designation" icon="briefcase"
-                                             placeholder="Select designation"
+                                <SelectField id="designation" label={t('auth.designation')}
+                                             icon={<Icon name="briefcase" size={17}/>}
+                                             placeholder={t('auth.selectDesignation')}
                                              options={ADMIN_DESIGNATIONS} value={form.designation}
                                              onChange={set('designation')} error={errors.designation}/>
                                 {form.designation === 'Other' && (
-                                    <TextField id="designationOther" label="Designation (specify)" icon="briefcase"
-                                               placeholder="Enter your designation" value={form.designationOther}
+                                    <TextField id="designationOther"
+                                               label={`${t('auth.designation')} (${t('auth.specify')})`}
+                                               icon="briefcase"
+                                               placeholder={t('auth.designationOther')} value={form.designationOther}
                                                onChange={set('designationOther')} error={errors.designationOther}/>
                                 )}
                             </>
                         )}
 
-                        {/* Family User — address block */}
+                        {/* Family User - address block */}
                         {role === 'family-user' && (
                             <>
-                                <TextField id="nic" label="NIC Number" icon="user" placeholder="901234567V"
+                                <TextField id="nic" label={t('auth.nic')} icon="user" placeholder="901234567V"
                                            autoComplete="off" value={form.nic} onChange={set('nic')}
                                            error={errors.nic}/>
-                                <TextField id="address" label="Address" icon="pin" placeholder="Enter your address"
+                                <TextField id="address" label={t('auth.address')} icon="pin"
+                                           placeholder={t('auth.addressPlaceholder')}
                                            autoComplete="street-address" value={form.address} onChange={set('address')}
                                            error={errors.address} full/>
-                                <TextField id="village" label="Village" icon="home" placeholder="Enter your village"
+                                <TextField id="village" label={t('auth.village')} icon="home"
+                                           placeholder={t('auth.villagePlaceholder')}
                                            value={form.village} onChange={set('village')} error={errors.village}/>
-                                <SelectField id="district" label="District" icon="map" placeholder="Select district"
+                                <SelectField id="district" label={t('auth.district')}
+                                             icon={<Icon name="map" size={17}/>} placeholder={t('auth.selectDistrict')}
                                              options={districtsIn(language)} value={form.district}
                                              onChange={onDistrictChange} error={errors.district}/>
-                                <TextField id="postalCode" label="Postal Code" icon="mailbox"
-                                           placeholder="Enter postal code"
+                                <TextField id="postalCode" label={t('auth.postalCode')} icon="mailbox"
+                                           placeholder={t('auth.postalCodePlaceholder')}
                                            autoComplete="postal-code" value={form.postalCode}
                                            onChange={set('postalCode')}
                                            error={errors.postalCode}/>
@@ -825,11 +651,13 @@ export const RegisterPage = () => {
 
                         {/* Password and Confirm Password share a row; the checklist spans the full
                             width underneath, so it never splits the two fields apart. */}
-                        <PasswordField id="password" label="Password" placeholder="Create a password" newRow
+                        <PasswordField id="password" label={t('auth.password')}
+                                       placeholder={t('auth.createPasswordPlaceholder')} newRow
                                        autoComplete="new-password" value={form.password} onChange={set('password')}
                                        onBlur={() => setTouchedPassword(true)}
                                        error={errors.password}/>
-                        <PasswordField id="confirmPassword" label="Confirm Password" placeholder="Confirm your password"
+                        <PasswordField id="confirmPassword" label={t('auth.confirmPassword')}
+                                       placeholder={t('auth.confirmPasswordPlaceholder')}
                                        autoComplete="new-password" value={form.confirmPassword}
                                        onChange={set('confirmPassword')} error={errors.confirmPassword}/>
                         <PasswordStrength id="password" className="sm:col-span-2"
@@ -839,7 +667,7 @@ export const RegisterPage = () => {
 
                     <div className="mt-5">
                         <label
-                            className="flex cursor-pointer items-start gap-2.5 text-[0.95rem] leading-snug text-[#1f2d26]">
+                            className="flex cursor-pointer items-start gap-2.5 text-[0.95rem] leading-snug text-ink">
                             <input
                                 type="checkbox"
                                 checked={agreed}
@@ -849,19 +677,19 @@ export const RegisterPage = () => {
                                 }}
                                 aria-invalid={Boolean(errors.terms) || undefined}
                                 aria-describedby={errors.terms ? 'terms-error' : undefined}
-                                className="mt-0.5 h-6 w-6 flex-none cursor-pointer rounded-[3px] border-[#2b3a30] accent-[#14512f] lg:h-4.5 lg:w-4.5"/>
+                                className="mt-0.5 h-6 w-6 flex-none cursor-pointer rounded-[3px] border-[#6f9db8] accent-sage-700 lg:h-4.5 lg:w-4.5"/>
                             <span>
-                                I agree to the{' '}
+                                {t('auth.agreePrefix')}{' '}
                                 <Link
                                     to={authRoutes.terms}
-                                    className="py-1 font-bold text-[#14512f] no-underline transition-colors hover:text-[#0f4226]">
-                                    Terms and Conditions
+                                    className="py-1 font-bold text-sage-700 no-underline transition-colors hover:text-sage-800">
+                                    {t('auth.terms')}
                                 </Link>{' '}
-                                and{' '}
+                                {t('auth.and')}{' '}
                                 <Link
                                     to={authRoutes.privacy}
-                                    className="py-1 font-bold text-[#14512f] no-underline transition-colors hover:text-[#0f4226]">
-                                    Privacy Policy
+                                    className="py-1 font-bold text-sage-700 no-underline transition-colors hover:text-sage-800">
+                                    {t('auth.privacy')}
                                 </Link>
                             </span>
                         </label>
@@ -872,31 +700,32 @@ export const RegisterPage = () => {
                     <button
                         type="submit"
                         disabled={submitting}
-                        className="mt-6 flex min-h-15 w-full items-center justify-center gap-3 rounded-[10px] border border-[#14512f] bg-[#14512f] text-[1.05rem] font-bold text-white transition hover:-translate-y-px hover:bg-[#0f4226] hover:shadow-[0_8px_16px_rgba(20,81,47,.24)] disabled:cursor-wait disabled:opacity-80">
+                        className="mt-6 flex min-h-15 w-full items-center justify-center gap-3 rounded-[10px] border border-sage-700 bg-sage-700 text-[1.05rem] font-bold text-white transition hover:-translate-y-px hover:bg-sage-800 hover:shadow-[0_8px_16px_rgba(3,105,161,.24)] disabled:cursor-wait disabled:opacity-80">
                         <Icon name="userPlus" size={21}/>
-                        {submitting ? 'Creating your account…' : 'Register'}
+                        {submitting ? t('auth.creatingAccount') : t('auth.register')}
                     </button>
 
-                    <div className="my-4 text-center text-[0.95rem] font-bold tracking-wide text-[#5d6b62]">OR</div>
+                    <div
+                        className="my-4 text-center text-[0.95rem] font-bold tracking-wide text-[#5b7b8f]">{t('common.or')}</div>
 
                     {/* Phones: two icon-only cards side by side, exactly like the login screen.
                         From sm up: the register screen's own full-width buttons. */}
                     <div className="mt-4 flex gap-3 sm:block sm:space-y-3.5">
                         <Link to={authRoutes.google}
-                              className="flex min-h-13 flex-1 items-center justify-center gap-0 rounded-[10px] border border-[#dce5ef] bg-white text-base font-bold text-white shadow-sm transition hover:-translate-y-px hover:shadow-[0_8px_16px_rgba(50,65,220,.25)] sm:min-h-14.5 sm:w-full sm:gap-3 sm:rounded-[10px] sm:border-[#4157f4] sm:bg-[#4157f4] sm:text-[1.02rem] sm:shadow-none sm:hover:bg-[#3349e8]">
-                            <GoogleIcon/><span className="sr-only sm:not-sr-only">Continue with Google</span>
+                              className="flex min-h-13 flex-1 items-center justify-center gap-0 rounded-[10px] border border-[#9dc2d6] bg-white text-base font-bold text-ink shadow-sm transition hover:-translate-y-px hover:border-sage-600 hover:bg-cream sm:min-h-14.5 sm:w-full sm:gap-3 sm:rounded-[10px] sm:text-[1.02rem]">
+                            <GoogleIcon/><span className="sr-only sm:not-sr-only">{t('auth.continueGoogle')}</span>
                         </Link>
 
                         <Link to={authRoutes.facebook}
-                              className="flex min-h-13 flex-1 items-center justify-center gap-0 rounded-[10px] border border-[#dce5ef] bg-white text-base font-bold text-[#292B2B] shadow-sm transition hover:-translate-y-px hover:border-[#1877F2] hover:bg-[#f8fbff] hover:text-[#1877F2] sm:min-h-14.5 sm:w-full sm:gap-3 sm:border-[#c9cfd6] sm:text-[1.02rem] sm:text-[#1f2d26] sm:shadow-none">
-                            <FacebookIcon/><span className="sr-only sm:not-sr-only">Continue with Facebook</span>
+                              className="flex min-h-13 flex-1 items-center justify-center gap-0 rounded-[10px] border border-line bg-white text-base font-bold text-[#33566c] shadow-sm transition hover:-translate-y-px hover:border-[#1877F2] hover:bg-[#f8fbff] hover:text-[#1877F2] sm:min-h-14.5 sm:w-full sm:gap-3 sm:border-[#c9cfd6] sm:text-[1.02rem] sm:text-ink sm:shadow-none">
+                            <FacebookIcon/><span className="sr-only sm:not-sr-only">{t('auth.continueFacebook')}</span>
                         </Link>
                     </div>
 
-                    <div className="mt-5 text-center text-[0.96rem] text-[#1f2d26]">
-                        Already have an account?{' '}
+                    <div className="mt-5 text-center text-[0.96rem] text-ink">
+                        {t('auth.haveAccount')}{' '}
                         <Link to={authRoutes.login}
-                              className="px-1.5 py-2 font-bold text-[#14512f] hover:underline">Login</Link>
+                              className="px-1.5 py-2 font-bold text-sage-700 hover:underline">{t('auth.login')}</Link>
                     </div>
                 </form>
             </div>

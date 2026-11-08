@@ -1,27 +1,39 @@
 import {createContext, type ReactNode, useContext, useMemo, useState} from 'react'
 import {authService, type LoginCredentials} from '../services/authService'
+import type {DemoUser} from '../data/demoUsers'
 
 type AuthContextValue = {
     isSigningIn: boolean
-    signIn: (credentials: LoginCredentials) => Promise<void>
+    /** The signed-in demo user, or null before sign-in. */
+    user: DemoUser | null
+    signIn: (credentials: LoginCredentials) => Promise<DemoUser>
+    signOut: () => void
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export const AuthProvider = ({children}: { children: ReactNode }) => {
     const [isSigningIn, setIsSigningIn] = useState(false)
+    const [user, setUser] = useState<DemoUser | null>(() => authService.current())
 
     const value = useMemo<AuthContextValue>(() => ({
         isSigningIn,
+        user,
         signIn: async (credentials) => {
             setIsSigningIn(true)
             try {
-                await authService.login(credentials)
+                const signedIn = await authService.login(credentials)
+                setUser(signedIn)
+                return signedIn
             } finally {
                 setIsSigningIn(false)
             }
         },
-    }), [isSigningIn])
+        signOut: () => {
+            authService.signOut()
+            setUser(null)
+        },
+    }), [isSigningIn, user])
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

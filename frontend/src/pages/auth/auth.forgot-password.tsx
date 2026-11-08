@@ -2,7 +2,9 @@ import type {FormEvent} from 'react'
 import {useEffect, useRef, useState} from 'react'
 import {Link, useNavigate} from 'react-router-dom'
 import {LotusMark} from '../../components/AuthIcons'
-import {AuthShell} from '../../layouts/AuthShell'
+import {AUTH_HEADING, AUTH_SUBTITLE, AuthShell} from '../../layouts/AuthShell'
+import {LanguageToggle} from '../../components/LanguageToggle'
+import {useTranslation} from 'react-i18next'
 import {authRoutes} from '../../routes/authRoutes'
 
 type ResetIconName = 'arrow' | 'check' | 'key' | 'mail' | 'person' | 'shield'
@@ -38,10 +40,10 @@ const ResetIcon = ({name, size = 22}: { name: ResetIconName; size?: number }) =>
 
 
 /** Card shell matching the login screen: cream card, gold lotus, Petrona heading. */
-const CARD = 'mx-auto mt-0 w-full max-w-141.5 rounded-[24px] border border-white/30 bg-[#fffdf4]/[.98] px-5 pb-7 pt-8 shadow-[0_22px_42px_rgba(9,20,13,.15)] sm:rounded-2xl sm:px-7 sm:pb-8 sm:pt-9 lg:my-auto lg:px-12 lg:pb-11 lg:pt-10'
-const FIELD = 'flex h-12 items-center gap-3 rounded-[9px] border border-[#292B2B] bg-white px-3 text-[#292B2B] transition focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.12)] lg:h-11'
-const INPUT = 'w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 font-temple text-base text-[#292B2B] outline-none placeholder:text-[#292B2B] lg:text-[.95rem]'
-const PRIMARY = 'flex min-h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#1d5c46] bg-[#1d5c46] text-base font-bold text-white transition hover:-translate-y-px hover:bg-[#154935] hover:shadow-[0_8px_16px_rgba(24,80,61,.24)] disabled:cursor-wait disabled:opacity-75 lg:min-h-12.75'
+const CARD = 'relative mx-auto mt-0 w-full max-w-141.5 rounded-[24px] border border-white/40 bg-[linear-gradient(180deg,#f2fafe_0%,#e8f6fe_100%)] px-5 pb-7 pt-8 shadow-[0_26px_60px_-18px_rgba(4,24,43,.55)] sm:rounded-2xl sm:px-7 sm:pb-8 sm:pt-9 lg:my-auto lg:px-12 lg:pb-11 lg:pt-10'
+const FIELD = 'flex h-12 items-center gap-3 rounded-[9px] border border-[#6f9db8] bg-white px-3 text-[#0f2b3d] transition placeholder:text-[#8299a8] focus-within:shadow-[0_0_0_3px_rgba(2,132,199,.16)] lg:h-11'
+const INPUT = 'w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 font-temple text-base text-[#0f2b3d] outline-none placeholder:text-[#8299a8] lg:text-[.95rem]'
+const PRIMARY = 'flex min-h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#0284c7] bg-[#0284c7] text-base font-bold text-white transition hover:-translate-y-px hover:bg-[#0369a1] hover:shadow-[0_8px_16px_rgba(24,80,61,.24)] disabled:cursor-wait disabled:opacity-75 lg:min-h-12.75'
 
 /** of***@domain.lk - enough to recognise, not enough to leak the whole address. */
 const mask = (value: string) => {
@@ -50,6 +52,7 @@ const mask = (value: string) => {
 }
 
 export const ForgotPasswordPage = () => {
+    const {t} = useTranslation()
     const navigate = useNavigate()
     const [identifier, setIdentifier] = useState('')
     const [error, setError] = useState<string | undefined>()
@@ -97,12 +100,13 @@ export const ForgotPasswordPage = () => {
         return (
             <AuthShell>
                 <div className={CARD}>
+                    <LanguageToggle tone="card" label={false} className="absolute top-3 right-3 z-10"/>
                     <header className="text-center">
-                        <LotusMark width={112} className="mx-auto mb-0"/>
-                        <h1 className="mb-2.5 mt-1 font-display text-[1.9rem] leading-none tracking-tight text-[#123c2e] sm:text-[clamp(2rem,2.6vw,2.7rem)]">
+                        <LotusMark width={168} className="mx-auto mb-1"/>
+                        <h1 className={AUTH_HEADING}>
                             Check your inbox
                         </h1>
-                        <p className="m-0 text-[1.02rem] leading-relaxed text-[#111]">
+                        <p className={AUTH_SUBTITLE}>
                             If an account matches <b className="font-bold">{mask(sentTo)}</b>, a password reset link is
                             on
                             its way.
@@ -110,28 +114,28 @@ export const ForgotPasswordPage = () => {
                     </header>
 
                     <div role="status" aria-live="polite"
-                         className="mt-7 flex items-start gap-3 rounded-[10px] border border-[#1d5c46]/25 bg-[#eef6ef] px-4 py-3.5 text-[#1f2d26]">
-                        <span className="mt-0.5 flex-none text-[#1d5c46]"><ResetIcon name="check" size={20}/></span>
+                         className="mt-7 flex items-start gap-3 rounded-[10px] border border-sage-600/25 bg-[#eef6ef] px-4 py-3.5 text-ink">
+                        <span className="mt-0.5 flex-none text-sage-600"><ResetIcon name="check" size={20}/></span>
                         <span className="text-[.92rem] leading-relaxed">
                             The link can be used once and expires in <b className="font-bold">30 minutes</b>. If it has not
                             arrived in a few minutes, check the spam folder.
                         </span>
                     </div>
 
-                    <ul className="mt-6 space-y-2.5 text-[.92rem] leading-relaxed text-[#2c3a31]">
+                    <ul className="mt-6 space-y-2.5 text-[.92rem] leading-relaxed text-[#33566c]">
                         <li className="flex gap-2.5">
-                            <span className="mt-0.5 flex-none text-[#1d5c46]"><ResetIcon name="mail" size={18}/></span>
+                            <span className="mt-0.5 flex-none text-sage-600"><ResetIcon name="mail" size={18}/></span>
                             <span>The link opens a page where you choose a new password. Your current password keeps working
                                 until then.</span>
                         </li>
                         <li className="flex gap-2.5">
-                            <span className="mt-0.5 flex-none text-[#1d5c46]"><ResetIcon name="shield"
+                            <span className="mt-0.5 flex-none text-sage-600"><ResetIcon name="shield"
                                                                                          size={18}/></span>
                             <span>Nobody from the temple or the system provider will ever ask you for your password or for
                                 the reset link.</span>
                         </li>
                         <li className="flex gap-2.5">
-                            <span className="mt-0.5 flex-none text-[#1d5c46]"><ResetIcon name="person"
+                            <span className="mt-0.5 flex-none text-sage-600"><ResetIcon name="person"
                                                                                          size={18}/></span>
                             <span>No access to that inbox or phone number? Ask your temple’s Temple Admin or
                                 Co-Administrator to recover the account for you.</span>
@@ -155,12 +159,12 @@ export const ForgotPasswordPage = () => {
                     <div
                         className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-[#d9d3bf] pt-5 text-[.94rem]">
                         <Link to={authRoutes.login}
-                              className="inline-flex min-h-11 items-center px-1 font-bold text-[#14512f] hover:underline lg:min-h-0">
+                              className="inline-flex min-h-11 items-center px-1 font-bold text-sage-700 hover:underline lg:min-h-0">
                             Back to sign in
                         </Link>
                         <span aria-hidden="true" className="text-[#9a9484]">·</span>
                         <button type="button"
-                                className="inline-flex min-h-11 items-center px-1 font-bold text-[#14512f] hover:underline lg:min-h-0"
+                                className="inline-flex min-h-11 items-center px-1 font-bold text-sage-700 hover:underline lg:min-h-0"
                                 onClick={() => {
                                     setSentTo(null)
                                     setResent(false)
@@ -180,19 +184,20 @@ export const ForgotPasswordPage = () => {
     return (
         <AuthShell>
             <div className={CARD}>
+                <LanguageToggle tone="card" label={false} className="absolute top-3 right-3 z-10"/>
                 <header className="text-center">
-                    <LotusMark width={112} className="mx-auto mb-0"/>
-                    <h1 className="mb-2.5 mt-1 font-display text-[1.9rem] leading-none tracking-tight text-[#123c2e] sm:text-[clamp(2rem,2.6vw,2.7rem)]">
-                        Reset your password
+                    <LotusMark width={168} className="mx-auto mb-1"/>
+                    <h1 className={AUTH_HEADING}>
+                        {t('auth.forgotTitle')}
                     </h1>
-                    <p className="m-0 text-[1.02rem] text-[#111]">
-                        Enter your registered email address and we will send a reset link.
+                    <p className={AUTH_SUBTITLE}>
+                        {t('auth.forgotSubtitle')}
                     </p>
                 </header>
 
                 <form className="mt-7 sm:mt-9" onSubmit={submit} noValidate>
                     <label className="block" htmlFor="reset-identifier">
-                        <span className="mb-3 block text-base text-[#131313]">Email Address</span>
+                        <span className="mb-3 block text-base text-[#131313]">{t('auth.email')}</span>
                         <span
                             className={`${FIELD} ${error ? 'border-status-rose shadow-[0_0_0_3px_rgba(173,28,3,.12)]' : ''}`}>
                             <ResetIcon name="person" size={21}/>
@@ -205,7 +210,7 @@ export const ForgotPasswordPage = () => {
                                 inputMode="email"
                                 autoCapitalize="none"
                                 spellCheck={false}
-                                placeholder="Enter your registered email address"
+                                placeholder={t('auth.emailPlaceholder')}
                                 value={identifier}
                                 aria-invalid={Boolean(error) || undefined}
                                 aria-describedby={error ? 'reset-identifier-error' : undefined}
@@ -220,10 +225,10 @@ export const ForgotPasswordPage = () => {
                               className="mt-2 block text-[.8rem] leading-snug text-status-rose">{error}</span>}
 
                     <button className={`${PRIMARY} mt-7`} type="submit" disabled={sending}>
-                        {sending ? 'Sending…' : 'Send reset link'} <ResetIcon name="arrow" size={19}/>
+                        {sending ? t('auth.sending') : t('auth.sendReset')} <ResetIcon name="arrow" size={19}/>
                     </button>
 
-                    <p className="mt-4 text-center text-[.88rem] leading-relaxed text-[#5d6b62]">
+                    <p className="mt-4 text-center text-[.88rem] leading-relaxed text-[#5b7b8f]">
                         The reset link is sent to your registered email address.
                         <br className="hidden sm:inline"/> If it has not arrived in a few minutes, check the spam
                         folder.
@@ -233,12 +238,12 @@ export const ForgotPasswordPage = () => {
                 <div
                     className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-[#d9d3bf] pt-5 text-[.94rem]">
                     <Link to={authRoutes.login}
-                          className="inline-flex min-h-11 items-center px-1 font-bold text-[#14512f] hover:underline lg:min-h-0">
-                        Back to sign in
+                          className="inline-flex min-h-11 items-center px-1 font-bold text-sage-700 hover:underline lg:min-h-0">
+                        {t('auth.backToLogin')}
                     </Link>
                     <span aria-hidden="true" className="text-[#9a9484]">·</span>
                     <button type="button"
-                            className="inline-flex min-h-11 items-center px-1 font-bold text-[#14512f] hover:underline lg:min-h-0"
+                            className="inline-flex min-h-11 items-center px-1 font-bold text-sage-700 hover:underline lg:min-h-0"
                             onClick={() => navigate(authRoutes.register)}>
                         Create an account
                     </button>
