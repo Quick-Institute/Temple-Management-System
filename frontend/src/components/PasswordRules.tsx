@@ -60,7 +60,7 @@ export const firstUnmetRule = (value: string): PasswordRule | null =>
  * A longer password with every rule met is the only way to reach "Strong".
  */
 export const passwordStrength = (value: string) => {
-    if (!value) return {label: 'Empty', bars: 0, color: '#8b8b8b', tone: 'idle' as const}
+    if (!value) return {label: 'Empty', bars: 0, color: '#8ba3b0', tone: 'idle' as const}
 
     const tooShort = value.length < MIN_PASSWORD_LENGTH
     if (tooShort) return {label: 'Too short', bars: 1, color: '#ad1c03', tone: 'weak' as const}
@@ -70,5 +70,5 @@ export const passwordStrength = (value: string) => {
 
     if (points <= 2) return {label: 'Weak', bars: 1, color: '#ad1c03', tone: 'weak' as const}
     if (points <= 4) return {label: 'Medium', bars: 2, color: '#a26a0c', tone: 'medium' as const}
-    return {label: 'Strong', bars: 3, color: '#1d5c46', tone: 'strong' as const}
+    return {label: 'Strong', bars: 3, color: '#0284c7', tone: 'strong' as const}
 }

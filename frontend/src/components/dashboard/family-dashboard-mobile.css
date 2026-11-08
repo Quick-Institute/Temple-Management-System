@@ -1,181 +1,181 @@
 /* Family dashboard refinements for phones only.
    Tablet (640px+) and desktop layouts intentionally remain unchanged. */
 @media (max-width: 639px) {
-  .family-dashboard-page {
-    gap: 12px;
-  }
+    .family-dashboard-page {
+        gap: 12px;
+    }
 
-  .family-welcome-banner {
-    height: 310px;
-    border-radius: 15px;
-    background-position: 57% center !important;
-  }
+    .family-welcome-banner {
+        height: 310px;
+        border-radius: 15px;
+        background-position: 57% center !important;
+    }
 
-  .family-banner-copy {
-    top: 20px;
-    left: 18px;
-    max-width: min(245px, calc(100% - 36px));
-  }
+    .family-banner-copy {
+        top: 20px;
+        left: 18px;
+        max-width: min(245px, calc(100% - 36px));
+    }
 
-  .family-banner-copy > p:first-child {
-    font-size: 18px;
-  }
+    .family-banner-copy > p:first-child {
+        font-size: 18px;
+    }
 
-  .family-banner-copy h1 {
-    font-size: 42px;
-    line-height: 1.05;
-  }
+    .family-banner-copy h1 {
+        font-size: 42px;
+        line-height: 1.05;
+    }
 
-  .family-banner-copy > p:nth-of-type(2) {
-    max-width: 225px;
-    font-size: 15px;
-    line-height: 1.35;
-  }
+    .family-banner-copy > p:nth-of-type(2) {
+        max-width: 225px;
+        font-size: 15px;
+        line-height: 1.35;
+    }
 
-  .family-banner-quote {
-    top: 190px;
-    left: auto;
-    right: 12px;
-    width: min(205px, calc(100% - 36px));
-    padding: 9px 10px;
-    transform: none;
-    border: 1px solid rgba(185, 154, 57, 0.16);
-    background: rgba(255, 248, 229, 0.94);
-    box-shadow: 0 3px 12px rgba(35, 73, 54, 0.07);
-  }
+    .family-banner-quote {
+        top: 190px;
+        left: auto;
+        right: 12px;
+        width: min(205px, calc(100% - 36px));
+        padding: 9px 10px;
+        transform: none;
+        border: 1px solid rgba(57, 151, 185, 0.16);
+        background: rgba(229, 248, 255, 0.94);
+        box-shadow: 0 3px 12px rgba(35, 60, 73, 0.07);
+    }
 
-  .family-banner-quote > img:first-child {
-    width: 48px;
-    height: 23px;
-    margin-bottom: 4px;
-  }
+    .family-banner-quote > img:first-child {
+        width: 48px;
+        height: 23px;
+        margin-bottom: 4px;
+    }
 
-  .family-banner-quote > p {
-    font-size: 12px;
-    line-height: 1.4;
-  }
+    .family-banner-quote > p {
+        font-size: 12px;
+        line-height: 1.4;
+    }
 
-  .family-banner-quote > img:last-child {
-    width: 68px;
-    height: 21px;
-    margin-top: 2px;
-  }
+    .family-banner-quote > img:last-child {
+        width: 68px;
+        height: 21px;
+        margin-top: 2px;
+    }
 
-  .family-dashboard-sections {
-    margin-top: -3px;
-    gap: 11px;
-  }
+    .family-dashboard-sections {
+        margin-top: -3px;
+        gap: 11px;
+    }
 
-  .family-summary-card {
-    min-height: 84px;
-    gap: 10px;
-    padding: 10px 12px;
-  }
+    .family-summary-card {
+        min-height: 84px;
+        gap: 10px;
+        padding: 10px 12px;
+    }
 
-  .family-summary-card > span:first-child {
-    width: 44px;
-    height: 44px;
-  }
+    .family-summary-card > span:first-child {
+        width: 44px;
+        height: 44px;
+    }
 
-  .family-summary-card > span:first-child svg {
-    width: 20px;
-    height: 20px;
-  }
+    .family-summary-card > span:first-child svg {
+        width: 20px;
+        height: 20px;
+    }
 
-  .family-summary-card h3 {
-    font-size: 12px;
-    line-height: 17px;
-  }
+    .family-summary-card h3 {
+        font-size: 12px;
+        line-height: 17px;
+    }
 
-  .family-summary-card p {
-    margin-top: 2px;
-    font-size: 13px;
-    line-height: 18px;
-  }
+    .family-summary-card p {
+        margin-top: 2px;
+        font-size: 13px;
+        line-height: 18px;
+    }
 
-  .family-summary-card > div > div {
-    margin-top: 2px;
-    font-size: 10px;
-    line-height: 15px;
-  }
+    .family-summary-card > div > div {
+        margin-top: 2px;
+        font-size: 10px;
+        line-height: 15px;
+    }
 
-  .family-quick-actions-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    padding-inline: 0;
-  }
+    .family-quick-actions-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        padding-inline: 0;
+    }
 
-  .family-quick-action {
-    min-height: 76px;
-    gap: 7px;
-    padding: 9px 8px;
-  }
+    .family-quick-action {
+        min-height: 76px;
+        gap: 7px;
+        padding: 9px 8px;
+    }
 
-  .family-quick-action > span:first-child {
-    width: 34px;
-    height: 34px;
-  }
+    .family-quick-action > span:first-child {
+        width: 34px;
+        height: 34px;
+    }
 
-  .family-quick-action > span:first-child svg {
-    width: 17px;
-    height: 17px;
-  }
+    .family-quick-action > span:first-child svg {
+        width: 17px;
+        height: 17px;
+    }
 
-  .family-quick-action h3 {
-    font-size: 11px;
-    line-height: 15px;
-  }
+    .family-quick-action h3 {
+        font-size: 11px;
+        line-height: 15px;
+    }
 
-  .family-quick-action p {
-    font-size: 9px;
-    line-height: 12px;
-  }
+    .family-quick-action p {
+        font-size: 9px;
+        line-height: 12px;
+    }
 
-  .family-notification-row {
-    flex-wrap: nowrap;
-    align-items: flex-start;
-    gap: 8px;
-    padding-block: 9px;
-  }
+    .family-notification-row {
+        flex-wrap: nowrap;
+        align-items: flex-start;
+        gap: 8px;
+        padding-block: 9px;
+    }
 
-  .family-notification-copy {
-    flex: 1 1 0;
-    min-width: 0;
-    flex-basis: auto;
-  }
+    .family-notification-copy {
+        flex: 1 1 0;
+        min-width: 0;
+        flex-basis: auto;
+    }
 
-  .family-notification-copy h3 {
-    font-size: 11px;
-    line-height: 15px;
-    overflow-wrap: anywhere;
-  }
+    .family-notification-copy h3 {
+        font-size: 11px;
+        line-height: 15px;
+        overflow-wrap: anywhere;
+    }
 
-  .family-notification-copy p {
-    font-size: 9px;
-    line-height: 13px;
-    overflow-wrap: anywhere;
-  }
+    .family-notification-copy p {
+        font-size: 9px;
+        line-height: 13px;
+        overflow-wrap: anywhere;
+    }
 
-  .family-notification-time {
-    flex-shrink: 0;
-    margin-left: 0;
-    padding-top: 1px;
-    font-size: 8px;
-  }
+    .family-notification-time {
+        flex-shrink: 0;
+        margin-left: 0;
+        padding-top: 1px;
+        font-size: 8px;
+    }
 }
 
 @media (max-width: 359px) {
-  .family-banner-copy h1 {
-    font-size: 38px;
-  }
+    .family-banner-copy h1 {
+        font-size: 38px;
+    }
 
-  .family-banner-quote {
-    right: 9px;
-    width: 190px;
-  }
+    .family-banner-quote {
+        right: 9px;
+        width: 190px;
+    }
 
-  .family-quick-action {
-    gap: 5px;
-    padding-inline: 6px;
-  }
+    .family-quick-action {
+        gap: 5px;
+        padding-inline: 6px;
+    }
 }

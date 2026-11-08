@@ -1,29 +1,65 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { AuthLoginPage } from '../pages/auth/auth.login';
-import {ForgotPasswordPage} from '../pages/auth/auth.forgot-password';
-import {RegisterPage} from '../pages/auth/auth.register';
-import {ResetPasswordPage} from '../pages/auth/auth.reset-password';
-import {PrivacyPage} from '../pages/legal/legal.privacy';
-import {TermsPage} from '../pages/legal/legal.terms';
-import { authRoutes } from './authRoutes';
-import DonationPage from '../pages/DonationPage';
-import DonationSuccessPage from '../pages/DonationSuccessPage';
-import SuggestionsPage from '../pages/SuggestionsPage';
-import AdminSuggestionsPage from '../pages/admin/AdminSuggestionsPage';
-import {DashboardRoute, FamilyOnly, PlaceholderPage, PortalLayout} from './PortalLayout';
-import {portalUser} from './portalContext';
-import {portalRoutes} from './portalRoutes';
-import DanaSchedulePage from '../pages/family/DanaSchedulePage';
-import DanaBookingPage from '../pages/family/DanaBookingPage';
-import BookingConfirmationPage from '../pages/family/BookingConfirmationPage';
-import MyBookingsPage from '../pages/family/MyBookingsPage';
-import TempleAdminDashboard from '../pages/temple/TempleAdminDashboard';
-import SuperAdminDashboard from '../pages/admin/SuperAdminDashboard';
+import {Navigate, Route, Routes} from 'react-router-dom'
+import {ForgotPasswordPage} from '../pages/auth/auth.forgot-password'
+import {AuthLoginPage} from '../pages/auth/auth.login'
+import {RegisterPage} from '../pages/auth/auth.register'
+import {ResetPasswordPage} from '../pages/auth/auth.reset-password'
+import {SocialSignInRoute} from '../pages/auth/auth.social'
+import {PrivacyPage} from '../pages/legal/legal.privacy'
+import {TermsPage} from '../pages/legal/legal.terms'
+import {AddTemplePage} from '../pages/temple/temple.add'
+import {TempleDetailsPage} from '../pages/temple/temple.details'
+import {TempleListPage} from '../pages/temple/temple.list'
+import {TempleModulePage} from '../pages/temple/temple.module'
+import {UserManagementPage} from '../pages/admin/user.management.page'
+import {MyTemplePage} from '../pages/temple/temple.mine'
+import {ProfilePage} from '../pages/profile.page'
+import {adminRoutes} from './adminRoutes'
+import {authRoutes} from './authRoutes'
+import {RequireEdit, RequirePermission, RequirePermissionShell} from './guards'
+import {usePermissions} from '../hooks/usePermissions'
+/* Upstream: donation workflow and community suggestions. */
+import DonationPage from '../pages/DonationPage'
+import DonationSuccessPage from '../pages/DonationSuccessPage'
+import SuggestionsPage from '../pages/SuggestionsPage'
+import AdminSuggestionsPage from '../pages/admin/AdminSuggestionsPage'
+/* Upstream portal screens. They render inside PortalLayout, which mounts our own AppShell. */
+import {DashboardRoute, PlaceholderPage, PortalLayout} from './PortalLayout'
+import {portalRoutes} from './portalRoutes'
+import {usePortalUser} from './portalContext'
+import DanaSchedulePage from '../pages/family/DanaSchedulePage'
+import DanaBookingPage from '../pages/family/DanaBookingPage'
+import BookingConfirmationPage from '../pages/family/BookingConfirmationPage'
+import MyBookingsPage from '../pages/family/MyBookingsPage'
+
+
+const OwnTempleOnly = ({children}: { children: React.ReactNode }) => {
+    const {role} = usePermissions()
+    const ownTempleOnly = ['family', 'coAdmin', 'committeeRepresentative', 'religiousRepresentative']
+    if (ownTempleOnly.includes(role)) return <Navigate to={adminRoutes.templeInformation} replace/>
+    return <>{children}</>
+}
+
+const TempleHomeRoute = () => {
+    const {role} = usePermissions()
+    const ownTempleOnly = ['family', 'coAdmin', 'committeeRepresentative', 'religiousRepresentative']
+    if (ownTempleOnly.includes(role)) return <MyTemplePage/>
+    return <TempleListPage/>
+}
+
+/* Upstream pages take the signed-in user as a prop; these wrappers read it from AuthContext. */
+const DanaScheduleRoute = () => <DanaSchedulePage user={usePortalUser()}/>
+const DanaBookingRoute = () => <DanaBookingPage user={usePortalUser()}/>
+const MyBookingsRoute = () => <MyBookingsPage user={usePortalUser()}/>
+
 
 export const AppRoutes = () => (
     <Routes>
         <Route path={authRoutes.login} element={<AuthLoginPage/>}/>
-        <Route path={authRoutes.register} element={<RegisterPage/>}/>
+
+        <Route path={authRoutes.registerParam} element={<RegisterPage/>}/>
+        <Route path={authRoutes.registerRoot} element={<Navigate to={authRoutes.registerAdmin} replace/>}/>
+        <Route path={authRoutes.registerCommitteeMemberAlias}
+               element={<Navigate to={authRoutes.registerCommitteeMember} replace/>}/>
         <Route path={authRoutes.forgotPassword} element={<ForgotPasswordPage/>}/>
         <Route path={authRoutes.resetPassword} element={<ResetPasswordPage/>}/>
 
@@ -31,45 +67,98 @@ export const AppRoutes = () => (
         <Route path={authRoutes.terms} element={<TermsPage/>}/>
         <Route path={authRoutes.privacy} element={<PrivacyPage/>}/>
 
-        {/* Social sign-in is not connected yet - it opens the dashboard. */}
-        <Route path={authRoutes.google} element={<Navigate to={authRoutes.dashboard} replace/>}/>
-        <Route path={authRoutes.facebook} element={<Navigate to={authRoutes.dashboard} replace/>}/>
+        {/*
+         * Social sign-in is a placeholder: the providers are not connected yet, so both buttons
+         * sign in as the Temple Admin demo account and open its dashboard.
+         */}
+        <Route path={authRoutes.google} element={<SocialSignInRoute provider="Google"/>}/>
+        <Route path={authRoutes.facebook} element={<SocialSignInRoute provider="Facebook"/>}/>
 
-        {/* Donation Module */}
-        <Route path="/donation" element={<DonationPage />} />
-        <Route path="/donation/success" element={<DonationSuccessPage />} />
+        {/* Donation Module (public) */}
+        <Route path="/donation" element={<DonationPage/>}/>
+        <Route path="/donation/success" element={<DonationSuccessPage/>}/>
 
-        {/*Community Suggestions Section*/}
-        <Route path="/suggestions" element={<SuggestionsPage />} />
-        <Route path="/admin/suggestions" element={<AdminSuggestionsPage />} />
+        {/* Community Suggestions */}
+        <Route path="/suggestions" element={<SuggestionsPage/>}/>
+        <Route path="/admin/suggestions" element={<AdminSuggestionsPage/>}/>
 
-        {/* Portal screens (family / temple admin / co-admin / super admin) inside the shared MainLayout. */}
+        {/* ------------------------------- portal group ------------------------------- */}
         <Route element={<PortalLayout/>}>
-            <Route path={portalRoutes.dashboard} element={<DashboardRoute/>}/>
-            <Route path={portalRoutes.danaSchedule} element={<FamilyOnly><DanaSchedulePage user={portalUser}/></FamilyOnly>}/>
-            {/* Nested under /dana-schedule so the sidebar keeps "Dana Schedule" highlighted. */}
-            <Route path={portalRoutes.danaBooking} element={<FamilyOnly><DanaBookingPage user={portalUser}/></FamilyOnly>}/>
-            <Route path={portalRoutes.danaConfirmation} element={<FamilyOnly><BookingConfirmationPage/></FamilyOnly>}/>
-            <Route path={portalRoutes.myBookings} element={<FamilyOnly><MyBookingsPage user={portalUser}/></FamilyOnly>}/>
+            {/* Dashboard resolves by user type: family, temple admin or staff representative. */}
+            <Route path={adminRoutes.dashboard} element={<DashboardRoute/>}/>
+            <Route path={adminRoutes.profile} element={<ProfilePage/>}/>
+            <Route path={adminRoutes.myFamily}
+                   element={<RequirePermission
+                       permission="changeRegisteredTemple"><PlaceholderPage/></RequirePermission>}/>
 
-            <Route path={portalRoutes.templeAdmin} element={<Navigate to={`${portalRoutes.templeAdmin}/dashboard`} replace/>}/>
-            <Route path={`${portalRoutes.templeAdmin}/dashboard`} element={<TempleAdminDashboard user={portalUser} basePath={portalRoutes.templeAdmin}/>}/>
+            {/* Dana screens (upstream), permission-checked per FR-24 to FR-29. */}
+            <Route path={adminRoutes.dana}
+                   element={<RequirePermission permission="viewDanaSlots"><DanaScheduleRoute/></RequirePermission>}/>
+            <Route path={portalRoutes.danaBooking}
+                   element={<RequirePermission permission="bookDanaSlot"><DanaBookingRoute/></RequirePermission>}/>
+            <Route path={portalRoutes.danaConfirmation}
+                   element={<RequirePermission
+                       permission="bookDanaSlot"><BookingConfirmationPage/></RequirePermission>}/>
+            <Route path={adminRoutes.myBookings}
+                   element={<RequirePermission permission="viewOwnBookings"><MyBookingsRoute/></RequirePermission>}/>
+            <Route path={portalRoutes.danaSchedule} element={<Navigate to={adminRoutes.dana} replace/>}/>
+            <Route path="/bookings" element={<Navigate to={adminRoutes.myBookings} replace/>}/>
+
+            {/* Upstream role portals. */}
+            <Route path={portalRoutes.templeAdmin}
+                   element={<Navigate to={`${portalRoutes.templeAdmin}/dashboard`} replace/>}/>
+            <Route path={`${portalRoutes.templeAdmin}/dashboard`} element={<DashboardRoute/>}/>
             <Route path={`${portalRoutes.templeAdmin}/:page`} element={<PlaceholderPage/>}/>
 
-            <Route path={portalRoutes.coAdmin} element={<Navigate to={`${portalRoutes.coAdmin}/dashboard`} replace/>}/>
-            <Route path={`${portalRoutes.coAdmin}/dashboard`} element={<TempleAdminDashboard role="coAdmin" user={portalUser} basePath={portalRoutes.coAdmin}/>}/>
+            <Route path={portalRoutes.coAdmin} element={<Navigate to={adminRoutes.coAdminDashboard} replace/>}/>
+            <Route path={adminRoutes.coAdminDashboard} element={<DashboardRoute/>}/>
             <Route path={`${portalRoutes.coAdmin}/:page`} element={<PlaceholderPage/>}/>
 
-            <Route path={portalRoutes.superAdmin} element={<Navigate to={`${portalRoutes.superAdmin}/dashboard`} replace/>}/>
-            <Route path={`${portalRoutes.superAdmin}/dashboard`} element={<SuperAdminDashboard user={portalUser}/>}/>
+            <Route path={portalRoutes.superAdmin}
+                   element={<Navigate to={`${portalRoutes.superAdmin}/dashboard`} replace/>}/>
+            <Route path={`${portalRoutes.superAdmin}/dashboard`} element={<DashboardRoute/>}/>
             <Route path={`${portalRoutes.superAdmin}/:page`} element={<PlaceholderPage/>}/>
-
-            {/* Sidebar items without a screen yet (/events, /notifications, /profile ...). */}
-            <Route path="/:page" element={<PlaceholderPage/>}/>
         </Route>
 
-        <Route path="/" element={<Navigate to={authRoutes.login} replace/>}/>
-        <Route path="*" element={<Navigate to={authRoutes.dashboard} replace/>}/>
-    </Routes>
-);
+        {/* --------------------- screens that carry their own AppShell --------------------- */}
+        <Route path={adminRoutes.templeInformation}
+               element={<RequirePermissionShell
+                   permission="manageTempleInformation"><TempleHomeRoute/></RequirePermissionShell>}/>
+        {/* A family or committee account may not open another temple by URL. */}
+        <Route path={`${adminRoutes.templeInformation}/:id`}
+               element={<RequirePermissionShell permission="manageTempleInformation">
+                   <OwnTempleOnly><TempleDetailsPage/></OwnTempleOnly>
+               </RequirePermissionShell>}/>
+        {/* Only a role that can change temple information reaches the add/edit form. */}
+        <Route path={adminRoutes.templeAdd}
+               element={<RequireEdit permission="manageTempleInformation"><AddTemplePage/></RequireEdit>}/>
 
+        <Route path={adminRoutes.users}
+               element={<RequirePermissionShell
+                   permission="manageUserRoles"><UserManagementPage/></RequirePermissionShell>}/>
+
+        <Route path={adminRoutes.events}
+               element={<RequirePermissionShell permission="manageTempleRecords"><TempleModulePage
+                   module="events"/></RequirePermissionShell>}/>
+        <Route path={adminRoutes.announcements}
+               element={<RequirePermissionShell permission="manageAnnouncements"><TempleModulePage
+                   module="announcements"/></RequirePermissionShell>}/>
+        <Route path={adminRoutes.families}
+               element={<RequirePermissionShell permission="registerFamilyQr"><TempleModulePage
+                   module="families"/></RequirePermissionShell>}/>
+        <Route path={adminRoutes.donations}
+               element={<RequirePermissionShell permission="viewDonations"><TempleModulePage
+                   module="donations"/></RequirePermissionShell>}/>
+        <Route path={adminRoutes.reports}
+               element={<RequirePermissionShell permission="viewTempleAudit"><TempleModulePage
+                   module="reports"/></RequirePermissionShell>}/>
+        <Route path={adminRoutes.settings}
+               element={<RequirePermissionShell permission="manageOptionalModules"><TempleModulePage module="settings"/></RequirePermissionShell>}/>
+        <Route path="/temple-registration"
+               element={<RequirePermissionShell permission="manageRegistrationStatus"><TempleModulePage
+                   module="families"/></RequirePermissionShell>}/>
+
+        <Route path="/" element={<Navigate to={authRoutes.login} replace/>}/>
+        <Route path="*" element={<Navigate to={adminRoutes.dashboard} replace/>}/>
+    </Routes>
+)

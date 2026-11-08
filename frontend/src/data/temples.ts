@@ -164,7 +164,7 @@ export const detectLanguage = (value: string): TempleLanguage =>
 
 const normalise = (value: string) => value.trim().toLocaleLowerCase()
 
-/** Temple name, village or code — typed in either language. Up to `limit` matches. */
+/** Temple name, village or code - typed in either language. Up to `limit` matches. */
 export const suggestTemples = (query: string, limit = 6): Temple[] => {
     const q = normalise(query)
     if (!q) return []
@@ -179,14 +179,14 @@ export const suggestTemples = (query: string, limit = 6): Temple[] => {
     ).slice(0, limit)
 }
 
-/** Exact code match, ignoring case and stray spaces — used when the code field is filled in. */
+/** Exact code match, ignoring case and stray spaces - used when the code field is filled in. */
 export const findTempleByCode = (code: string): Temple | undefined => {
     const wanted = normalise(code)
     if (!wanted) return undefined
     return TEMPLES.find((temple) => normalise(temple.code) === wanted)
 }
 
-/** Exact name match in either language — used when the name field is left. */
+/** Exact name match in either language - used when the name field is left. */
 export const findTempleByName = (name: string): Temple | undefined => {
     const wanted = normalise(name)
     if (!wanted) return undefined
@@ -194,17 +194,6 @@ export const findTempleByName = (name: string): Temple | undefined => {
         normalise(temple.name.en) === wanted || temple.name.si.trim() === name.trim())
 }
 
-/**
- * Name match narrowed by district, so "temple name + district" can pin down one temple when two
- * share a name. Pass an empty district to skip the narrowing.
- */
-/**
- * Resolve a temple from a name, narrowed by a district when one has been chosen.
- *
- * A blank district is no constraint — the name alone is enough, and there is nothing to conflict
- * with. Once a district has been chosen it has to agree: a name that matches a temple in Gampaha
- * must not overwrite a district the user deliberately set to Colombo.
- */
 export const findTempleByNameAndDistrict = (name: string, district: string): Temple | undefined => {
     const matches = TEMPLES.filter((temple) =>
         normalise(temple.name.en) === normalise(name) || temple.name.si.trim() === name.trim())

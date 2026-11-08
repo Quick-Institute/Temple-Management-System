@@ -16,96 +16,110 @@
 
 /* ------------------------------------------------------------------
    Design tokens
-   In-app screens use the blush palette supplied for the project.
-   The auth screens keep the original sage / gold design through the
-   .auth-scope class applied by AuthShell.
+   In-app screens (temple admin) use the deep-green + brass palette of
+   the dashboard wireframe. The auth screens keep the original sage /
+   gold design through the .auth-scope class applied by AuthShell.
    ------------------------------------------------------------------ */
 @theme {
     --font-temple: 'Petrona', Georgia, 'Times New Roman', serif;
     --font-display: 'Petrona', Georgia, 'Times New Roman', serif;
     --font-arial: Arial, Helvetica, sans-serif;
     --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    /* Sinhala has no Petrona/Latin coverage, so it gets its own stack. Iskoola Pota ships with
+       Windows, Noto Sans Sinhala with Android and most Linux desktops. */
+    --font-sinhala: 'Iskoola Pota', 'Noto Sans Sinhala', 'Sinhala Sangam MN', 'Nirmala UI', 'Latha', sans-serif;
 
-    /* Primary - rosewood / terracotta (powder_blush, soft_blush, seashell) */
-    --color-sage-950: #3a120b;
-    --color-sage-900: #4d1810;
-    --color-sage-800: #7a2a1b;
-    --color-sage-700: #963a26;
-    --color-sage-600: #b34f36;
-    --color-sage-500: #c66d5d;
-    --color-sage-400: #dfada4;
-    --color-sage-300: #eec9c2;
-    --color-sage-200: #f7dcd7;
-    --color-sage-100: #fae1dd;
-    --color-sage-50: #fdf2f1;
+    /* Primary - sky blue (the whole app, after the client picked this palette) */
+    --color-sage-950: #082f49;
+    --color-sage-900: #0c4a6e;
+    --color-sage-800: #075985;
+    --color-sage-700: #0369a1;
+    --color-sage-600: #0284c7;
+    --color-sage-500: #0ea5e9;
+    --color-sage-400: #38bdf8;
+    --color-sage-300: #7dd3fc;
+    --color-sage-200: #bae6fd;
+    --color-sage-100: #e0f2fe;
+    --color-sage-50: #f0f9ff;
 
-    /* Accents - peach (peach_glow, peach_fuzz, powder_petal) */
-    --color-gold-800: #6b3400;
-    --color-gold-700: #a24c02;
-    --color-gold-600: #c25e04;
-    --color-gold-500: #fd9d49;
-    --color-gold-400: #ffa260;
-    --color-gold-200: #ffdec6;
-    --color-gold-100: #ffe6d4;
-    --color-gold-50: #fff5f1;
+    /* Accents - cyan (the old brass, retuned for the blue theme) */
+    --color-gold-800: #155e75;
+    --color-gold-700: #0e7490;
+    --color-gold-600: #0891b2;
+    --color-gold-500: #06b6d4;
+    --color-gold-400: #22d3ee;
+    --color-gold-300: #67e8f9;
+    --color-gold-200: #a5f3fc;
+    --color-gold-100: #cffafe;
+    --color-gold-50: #ecfeff;
 
     /* Module tints */
-    --color-sand-100: #ffe9d7;
-    --color-sand-50: #fff7f1;
-    --color-lotus-100: #ffe7e3;
-    --color-lotus-50: #fff3f1;
-    --color-sky-100: #e1e8e4;
-    --color-sky-50: #f7f9f8;
-    --color-mint-50: #fdf2f1;
+    --color-sand-100: #dbeafe;
+    --color-sand-50: #eff6ff;
+    --color-lotus-100: #fde2e4;
+    --color-lotus-50: #fff1f2;
+    --color-sky-100: #bae6fd;
+    --color-sky-50: #f0f9ff;
+    --color-mint-50: #f1faf7;
 
-    /* Surfaces & lines */
+    /* Stat / timeline accents (dashboard icon circles) */
+    --color-accent-blue: #2f6fd0;
+    --color-accent-blue-50: #e8f1fe;
+    --color-accent-green: #0f9d58;
+    --color-accent-green-50: #e7f7ee;
+    --color-accent-gold: #e9a23b;
+    --color-accent-gold-50: #fef5e2;
+    --color-accent-purple: #7a3fd1;
+    --color-accent-purple-50: #f2eafd;
+
+    /* Surfaces & lines - cool, airy, like the dashboard reference */
     --color-paper: #ffffff;
-    --color-cream: #faf1f0;
-    --color-cream-deep: #f4eeea;
-    --color-canvas: #fdf8f7;
-    --color-line: #e8e8e4;
-    --color-line-soft: #f1eeeb;
+    --color-cream: #f2f9fe;
+    --color-cream-deep: #e4f1f9;
+    --color-canvas: #f7fcff;
+    --color-line: #d7e8f3;
+    --color-line-soft: #e9f3fa;
 
     /* Text */
-    --color-ink: #322a26;
-    --color-ink-soft: #5e4f47;
-    --color-muted: #7a6559;
+    --color-ink: #0f2b3d;
+    --color-ink-soft: #405e72;
+    --color-muted: #6b8798;
 
     /* Status */
-    --color-status-green: #4b6656;
-    --color-status-blue: #775d3f;
-    --color-status-amber: #a24c02;
-    --color-status-rose: #ad1c03;
-    --color-status-red: #8f1a02;
+    --color-status-green: #1d7a4b;
+    --color-status-blue: #2f6fd0;
+    --color-status-amber: #b0811a;
+    --color-status-rose: #c0392b;
+    --color-status-red: #a72d1e;
 }
 
-/* Auth screens keep the original sage / gold palette */
+/* Auth screens share the sky palette, with a slightly deeper blue for the night-time photograph. */
 .auth-scope {
-    --color-sage-950: #10261b;
-    --color-sage-900: #1c3b2c;
-    --color-sage-800: #26543d;
-    --color-sage-700: #2f6b4f;
-    --color-sage-600: #3d8461;
-    --color-sage-500: #57a07b;
-    --color-sage-200: #c8e0d1;
-    --color-sage-100: #dcecdf;
-    --color-sage-50: #eef6ef;
+    --color-sage-950: #082f49;
+    --color-sage-900: #0c4a6e;
+    --color-sage-800: #075985;
+    --color-sage-700: #0369a1;
+    --color-sage-600: #0284c7;
+    --color-sage-500: #0ea5e9;
+    --color-sage-200: #bae6fd;
+    --color-sage-100: #e0f2fe;
+    --color-sage-50: #f0f9ff;
 
-    --color-gold-800: #6f5510;
-    --color-gold-700: #8a6a12;
-    --color-gold-500: #c9a227;
-    --color-gold-400: #e0bd62;
-    --color-gold-200: #f0dfae;
-    --color-gold-100: #f8eecb;
-    --color-gold-50: #fdf8e9;
+    --color-gold-800: #155e75;
+    --color-gold-700: #0e7490;
+    --color-gold-500: #0ea5e9;
+    --color-gold-400: #38bdf8;
+    --color-gold-200: #bae6fd;
+    --color-gold-100: #e0f2fe;
+    --color-gold-50: #f0f9ff;
 
-    --color-cream: #f7f9f3;
-    --color-cream-deep: #eff3ea;
-    --color-line: #e3e9dd;
-    --color-line-soft: #edf1e8;
-    --color-ink: #1f2d26;
-    --color-ink-soft: #44564b;
-    --color-muted: #6d7f74;
+    --color-cream: #f4fbff;
+    --color-cream-deep: #e6f3fb;
+    --color-line: #d7e8f3;
+    --color-line-soft: #e9f3fa;
+    --color-ink: #0f2b3d;
+    --color-ink-soft: #405e72;
+    --color-muted: #6b8798;
 }
 
 @layer base {
@@ -115,7 +129,7 @@
     }
 
     body {
-        @apply m-0 min-h-screen bg-canvas font-sans text-[16px] leading-relaxed text-ink antialiased;
+        @apply m-0 min-h-screen bg-canvas font-sans text-[17px] leading-relaxed text-ink antialiased;
     }
 
     h1,
@@ -137,6 +151,8 @@
         outline: 2px solid var(--color-sage-600);
         outline-offset: 2px;
     }
+
+
 }
 
 /* ------------------------------------------------------------------
@@ -149,7 +165,7 @@
     }
 
     .btn {
-        @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-transparent px-4 text-[0.95rem] font-semibold transition duration-150 select-none;
+        @apply inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-transparent px-5 text-[1.02rem] font-semibold transition duration-150 select-none;
     }
 
     .btn-primary {
@@ -168,12 +184,13 @@
         @apply bg-transparent text-sage-800 hover:bg-sage-50;
     }
 
+    /* "Small" is still a comfortable tap target - the smallest button in the temple admin. */
     .btn-sm {
-        @apply min-h-9 rounded-lg px-3 text-[0.82rem];
+        @apply min-h-10 rounded-lg px-3.5 text-[0.95rem];
     }
 
     .badge {
-        @apply inline-flex items-center gap-1.5 rounded-full border border-sage-200 bg-sage-50 px-2.5 py-1 text-[0.74rem] font-semibold whitespace-nowrap text-sage-800;
+        @apply inline-flex items-center gap-1.5 rounded-full border border-sage-200 bg-sage-50 px-3 py-1 text-[0.83rem] font-semibold whitespace-nowrap text-sage-800;
     }
 
     .badge-gold {
@@ -188,8 +205,9 @@
         @apply border-sky-100 bg-sky-50 text-status-green;
     }
 
+    /* Amber stays amber: it reads as "waiting", which cyan would not. */
     .badge-amber {
-        @apply border-gold-200 bg-gold-50 text-status-amber;
+        @apply border-accent-gold/40 bg-accent-gold-50 text-status-amber;
     }
 
     .tbl {
@@ -233,6 +251,107 @@
         box-shadow: inset 3px 0 0 var(--color-gold-500);
     }
 
+    /* ---- Dark green admin rail (dashboard wireframe) ---- */
+    .rail-link {
+        @apply relative flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-[1rem] font-medium text-sage-100/90 transition duration-150 hover:bg-white/8 hover:text-white;
+    }
+
+    /* Active rail row: the deep navy of the theme with a light sky marker. */
+    .rail-link-active {
+        @apply bg-sage-800 font-semibold text-white;
+        box-shadow: inset 3px 0 0 var(--color-sage-300), 0 1px 0 0 rgb(125 211 252 / 0.35);
+    }
+
+    .rail-icon {
+        @apply grid h-6 w-6 flex-none place-items-center text-sage-100/80;
+    }
+
+    .rail-link-active .rail-icon {
+        @apply text-sky-300;
+    }
+
+    /* ---- Dashboard cards ---- */
+    .stat-card {
+        @apply flex items-center gap-3.5 rounded-xl border border-line bg-paper px-4 py-4 transition hover:border-sage-300 hover:shadow-sm;
+    }
+
+    .stat-icon {
+        @apply grid h-14 w-14 flex-none place-items-center rounded-full text-white;
+    }
+
+    .panel-head {
+        @apply flex items-center justify-between gap-3 border-b border-line-soft px-4 py-3.5;
+    }
+
+    .panel-title {
+        @apply flex items-center gap-2.5 font-temple text-[1.05rem] font-semibold text-sage-900;
+    }
+
+    .subtle-link {
+        @apply inline-flex items-center gap-1.5 text-[0.8rem] font-semibold text-sage-700 transition hover:text-sage-900;
+    }
+
+    .quick-tile {
+        @apply flex flex-col gap-2 rounded-xl border px-3 py-3.5 text-left transition hover:-translate-y-px hover:shadow-sm;
+    }
+
+    .chip {
+        @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-cream px-3 py-1.5 text-[0.88rem] font-medium text-ink-soft;
+    }
+
+    /* ---- Forms ---- */
+    /* Same look as the shared SelectField label, so a form row is consistent whether the control
+       is a text input or a dropdown. */
+    .field-label {
+        @apply mb-2 block text-[1rem] leading-none font-semibold text-ink;
+    }
+
+    .field-input {
+        @apply w-full rounded-lg border border-line bg-white px-3.5 py-3 text-[1rem] text-ink transition outline-none placeholder:text-muted/80 focus:border-sage-500 focus:ring-2 focus:ring-sage-200;
+    }
+
+    .field-hint {
+        @apply mt-1.5 text-[0.84rem] text-muted;
+    }
+
+    .field-error {
+        @apply mt-1.5 text-[0.73rem] font-medium text-status-rose;
+    }
+
+    .section-card {
+        @apply rounded-2xl border border-line bg-paper;
+    }
+
+    .section-card-head {
+        @apply flex items-center gap-2.5 border-b border-line-soft px-4 py-3.5 sm:px-5;
+    }
+
+    .kv-row {
+        @apply flex flex-wrap items-baseline gap-x-2 gap-y-0.5 py-[0.42rem] text-[0.87rem];
+    }
+
+    .kv-key {
+        @apply w-[9.5rem] flex-none text-[0.95rem] text-muted;
+    }
+
+    .kv-val {
+        @apply min-w-0 flex-1 text-[1rem] font-medium break-words text-ink;
+    }
+
+    /* Stacked variant for two-column detail panels, where a fixed key width has no room. */
+    .kv-row-stacked {
+        @apply block min-w-0 border-b border-line-soft py-[0.42rem] text-[0.87rem] last:border-b-0;
+    }
+
+    .kv-row-stacked .kv-key {
+        @apply block w-auto;
+    }
+
+    .kv-row-stacked .kv-val {
+        @apply mt-0.5 block break-words;
+    }
+
+
     .info-note {
         @apply flex items-start gap-2.5 rounded-xl border border-sand-100 bg-sand-50 px-4 py-3 text-[0.85rem] text-ink-soft;
     }
@@ -241,6 +360,7 @@
         @apply h-2 w-full overflow-hidden rounded-full bg-cream-deep;
     }
 }
+
 /* ------------------------------------------------------------------
    Portal screens (family / temple admin / co-admin / super admin)
    Fonts + base look used by MainLayout and the dashboard components.
@@ -252,6 +372,45 @@
 
 .portal-scope {
     font-family: 'Inter', 'Segoe UI', sans-serif;
-    color: #234936;
-    background-color: #fffdf8;
+    color: #0f2b3d;
+    background-color: #f7fcff;
+}
+
+/* ------------------------------------------------------------------
+   Language: Sinhala typography
+   Kept outside Tailwind's layers on purpose - the font-* utilities sit
+   in the utilities layer, and a layered rule can never override them
+   however specific it is.
+   ------------------------------------------------------------------ */
+html[data-lang='si'] body,
+html[data-lang='si'] h1,
+html[data-lang='si'] h2,
+html[data-lang='si'] h3,
+html[data-lang='si'] h4,
+html[data-lang='si'] .font-temple,
+html[data-lang='si'] .font-display,
+html[data-lang='si'] .font-arial,
+html[data-lang='si'] .font-lora,
+html[data-lang='si'] input,
+html[data-lang='si'] select,
+html[data-lang='si'] button,
+html[data-lang='si'] textarea {
+    font-family: var(--font-sinhala);
+    letter-spacing: 0;
+}
+
+html[data-lang='si'] body {
+    line-height: 1.7;
+}
+
+html[data-lang='si'] h1,
+html[data-lang='si'] h2 {
+    line-height: 1.35;
+}
+
+/* A Sinhala word shown while the site is in English - the language switch itself, a Sinhala
+   temple name - still has to render, so anything marked lang="si" gets the Sinhala face. */
+[lang='si'] {
+    font-family: var(--font-sinhala);
+    letter-spacing: 0;
 }

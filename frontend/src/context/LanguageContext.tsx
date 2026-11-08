@@ -1,60 +1,60 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import {createContext, type ReactNode, useContext, useEffect, useState} from 'react';
 
 type Language = 'en' | 'si';
 
 type Translations = {
-  [key in Language]: { [key: string]: string }
+    [key in Language]: { [key: string]: string }
 };
 
 const translations: Translations = {
-  en: {
-    welcome: "Welcome to Temple Management System",
-    donation: "Donation",
-    suggestions: "Suggestions",
-    login: "Login",
-    language: "Language",
-  },
-  si: {
-    welcome: "පන්සලට සාදරයෙන් පිළිගනිමු",
-    donation: "පරිත්‍යාග",
-    suggestions: "යෝජනා",
-    login: "පිවිසීම",
-    language: "භාෂාව",
-  }
+    en: {
+        welcome: "Welcome to Temple Management System",
+        donation: "Donation",
+        suggestions: "Suggestions",
+        login: "Login",
+        language: "Language",
+    },
+    si: {
+        welcome: "පන්සලට සාදරයෙන් පිළිගනිමු",
+        donation: "පරිත්‍යාග",
+        suggestions: "යෝජනා",
+        login: "පිවිසීම",
+        language: "භාෂාව",
+    }
 };
 
 type ContextType = {
-  language: Language;
-  setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+    language: Language;
+    setLanguage: (lang: Language) => void;
+    t: (key: string) => string;
 };
 
 const LanguageContext = createContext<ContextType | null>(null);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>(() => {
-    const saved = localStorage.getItem('temple_lang') as Language;
-    return saved === 'si' ? 'si' : 'en';
-  });
+export function LanguageProvider({children}: { children: ReactNode }) {
+    const [language, setLanguage] = useState<Language>(() => {
+        const saved = localStorage.getItem('temple_lang') as Language;
+        return saved === 'si' ? 'si' : 'en';
+    });
 
-  useEffect(() => {
-    localStorage.setItem('temple_lang', language);
-  }, [language]);
+    useEffect(() => {
+        localStorage.setItem('temple_lang', language);
+    }, [language]);
 
-  const t = (key: string) => {
-    return translations[language][key] || key;
-  };
+    const t = (key: string) => {
+        return translations[language][key] || key;
+    };
 
-  return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
-      {children}
-    </LanguageContext.Provider>
-  );
+    return (
+        <LanguageContext.Provider value={{language, setLanguage, t}}>
+            {children}
+        </LanguageContext.Provider>
+    );
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useLanguage = () => {
-  const ctx = useContext(LanguageContext);
-  if (!ctx) throw new Error("useLanguage must be inside LanguageProvider");
-  return ctx;
+    const ctx = useContext(LanguageContext);
+    if (!ctx) throw new Error("useLanguage must be inside LanguageProvider");
+    return ctx;
 };

@@ -4,7 +4,9 @@ import {Link, useNavigate, useSearchParams} from 'react-router-dom'
 import {LotusMark} from '../../components/AuthIcons'
 import {passwordLengthError} from '../../components/PasswordRules'
 import {PasswordStrength} from '../../components/PasswordStrength'
-import {AuthShell} from '../../layouts/AuthShell'
+import {AUTH_HEADING, AUTH_SUBTITLE, AuthShell} from '../../layouts/AuthShell'
+import {LanguageToggle} from '../../components/LanguageToggle'
+import {useTranslation} from 'react-i18next'
 import {authRoutes} from '../../routes/authRoutes'
 
 type ResetIconName = 'alert' | 'arrow' | 'check' | 'dot' | 'eye' | 'eyeOff' | 'key' | 'lock' | 'mail' | 'shield'
@@ -56,10 +58,10 @@ const ResetIcon = ({name, size = 20}: { name: ResetIconName; size?: number }) =>
 
 
 /* Card shell shared with the login and forgot-password screens: cream card, gold lotus, Petrona. */
-const CARD = 'mx-auto mt-0 w-full max-w-141.5 rounded-[24px] border border-white/30 bg-[#fffdf4]/[.98] px-5 pb-7 pt-8 shadow-[0_22px_42px_rgba(9,20,13,.15)] sm:rounded-2xl sm:px-7 sm:pb-8 sm:pt-9 lg:my-auto lg:px-12 lg:pb-11 lg:pt-10'
-const FIELD = 'flex h-12 items-center gap-3 rounded-[9px] border border-[#292B2B] bg-white px-3 text-[#292B2B] transition focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.12)] lg:h-11'
-const INPUT = 'w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 font-temple text-base text-[#292B2B] outline-none lg:text-[.95rem]'
-const PRIMARY = 'flex min-h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#1d5c46] bg-[#1d5c46] text-base font-bold text-white transition hover:-translate-y-px hover:bg-[#154935] hover:shadow-[0_8px_16px_rgba(24,80,61,.24)] disabled:cursor-wait disabled:opacity-75 lg:min-h-12.75'
+const CARD = 'relative mx-auto mt-0 w-full max-w-141.5 rounded-[24px] border border-white/40 bg-[linear-gradient(180deg,#f2fafe_0%,#e8f6fe_100%)] px-5 pb-7 pt-8 shadow-[0_26px_60px_-18px_rgba(4,24,43,.55)] sm:rounded-2xl sm:px-7 sm:pb-8 sm:pt-9 lg:my-auto lg:px-12 lg:pb-11 lg:pt-10'
+const FIELD = 'flex h-12 items-center gap-3 rounded-[9px] border border-[#6f9db8] bg-white px-3 text-[#0f2b3d] transition placeholder:text-[#8299a8] focus-within:shadow-[0_0_0_3px_rgba(2,132,199,.16)] lg:h-11'
+const INPUT = 'w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 font-temple text-base text-[#0f2b3d] outline-none placeholder:text-[#8299a8] lg:text-[.95rem]'
+const PRIMARY = 'flex min-h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#0284c7] bg-[#0284c7] text-base font-bold text-white transition hover:-translate-y-px hover:bg-[#0369a1] hover:shadow-[0_8px_16px_rgba(24,80,61,.24)] disabled:cursor-wait disabled:opacity-75 lg:min-h-12.75'
 const ERROR_BORDER = 'border-status-rose shadow-[0_0_0_3px_rgba(173,28,3,.12)]'
 
 const PasswordField = ({id, label, placeholder, value, onChange, onBlur, error, autoFocus}: {
@@ -93,7 +95,7 @@ const PasswordField = ({id, label, placeholder, value, onChange, onBlur, error, 
                     onChange={(event) => onChange(event.target.value)}
                 />
                 <button
-                    className="grid h-11 w-11 shrink-0 place-items-center border-0 bg-transparent text-[#292B2B] hover:text-[#1C4F3C] lg:h-9 lg:w-9"
+                    className="grid h-11 w-11 shrink-0 place-items-center border-0 bg-transparent text-[#33566c] hover:text-sage-600 lg:h-9 lg:w-9"
                     type="button"
                     aria-label={visible ? 'Hide password' : 'Show password'}
                     aria-pressed={visible}
@@ -112,11 +114,11 @@ const FooterLinks = () => (
     <div
         className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-[#d9d3bf] pt-5 text-[.94rem]">
         <Link to={authRoutes.login}
-              className="inline-flex min-h-11 items-center px-1 font-bold text-[#14512f] hover:underline lg:min-h-0">Back
+              className="inline-flex min-h-11 items-center px-1 font-bold text-sage-700 hover:underline lg:min-h-0">Back
             to sign in</Link>
         <span aria-hidden="true" className="text-[#9a9484]">·</span>
         <Link to={authRoutes.register}
-              className="inline-flex min-h-11 items-center px-1 font-bold text-[#14512f] hover:underline lg:min-h-0">Create
+              className="inline-flex min-h-11 items-center px-1 font-bold text-sage-700 hover:underline lg:min-h-0">Create
             an account</Link>
     </div>
 )
@@ -126,6 +128,7 @@ const FooterLinks = () => (
 /* ------------------------------------------------------------------ */
 
 export const ResetPasswordPage = () => {
+    const {t} = useTranslation()
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
     const token = searchParams.get('token')
@@ -182,32 +185,33 @@ export const ResetPasswordPage = () => {
         return (
             <AuthShell>
                 <div className={CARD}>
+                    <LanguageToggle tone="card" label={false} className="absolute top-3 right-3 z-10"/>
                     <header className="text-center">
-                        <LotusMark width={112} className="mx-auto mb-0"/>
-                        <h1 className="mb-2.5 mt-1 font-display text-[1.9rem] leading-none tracking-tight text-[#123c2e] sm:text-[clamp(2rem,2.6vw,2.7rem)]">
-                            Password updated
+                        <LotusMark width={168} className="mx-auto mb-1"/>
+                        <h1 className={AUTH_HEADING}>
+                            {t('auth.reset')}
                         </h1>
-                        <p className="m-0 text-[1.02rem] leading-relaxed text-[#111]">
+                        <p className={AUTH_SUBTITLE}>
                             Your new password is active from now. Use it the next time you sign in.
                         </p>
                     </header>
 
                     <div role="status" aria-live="polite"
-                         className="mt-7 flex items-start gap-3 rounded-[10px] border border-[#1d5c46]/25 bg-[#eef6ef] px-4 py-3.5 text-[#1f2d26]">
-                        <span className="mt-0.5 flex-none text-[#1d5c46]"><ResetIcon name="check" size={20}/></span>
+                         className="mt-7 flex items-start gap-3 rounded-[10px] border border-sage-600/25 bg-[#eef6ef] px-4 py-3.5 text-ink">
+                        <span className="mt-0.5 flex-none text-sage-600"><ResetIcon name="check" size={20}/></span>
                         <span className="text-[.92rem] leading-relaxed">
                             Other devices signed in to this account have been signed out for safety.
                         </span>
                     </div>
 
-                    <ul className="mt-6 space-y-2.5 text-[.92rem] leading-relaxed text-[#2c3a31]">
+                    <ul className="mt-6 space-y-2.5 text-[.92rem] leading-relaxed text-[#33566c]">
                         <li className="flex gap-2.5">
-                            <span className="mt-0.5 flex-none text-[#1d5c46]"><ResetIcon name="shield"
+                            <span className="mt-0.5 flex-none text-sage-600"><ResetIcon name="shield"
                                                                                          size={18}/></span>
                             <span>The link you used is now spent - asking for another reset starts a new request.</span>
                         </li>
                         <li className="flex gap-2.5">
-                            <span className="mt-0.5 flex-none text-[#1d5c46]"><ResetIcon name="lock"
+                            <span className="mt-0.5 flex-none text-sage-600"><ResetIcon name="lock"
                                                                                          size={18}/></span>
                             <span>Nobody from the temple or the system provider will ever ask you for your
                                 password.</span>
@@ -230,18 +234,19 @@ export const ResetPasswordPage = () => {
         return (
             <AuthShell>
                 <div className={CARD}>
+                    <LanguageToggle tone="card" label={false} className="absolute top-3 right-3 z-10"/>
                     <header className="text-center">
-                        <LotusMark width={112} className="mx-auto mb-0"/>
-                        <h1 className="mb-2.5 mt-1 font-display text-[1.9rem] leading-none tracking-tight text-[#123c2e] sm:text-[clamp(2rem,2.6vw,2.7rem)]">
+                        <LotusMark width={168} className="mx-auto mb-1"/>
+                        <h1 className="mb-2.5 mt-1 font-display text-[1.9rem] leading-none tracking-tight text-sage-900 sm:text-[clamp(2rem,2.6vw,2.7rem)]">
                             {unusable === 'expired' ? 'This link has expired' : 'This link is not valid'}
                         </h1>
-                        <p className="m-0 text-[1.02rem] leading-relaxed text-[#111]">
+                        <p className="m-0 text-[1.02rem] leading-relaxed text-ink">
                             Reset links can be used once and expire 30 minutes after they are sent.
                         </p>
                     </header>
 
                     <div role="alert"
-                         className="mt-7 flex items-start gap-3 rounded-[10px] border border-status-rose/25 bg-[#fdf2f0] px-4 py-3.5 text-[#1f2d26]">
+                         className="mt-7 flex items-start gap-3 rounded-[10px] border border-status-rose/25 bg-[#fdf2f0] px-4 py-3.5 text-ink">
                         <span className="mt-0.5 flex-none text-status-rose"><ResetIcon name="alert" size={20}/></span>
                         <span className="text-[.92rem] leading-relaxed">
                             Open the link from the most recent email, or request a new one and use it within
@@ -263,13 +268,14 @@ export const ResetPasswordPage = () => {
     return (
         <AuthShell>
             <div className={CARD}>
+                <LanguageToggle tone="card" label={false} className="absolute top-3 right-3 z-10"/>
                 <header className="text-center">
-                    <LotusMark width={112} className="mx-auto mb-0"/>
-                    <h1 className="mb-2.5 mt-1 font-display text-[1.9rem] leading-none tracking-tight text-[#123c2e] sm:text-[clamp(2rem,2.6vw,2.7rem)]">
-                        Choose a new password
+                    <LotusMark width={168} className="mx-auto mb-1"/>
+                    <h1 className={AUTH_HEADING}>
+                        {t('auth.resetTitle')}
                     </h1>
-                    <p className="m-0 text-[1.02rem] leading-relaxed text-[#111]">
-                        Pick something you do not use anywhere else.
+                    <p className={AUTH_SUBTITLE}>
+                        {t('auth.resetSubtitle')}
                     </p>
                 </header>
 
@@ -278,8 +284,8 @@ export const ResetPasswordPage = () => {
                         <div>
                             <PasswordField
                                 id="new-password"
-                                label="New Password"
-                                placeholder="Enter your new password"
+                                label={t('auth.newPassword')}
+                                placeholder={t('auth.newPassword')}
                                 value={password}
                                 autoFocus
                                 onChange={(value) => {
@@ -313,7 +319,7 @@ export const ResetPasswordPage = () => {
                         {saving ? 'Updating…' : 'Update password'} <ResetIcon name="arrow" size={19}/>
                     </button>
 
-                    <p className="mt-4 text-center text-[.88rem] leading-relaxed text-[#5d6b62]">
+                    <p className="mt-4 text-center text-[.88rem] leading-relaxed text-[#5b7b8f]">
                         Your current password keeps working until the new one is saved.
                     </p>
                 </form>

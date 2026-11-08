@@ -1,9 +1,9 @@
 import type {ErrorInfo, ReactNode} from 'react'
 import {Component} from 'react'
-import {AuthProvider} from './context/AuthContext';
-import {LanguageProvider} from './context/LanguageContext';
-import {AppRoutes} from './routes/AppRoutes';
-
+import {AuthProvider} from './context/AuthContext'
+import {LanguageProvider} from './context/LanguageContext'
+import {TempleStoreProvider} from './data/templeStore.tsx'
+import {AppRoutes} from './routes/AppRoutes'
 
 /**
  * Keeps a render error from leaving a blank page: the router and the provider tree live in
@@ -44,7 +44,9 @@ const App = () => (
     <AuthProvider>
         <LanguageProvider>
             <ScreenErrorBoundary>
-                <AppRoutes/>
+                <TempleStoreProvider>
+                    <AppRoutes/>
+                </TempleStoreProvider>
             </ScreenErrorBoundary>
         </LanguageProvider>
     </AuthProvider>

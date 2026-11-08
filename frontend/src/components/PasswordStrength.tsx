@@ -1,9 +1,9 @@
 import {PASSWORD_RULES, passwordStrength} from './PasswordRules'
 
 const TONE = {
-    idle: {text: 'text-[#8b8b7f]', icon: 'text-[#b6b6a8]'},
+    idle: {text: 'text-[#8ba3b0]', icon: 'text-[#b9cdd8]'},
     unmet: {text: 'text-[#a8442c]', icon: 'text-[#c4634a]'},
-    met: {text: 'text-[#1d5c46]', icon: 'text-[#1d5c46]'},
+    met: {text: 'text-[#0284c7]', icon: 'text-[#0284c7]'},
 } as const
 
 /** Hollow circle (idle), crossed circle (not met yet), filled tick (met). */
@@ -13,7 +13,7 @@ const StatusIcon = ({state}: { state: keyof typeof TONE }) => (
          aria-hidden="true" className="flex-none">
         <circle cx="10" cy="10" r="7.4" fill={state === 'met' ? 'currentColor' : 'none'}
                 opacity={state === 'met' ? 0.14 : 1}/>
-        {state === 'met' && <path d="m6.4 10.3 2.4 2.4 4.8-5.2" stroke="#1d5c46" strokeWidth={2.2}/>}
+        {state === 'met' && <path d="m6.4 10.3 2.4 2.4 4.8-5.2" stroke="#0284c7" strokeWidth={2.2}/>}
         {state === 'unmet' && <path d="m7.6 7.6 4.8 4.8M12.4 7.6l-4.8 4.8"/>}
     </svg>
 )
@@ -66,7 +66,7 @@ export const PasswordStrength = ({
         <div
             id={`${id}-rules`}
             data-state={allMet ? 'complete' : typed ? 'typing' : 'empty'}
-            className={`rounded-[10px] border px-3.5 py-3 transition-colors duration-200 sm:px-4 sm:py-3.5 ${allMet ? 'border-[#1d5c46]/35 bg-[#f1f8f3]' : 'border-[#e5e0d2] bg-[#faf8f1]'} ${className}`}>
+            className={`rounded-[10px] border px-3.5 py-3 transition-colors duration-200 sm:px-4 sm:py-3.5 ${allMet ? 'border-sage-600/35 bg-cream' : 'border-line bg-canvas'} ${className}`}>
 
             {/* Meter: three bars plus the word for it. Decorative - the list below carries the detail. */}
             <div className="flex items-center gap-3">
@@ -75,17 +75,17 @@ export const PasswordStrength = ({
                         <span
                             key={index}
                             className="h-1.5 flex-1 rounded-full transition-colors duration-300"
-                            style={{backgroundColor: index < level.bars ? level.color : '#e6e1d3'}}/>
+                            style={{backgroundColor: index < level.bars ? level.color : '#e3eef6'}}/>
                     ))}
                 </span>
                 <span
                     className="w-16 flex-none text-right text-[.76rem] font-bold tracking-wide transition-colors duration-300"
-                    style={{color: typed ? level.color : '#9a9a8f'}}>
-                    {typed ? level.label : '—'}
+                    style={{color: typed ? level.color : '#9db4c2'}}>
+                    {typed ? level.label : '-'}
                 </span>
             </div>
 
-            <p className="mt-2.5 mb-0 text-[.76rem] font-bold uppercase tracking-[.06em] text-[#8b8b7f]">
+            <p className="mt-2.5 mb-0 text-[.76rem] font-bold uppercase tracking-[.06em] text-[#8ba3b0]">
                 A stronger password has
             </p>
 

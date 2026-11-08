@@ -1,6 +1,19 @@
 import {type ReactNode, useEffect, useId, useRef, useState} from 'react'
 import {suggestTemples, type Temple} from '../data/temples'
 
+/** Same matching as `suggestTemples`, but over a list the caller supplies. */
+const filterTemples = (pool: Temple[], query: string): Temple[] => {
+    const q = query.trim().toLowerCase()
+    if (!q) return pool
+    return pool.filter((temple) =>
+        temple.name.en.toLowerCase().includes(q)
+        || temple.name.si.includes(query.trim())
+        || temple.code.toLowerCase().includes(q)
+        || temple.village.en.toLowerCase().includes(q)
+        || temple.district.en.toLowerCase().includes(q),
+    )
+}
+
 export const TempleCombobox = ({
                                    id,
                                    label,
@@ -12,6 +25,7 @@ export const TempleCombobox = ({
                                    onCommit,
                                    error,
                                    language,
+                                   options,
                                }: {
     id: string
     label: string
@@ -21,11 +35,16 @@ export const TempleCombobox = ({
     onChange: (value: string) => void
     /** A temple was chosen from the list. */
     onPick: (temple: Temple) => void
-    /** The field was left — try to resolve whatever was typed. */
+    /** The field was left - try to resolve whatever was typed. */
     onCommit: (value: string) => void
     error?: string
     /** Which script the option labels use: Sinhala names for 'si', English for 'en'. */
     language: 'si' | 'en'
+    /**
+     * The temples to offer. Defaults to the built-in register; pass your own list (for example the
+     * temples that are actually registered) and the box behaves exactly the same.
+     */
+    options?: Temple[]
 }) => {
     const [open, setOpen] = useState(false)
     const [active, setActive] = useState(-1)
@@ -33,7 +52,12 @@ export const TempleCombobox = ({
     const inputRef = useRef<HTMLInputElement>(null)
     const listId = useId()
 
-    const suggestions = open ? suggestTemples(value) : []
+    const pool = options
+    const suggestions = open
+        ? pool
+            ? filterTemples(pool, value)
+            : suggestTemples(value)
+        : []
 
     useEffect(() => {
         if (!open) return
@@ -91,12 +115,12 @@ export const TempleCombobox = ({
 
     return (
         <div>
-            <label className="mb-2 block text-[1.02rem] leading-none text-[#16241c]" htmlFor={id}>{label}</label>
+            <label className="mb-2 block text-[1.02rem] leading-none text-ink" htmlFor={id}>{label}</label>
             <div className="relative" ref={wrapRef}>
                 <div
-                    className={`flex h-12 items-center gap-3 rounded-lg border border-[#2b3a30] bg-white px-3 text-[#2b3a30] transition focus-within:shadow-[0_0_0_3px_rgba(27,98,75,.14)] lg:h-[42px] ${
+                    className={`flex h-12 items-center gap-3 rounded-lg border border-[#6f9db8] bg-white px-3 text-ink transition focus-within:shadow-[0_0_0_3px_rgba(2,132,199,.16)] lg:h-10.5 ${
                         error ? 'border-status-rose shadow-[0_0_0_3px_rgba(173,28,3,.12)]' : ''
-                    } ${open ? 'border-[#14512f] shadow-[0_0_0_3px_rgba(27,98,75,.14)]' : ''}`}>
+                    } ${open ? 'border-sage-700 shadow-[0_0_0_3px_rgba(2,132,199,.16)]' : ''}`}>
                     {icon}
                     <input
                         id={id}
@@ -109,7 +133,7 @@ export const TempleCombobox = ({
                         aria-autocomplete="list"
                         aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
                         autoComplete="off"
-                        className="w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 text-[1rem] text-[#1f2d26] outline-none lg:text-[0.86rem]"
+                        className="w-px min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 text-[1rem] text-ink outline-none lg:text-[0.86rem]"
                         placeholder={placeholder}
                         value={value}
                         aria-invalid={Boolean(error) || undefined}
@@ -130,7 +154,7 @@ export const TempleCombobox = ({
                         id={listId}
                         role="listbox"
                         aria-label={label}
-                        className="absolute inset-x-0 z-50 top-[calc(100%+8px)] max-h-64 overflow-y-auto overscroll-contain rounded-[10px] border border-[#2b3a30]/30 bg-white p-2.5 shadow-[0_18px_38px_rgba(9,20,13,.20)]">
+                        className="absolute inset-x-0 z-50 top-[calc(100%+8px)] max-h-64 overflow-y-auto overscroll-contain rounded-[10px] border border-[#6f9db8]/30 bg-white p-2.5 shadow-[0_18px_38px_rgba(8,47,73,.20)]">
                         {suggestions.map((temple, index) => (
                             <div
                                 id={`${listId}-${index}`}
@@ -143,7 +167,7 @@ export const TempleCombobox = ({
                                 className={`cursor-pointer rounded-[7px] px-3 py-2.5 ${
                                     index === active ? 'bg-[#eef4ee]' : 'bg-transparent'
                                 }`}>
-                                <span className="block text-[1rem] leading-snug text-[#1f2d26] sm:text-[0.9rem]">
+                                <span className="block text-[1rem] leading-snug text-ink sm:text-[0.9rem]">
                                     {temple.name[language]}
                                 </span>
                                 <span className="block text-[0.78rem] leading-snug text-[#6f7d74]">
