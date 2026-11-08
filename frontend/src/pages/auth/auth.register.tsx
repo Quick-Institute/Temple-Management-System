@@ -2,7 +2,7 @@ import type {FormEvent, ReactNode} from 'react'
 import {useState} from 'react'
 import {Link, Navigate, useNavigate, useParams} from 'react-router-dom'
 import {LotusMark, TempleMark} from '../../components/AuthIcons'
-import {passwordLengthError} from '../../components/PasswordRules'
+import {passwordLengthError, withLimits} from '../../components/PasswordRules'
 import {TempleCombobox} from '../../components/TempleCombobox'
 import {
     detectLanguage,
@@ -417,14 +417,14 @@ export const RegisterPage = () => {
             required('templeCode', 'Enter the temple code given by the temple office.')
         }
 
-        required('firstName', 'Enter your first name.')
-        required('lastName', 'Enter your last name.')
-        if (!form.email.trim()) next.email = 'Enter your email address.'
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = 'Enter a valid email address.'
-        required('phone', 'Enter your phone number.')
+        required('firstName', t('auth.errFirstNameRequired'))
+        required('lastName', t('auth.errLastNameRequired'))
+        if (!form.email.trim()) next.email = t('auth.errEmailRequiredShort')
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = t('auth.errEmailInvalidShort')
+        required('phone', t('auth.errPhoneRequired'))
 
         if (role === 'temple-admin') {
-            required('designation', 'Select your designation.')
+            required('designation', t('auth.errDesignationRequired'))
             if (form.designation === 'Other') required('designationOther', 'Enter your designation.')
         }
 
@@ -433,7 +433,7 @@ export const RegisterPage = () => {
             required('district', 'Select your district.')
             required('committee', 'Select your committee.')
             if (form.committee === 'Other') required('committeeOther', 'Enter the committee name.')
-            required('designation', 'Select your designation.')
+            required('designation', t('auth.errDesignationRequired'))
             if (form.designation === 'Other') required('designationOther', 'Enter your designation.')
         }
 
@@ -441,12 +441,12 @@ export const RegisterPage = () => {
             required('address', 'Enter your address.')
             required('village', 'Enter your village.')
             required('district', 'Select your district.')
-            if (!form.postalCode.trim()) next.postalCode = 'Enter your postal code.'
-            else if (!/^\d{5}$/.test(form.postalCode.trim())) next.postalCode = 'Postal codes have five digits.'
+            if (!form.postalCode.trim()) next.postalCode = t('auth.errPostalRequired')
+            else if (!/^\d{5}$/.test(form.postalCode.trim())) next.postalCode = t('auth.errPostalFive')
 
-            if (!form.nic.trim()) next.nic = 'Enter your NIC number.'
+            if (!form.nic.trim()) next.nic = t('auth.errNicRequired')
             else if (!NIC_PATTERN.test(form.nic.trim()))
-                next.nic = 'Enter a valid NIC - 9 digits with V or X, or 12 digits.'
+                next.nic = t('auth.errNicInvalid')
         }
 
         /*
@@ -454,15 +454,15 @@ export const RegisterPage = () => {
          * still create the key, and validate() decides from Object.keys(next).length - so the
          * form would never submit at all.
          */
-        if (!form.password) next.password = 'Create a password.'
+        if (!form.password) next.password = t('auth.errCreatePasswordShort')
         else {
             const lengthError = passwordLengthError(form.password)
-            if (lengthError) next.password = lengthError
+            if (lengthError) next.password = withLimits(t(lengthError))
         }
-        if (!form.confirmPassword) next.confirmPassword = 'Confirm your password.'
-        else if (form.password !== form.confirmPassword) next.confirmPassword = 'Passwords do not match.'
+        if (!form.confirmPassword) next.confirmPassword = t('auth.errConfirmPassword')
+        else if (form.password !== form.confirmPassword) next.confirmPassword = t('auth.errPasswordsDiffer')
 
-        if (!agreed) next.terms = 'Please accept the terms and the privacy policy.'
+        if (!agreed) next.terms = t('auth.errAcceptTerms')
 
         setErrors(next)
         return Object.keys(next).length === 0

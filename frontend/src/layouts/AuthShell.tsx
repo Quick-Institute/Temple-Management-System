@@ -45,26 +45,20 @@ export const AUTH_SUBTITLE = 'mt-0 text-[1.02rem] leading-relaxed text-[#33566c]
 
 type AuthVariant = 'login' | 'signup'
 
-const COPY: Record<AuthVariant, { desktop: string[]; mobile: string[]; subtitleKey: string }> = {
-    login: {
-        desktop: ['Temple Management', 'System'],
-        mobile: ['Temple', 'Management', 'System'],
-        subtitleKey: 'auth.heroLogin',
-    },
-    signup: {
-        desktop: ['Join Our', 'Temple', 'Community'],
-        mobile: ['Join Our', 'Temple', 'Community'],
-        subtitleKey: 'auth.heroSignup',
-    },
+/*
+ * Hero copy comes from the dictionary, "||" marking where the line breaks go. Both headlines are
+ * translated - the product name used to stay in English on the Sinhala login screen.
+ */
+const COPY: Record<AuthVariant, { titleKey: string; subtitleKey: string }> = {
+    login: {titleKey: 'auth.heroLoginTitle', subtitleKey: 'auth.heroLogin'},
+    signup: {titleKey: 'auth.heroSignupTitle', subtitleKey: 'auth.heroSignup'},
 }
 
 export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; variant?: AuthVariant }) => {
     const {t} = useTranslation()
     const copy = COPY[variant]
     const subtitle = t(copy.subtitleKey)
-    /* The sign-up headline is a sentence, so it is translated as one; the login headline is the
-       product name and stays as it is. */
-    const headline = variant === 'signup' ? t('auth.heroSignupTitle') : null
+    const headlineLines = t(copy.titleKey).split('||')
     return (
         <main
             className={`auth-scope relative isolate min-h-svh min-w-[320px] overflow-x-hidden bg-sage-900 2xl:mx-auto 2xl:max-w-[1800px] ${
@@ -100,7 +94,7 @@ export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; 
             <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 bg-sage-950/22"/>
 
             {/* Green wash, below lg only - this is the layer that darkens the stacked screens. */}
-            <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 bg-[#04182bcc] lg:hidden"/>
+            <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 bg-sage-900/70 lg:hidden"/>
 
             {/* Light left-to-right gradient, every width. Above lg this is the only overlay, which is
             why the split screens look as bright as they did before. */}
@@ -114,17 +108,14 @@ export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; 
                     <div>
                         {/* TABLET AND DESKTOP VERSION - from sm (640px) up */}
                         <h1 className="m-0 hidden text-center font-arial text-[2.35rem] font-black leading-[.95] tracking-[-.035em] text-balance text-white [text-shadow:0_3px_0_rgba(0,0,0,.35),0_7px_12px_rgba(0,0,0,.68)] sm:block md:text-[2.9rem] lg:text-[2.5rem] xl:text-[3.1rem] 2xl:text-[3.5rem] roomy:text-left">
-                            {headline
-                                ? <span className="block">{headline}</span>
-                                : copy.desktop.map((line, index) => (
-                                    <span key={line} className={index === 0 ? 'block' : 'mt-1 block'}>{line}</span>
-                                ))}
+                            {headlineLines.map((line, index) => (
+                                <span key={line} className={index === 0 ? 'block' : 'mt-1 block'}>{line}</span>
+                            ))}
                         </h1>
 
                         {/* PHONE VERSION - the original three centred lines, exactly as before */}
                         <h1 className="m-0 flex flex-col items-center gap-0.5 text-center font-arial text-[clamp(2.1rem,8vw,2.6rem)] font-black leading-[1.05] text-white [text-shadow:0_3px_0_rgba(0,0,0,.35),0_7px_12px_rgba(0,0,0,.68)] sm:hidden">
-                            {headline ? <span>{headline}</span> : copy.mobile.map((line) => <span
-                                key={line}>{line}</span>)}
+                            {headlineLines.map((line) => <span key={line}>{line}</span>)}
                         </h1>
                     </div>
 
@@ -148,7 +139,7 @@ export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; 
                         aria-label={t('nav.capabilities')}
                         style={{paddingBottom: '4.4rem'}}>
                         {FEATURES.map((feature) => (
-                            <li className="group relative w-27.5 text-center first:[&>span:first-child]:left-0 last:[&>span:first-child]:right-0 last:[&>span:first-child]:translate-x-0 text-[clamp(.78rem,1.05vw,1.06rem)] font-bold leading-[1.4] [text-shadow:0_2px_5px_rgba(0,0,0,.55)] after:absolute after:-right-7 after:top-0 after:h-36 after:w-px after:bg-white/80 after:content-[''] last:after:hidden lg:w-auto lg:min-w-0 lg:flex-1 lg:max-w-21 xl:max-w-24 2xl:max-w-27.5"
+                            <li className="group relative w-27.5 text-center first:[&>span:first-child]:left-0 first:[&>span:first-child]:translate-x-0 last:[&>span:first-child]:right-0 text-[clamp(.78rem,1.05vw,1.06rem)] font-bold leading-[1.4] [text-shadow:0_2px_5px_rgba(0,0,0,.55)] after:absolute after:-right-7 after:top-0 after:h-36 after:w-px after:bg-white/80 after:content-[''] last:after:hidden lg:w-auto lg:min-w-0 lg:flex-1 lg:max-w-21 xl:max-w-24 2xl:max-w-27.5"
                                 key={feature.icon}>
                                 {/*
                               * The note used to float ABOVE the icon, where it landed on the headline
@@ -160,9 +151,9 @@ export const AuthShell = ({children, variant = 'login'}: { children: ReactNode; 
                               */}
                                 <span
                                     role="tooltip"
-                                    className="pointer-events-none absolute top-full left-1/2 z-30 mt-2.5 w-48 -translate-x-1/2 rounded-xl border-2 border-white bg-[#041e33] px-3.5 py-2.5 text-center text-[.86rem] leading-snug font-bold text-white whitespace-normal opacity-0 shadow-[0_14px_34px_rgba(0,0,0,.85)] transition-opacity duration-100 text-shadow-none group-hover:opacity-100 before:absolute before:bottom-full before:left-1/2 before:-mb-0.5 before:-translate-x-1/2 before:border-[7px] before:border-transparent before:border-b-white before:content-['']">{t(feature.noteKey)}</span>
+                                    className="pointer-events-none absolute top-full left-1/2 z-30 mt-2.5 w-48 -translate-x-1/2 rounded-xl border-2 border-white bg-sage-900 px-3.5 py-2.5 text-center text-[.86rem] leading-snug font-bold text-white whitespace-normal opacity-0 shadow-[0_14px_34px_rgba(0,0,0,.85)] transition-opacity duration-100 text-shadow-none group-hover:opacity-100 before:absolute before:bottom-full before:left-1/2 before:-mb-0.5 before:-translate-x-1/2 before:border-[7px] before:border-transparent before:border-b-white before:content-['']">{t(feature.noteKey)}</span>
                                 <span
-                                    className="mx-auto mb-5 grid h-17.5 w-17.5 place-items-center rounded-full border-2 border-white text-white transition-all duration-300 ease-out group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:border-sage-300 group-hover:bg-white/20 group-hover:text-sage-100 group-hover:shadow-[0_9px_18px_rgba(0,0,0,.3)] lg:mb-4 lg:h-14 lg:w-14 xl:h-16 xl:w-16 2xl:mb-5 2xl:h-17.5 2xl:w-17.5"><ShellIcon
+                                    className="mx-auto mb-5 grid h-17.5 w-17.5 place-items-center rounded-full border-2 border-white text-white transition-all duration-300 ease-out group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:border-sage-400 group-hover:bg-sage-800 group-hover:text-sage-300 group-hover:shadow-[0_9px_18px_rgba(0,0,0,.3)] lg:mb-4 lg:h-14 lg:w-14 xl:h-16 xl:w-16 2xl:mb-5 2xl:h-17.5 2xl:w-17.5"><ShellIcon
                                     name={feature.icon}/></span>
                                 <span
                                     className="transition-colors duration-200 group-hover:text-sage-100">{t(feature.titleKey).split('\n').map((line) =>
