@@ -69,6 +69,8 @@ const itemActive =
 const PARENT_PREFIXES: Record<string, string[]> = {
     'Temple Information': ['/temple'],
     'Dana Management': ['/dana-management', '/my-bookings'],
+    'Family Members': ['/family-members', '/families'],
+    'User Management': ['/user-management', '/users-roles', '/users', '/add-user'],
 }
 
 type NavItemProps = {

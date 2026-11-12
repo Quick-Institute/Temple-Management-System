@@ -1,3 +1,6 @@
+/* Google Fonts & Icons */
+@import url('https://fonts.googleapis.com/css2?family=Petrona:ital,wght@0,300..900;1,300..900&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Serif+Sinhala:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=block');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block');
 @import 'tailwindcss';
 
 @custom-variant roomy (@media (min-width: 1200px) and (min-height: 760px));
@@ -12,6 +15,22 @@
     font-display: swap;
     src: url('./assets/fonts/petrona-latin.woff2') format('woff2');
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 400 800;
+    font-display: block;
+    src: url('./assets/fonts/plus-jakarta-sans-latin.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Material Symbols Outlined';
+    font-style: normal;
+    font-weight: 100 700;
+    font-display: block;
+    src: url('./assets/fonts/material-symbols-outlined.woff2') format('woff2');
 }
 
 /* ------------------------------------------------------------------
@@ -413,4 +432,145 @@ html[data-lang='si'] h2 {
 [lang='si'] {
     font-family: var(--font-sinhala);
     letter-spacing: 0;
+}
+
+
+
+
+
+/* ==========================================================================
+   TEMPLE PORTAL SCOPED STYLES (Admin Pages Styling)
+   Exclusively applies to your Temple pages (.temple-portal)
+   ========================================================================== */
+
+.temple-portal .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined' !important;
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-feature-settings: 'liga';
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+}
+
+.temple-portal {
+    --sky-50: #f0f9ff;
+    --sky-100: #e0f2fe;
+    --sky-200: #bae6fd;
+    --sky-500: #0ea5e9;
+    --sky-600: #0284c7;
+    --sky-700: #0369a1;
+    --sky-900: #0c4a6e;
+    --slate-dark: #0c4a6e;
+    --slate-hover: #0369a1;
+    --cream-bg: #f0f7fd;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --primary: #0284c7;
+
+    font-family: 'Plus Jakarta Sans', 'Noto Sans Sinhala', 'Iskoola Pota', 'Nirmala UI', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    color: #0f172a;
+    background-color: var(--cream-bg);
+}
+
+.temple-portal button,
+.temple-portal input,
+.temple-portal select,
+.temple-portal textarea {
+    font-family: inherit;
+}
+
+.temple-portal h1:not(.font-serif),
+.temple-portal h2:not(.font-serif),
+.temple-portal h3:not(.font-serif),
+.temple-portal h4:not(.font-serif) {
+    font-family: 'Plus Jakarta Sans', 'Noto Sans Sinhala', 'Iskoola Pota', 'Nirmala UI', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif !important;
+}
+
+.temple-portal .font-serif {
+    font-family: 'Petrona', Georgia, serif !important;
+}
+
+.temple-portal .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: 0 2px 8px -4px rgba(0, 0, 0, 0.05);
+    transition: all 0.25s ease;
+}
+
+.temple-portal .card:hover {
+    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.08);
+}
+
+.temple-portal .form-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #0c4a6e;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.temple-portal .form-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.temple-portal .form-input:focus {
+    outline: none;
+    border-color: #0284c7;
+    box-shadow: 0 0 0 3.5px rgba(2, 132, 199, 0.15);
+}
+
+@keyframes toastProgress {
+    from {
+        width: 100%;
+    }
+
+    to {
+        width: 0%;
+    }
+}
+
+.temple-portal .toast-progress-bar {
+    animation: toastProgress 4.5s linear forwards;
+}
+
+/* Print Styles */
+@media print {
+
+    .temple-portal aside,
+    .temple-portal header,
+    .no-print,
+    button,
+    .temple-footer-wave {
+        display: none !important;
+    }
+
+    .printable-document-container {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        padding: 15mm !important;
+        background: #ffffff !important;
+    }
 }
