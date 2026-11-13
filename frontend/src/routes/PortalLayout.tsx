@@ -2,7 +2,10 @@ import type {ReactElement} from 'react'
 import {Navigate, Outlet, useParams} from 'react-router-dom'
 import MainLayout from '../layouts/MainLayout'
 import FamilyDashboard from '../pages/family/FamilyDashboard'
-import {TempleDashboardContent} from '../pages/temple/temple.dashboard'
+import TempleAdminDashboard from '../pages/temple/TempleAdminDashboard'
+import CoAdminDashboard from '../pages/temple/CoAdminDashboard'
+import {homeFor} from '../data/demoUsers'
+import {authRoutes} from './authRoutes'
 import SuperAdminDashboard from '../pages/admin/SuperAdminDashboard'
 import {useAuth} from '../context/AuthContext'
 import {usePortalContext, usePortalUser} from './portalContext'
@@ -51,10 +54,21 @@ export const PlaceholderPage = () => {
  *   temple admin   -> temple admin dashboard (stats, schedule, notices)
  *   committee      -> the co-admin view of the same dashboard
  */
-export const DashboardRoute = () => {
+export const DashboardRoute = ({dashboardRole}: {dashboardRole?: 'templeAdmin' | 'coAdmin'} = {}) => {
     const {role} = usePortalContext()
     const user = usePortalUser()
+    // Restored dashboards use the authenticated role, including the existing staff mapping.
+    if (dashboardRole) {
+        if (!user) return <Navigate to={authRoutes.login} replace/>
+        if (user.role !== dashboardRole) return <Navigate to={homeFor(user.role!)} replace/>
+        return dashboardRole === 'templeAdmin'
+            ? <TempleAdminDashboard user={user}/>
+            : <CoAdminDashboard user={user}/>
+    }
     if (role === 'superAdmin') return <SuperAdminDashboard user={user}/>
-    if (role === 'templeAdmin' || role === 'coAdmin') return <TempleDashboardContent/>
+    if (role === 'templeAdmin' || role === 'coAdmin') {
+        const dashboard = role === 'templeAdmin' ? '/temple-admin/dashboard' : '/co-admin/dashboard'
+        return <Navigate to={dashboard} replace/>
+    }
     return <FamilyDashboard user={user}/>
 }
