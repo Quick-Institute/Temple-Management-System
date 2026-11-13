@@ -83,7 +83,7 @@ function MyBookingsPage({user}) {
     // The negative margin must mirror MainLayout's <main> padding at every breakpoint (p-3 / sm:p-4 / lg:p-5).
     // A fixed -m-5 over-shot the padding below 1024px and made the whole page wider than its scroll container.
     return (
-        <div className="family-my-bookings -m-3 flex min-w-0 flex-col font-lora text-[#284553] sm:-m-4 lg:-m-5">
+        <div className="family-my-bookings [&>section>img]:[mask-image:linear-gradient(to_right,transparent_0%,rgba(0,0,0,0.55)_22%,#000_48%)] -m-3 flex min-w-0 flex-col font-lora text-[#284553] sm:-m-4 lg:-m-5">
             <PageBanner
                 title="My Bookings"
                 description="View and manage your Dana booking requests."
