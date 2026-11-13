@@ -117,11 +117,11 @@ export const AppRoutes = () => (
                      {/* Upstream role portals. */}
                      <Route path={portalRoutes.templeAdmin}
                             element={<Navigate to={`${portalRoutes.templeAdmin}/dashboard`} replace />} />
-                     <Route path={`${portalRoutes.templeAdmin}/dashboard`} element={<DashboardRoute />} />
+                     <Route path={`${portalRoutes.templeAdmin}/dashboard`} element={<DashboardRoute dashboardRole="templeAdmin"/>} />
                      <Route path={`${portalRoutes.templeAdmin}/:page`} element={<PlaceholderPage />} />
 
                      <Route path={portalRoutes.coAdmin} element={<Navigate to={adminRoutes.coAdminDashboard} replace />} />
-                     <Route path={adminRoutes.coAdminDashboard} element={<DashboardRoute />} />
+                     <Route path={adminRoutes.coAdminDashboard} element={<DashboardRoute dashboardRole="coAdmin"/>} />
                      <Route path={`${portalRoutes.coAdmin}/:page`} element={<PlaceholderPage />} />
 
                      <Route path={portalRoutes.superAdmin}

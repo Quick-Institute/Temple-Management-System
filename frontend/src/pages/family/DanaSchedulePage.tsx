@@ -92,7 +92,7 @@ function DanaSchedulePage({user}: UserPageProps) {
     // -m-5 cancels MainLayout's <main> p-5 so the banner runs edge to edge; the content wrapper re-insets the rest.
     return (
         <div
-            className="family-dana-schedule -mx-3 -mt-3 flex min-w-0 flex-col font-lora text-[#284553] sm:-mx-4 sm:-mt-4 lg:-m-5">
+            className="family-dana-schedule [&>section>img]:[mask-image:linear-gradient(to_right,transparent_0%,rgba(0,0,0,0.55)_22%,#000_48%)] -mx-3 -mt-3 flex min-w-0 flex-col font-lora text-[#284553] sm:-mx-4 sm:-mt-4 lg:-m-5">
             <PageBanner
                 title="Dana Schedule"
                 description="View available Dana (almsgiving) slots and make a booking."

@@ -64,7 +64,7 @@ export const NAV_BY_ROLE: Record<RoleKey, NavItemDef[]> = {
         {label: 'Profile', icon: 'profile', to: '/profile'},
     ],
     templeAdmin: [
-        {label: 'Dashboard', icon: 'home', to: '/dashboard'},
+        {label: 'Dashboard', icon: 'home', to: '/temple-admin/dashboard'},
         {label: 'Temple Information', icon: 'temple', to: '/temple', permission: 'manageTempleInformation'},
         {label: 'Dana Management', icon: 'dana', to: '/dana-management', permission: 'viewDanaSlots', roles: STAFF},
         {label: 'Event Management', icon: 'events', to: '/event-management', permission: 'manageTempleRecords'},
