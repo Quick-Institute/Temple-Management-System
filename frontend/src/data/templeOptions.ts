@@ -35,12 +35,12 @@ export const TEMPLE_TYPES = [
 ]
 
 /**
- * Co-Administrators, per the proposal (10.2.3): the Temple Admin may appoint a Co-Administrator
- * to assist. The two roles the temple can appoint are these - neither carries platform
- * privileges, and neither is the Super Administrator.
+ * Co-Administrators, per the proposal (10.2.3): the Temple Admin may appoint Co-Administrators
+ * to assist. These are the two designations the proposal names, not a limit - a temple may
+ * appoint any number. Neither carries platform privileges, and neither is the Super Administrator.
  */
 /**
- * The designations the proposal names. A temple can appoint more than two Co-Administrators and
+ * The designations the proposal names. A temple can appoint any number of Co-Administrators and
  * the field is creatable, so this is a starting list rather than a closed set.
  */
 export const CO_ADMIN_ROLES: CoAdministratorRole[] = [

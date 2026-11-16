@@ -1,7 +1,7 @@
 import {useCallback, useSyncExternalStore} from 'react'
 import {useAuth} from '../context/AuthContext'
-import {usePermissions} from './usePermissions'
 import {useTemples} from '../data/templeStore.tsx'
+import {assignedTemplesFor} from '../data/templeAccess'
 import type {TempleRecord} from '../data/templeStatus'
 
 const STORAGE_KEY = 'tms.activeTemple'
@@ -55,24 +55,15 @@ export const useActiveTemple = (): {
     canSwitch: boolean
 } => {
     const {user} = useAuth()
-    const {role} = usePermissions()
     const {records, activeTemple} = useTemples()
     const stored = useSyncExternalStore(subscribe, () => selectedId, () => null)
 
-    const email = user?.identifier
     /*
-     * A temple belongs to the chief incumbent through `ownerEmail`. A Co-Administrator belongs to
-     * exactly one temple, recorded on the temple's own Co-Administrator list.
+     * Scope the switcher to the temples this account may work on. A Co-Administrator is limited
+     * to the temple they are appointed to; a Temple Admin to the temples they own; the platform
+     * administrator to every temple. The rules live in data/templeAccess.ts.
      */
-    const owns = (record: TempleRecord) => (
-        record.ownerEmail === email
-        || record.coAdmins.some((admin) => admin.email.trim().toLowerCase() === email?.trim().toLowerCase())
-    )
-    const owned = role === 'superAdmin'
-        ? records
-        : email
-            ? records.filter(owns)
-            : []
+    const owned = assignedTemplesFor(user, records)
 
     /* Nothing marked as owned yet? Fall back to the store's active temple so old records still work. */
     const temples = owned.length ? owned : records.filter((record) => record.id === activeTemple?.id)

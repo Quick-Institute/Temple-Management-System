@@ -30,7 +30,28 @@ export type SelectFieldProps = {
     searchable?: boolean
     /** Let the user keep a value that is not in `options`. */
     creatable?: boolean
+    /**
+     * Display-only label for a stored option value. The value handed to `onChange` stays exactly
+     * as it is in `options`, so a Sinhala list still saves the same English value as before.
+     */
+    optionLabel?: (value: string) => string
+    /** Translated panel copy. Left unset, the original English strings are used. */
+    texts?: {
+        /** `{{label}}` is replaced with the field label. */
+        search?: string
+        searchCreate?: string
+        searchAria?: string
+        /** `{{value}}` is replaced with the typed value. */
+        use?: string
+        newBadge?: string
+        /** `{{query}}` is replaced with the search term. */
+        noMatch?: string
+    }
 }
+
+/* Tiny template helper so the translated panel copy can name the field, value or query. */
+const fill = (template: string, vars: Record<string, string>) =>
+    template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => vars[key] ?? '')
 
 const labelClass = 'mb-2 block text-[0.92rem] leading-none font-semibold text-[#0f2b3d]'
 const boxClass =
@@ -73,6 +94,8 @@ export const SelectField = ({
                                 disabled,
                                 searchable,
                                 creatable,
+                                optionLabel,
+                                texts,
                             }: SelectFieldProps) => {
     const [open, setOpen] = useState(false)
     const [flipUp, setFlipUp] = useState(false)
@@ -84,18 +107,23 @@ export const SelectField = ({
     const listRef = useRef<HTMLDivElement>(null)
     const listId = useId()
     const all = [placeholder, ...options]
+    /* What the user reads. `option` itself is never rewritten - it is the value that gets saved. */
+    const display = (option: string) => (optionLabel ? optionLabel(option) : option)
+    const matches = (option: string, term: string) =>
+        option.toLowerCase().includes(term) || display(option).toLowerCase().includes(term)
     /* A three-item list reads better without a search box; a long list does not. */
     const searchOn = searchable ?? options.length > 8
     const needle = query.trim().toLowerCase()
 
     /* A typed value that is not already an option becomes a row at the top of the panel. */
-    const custom = creatable && needle && !options.some((option) => option.toLowerCase() === needle)
+    const custom = creatable && needle &&
+        !options.some((option) => option.toLowerCase() === needle || display(option).toLowerCase() === needle)
     const customRow = custom ? query.trim() : null
 
     /* Rows keep their index in `all`, so the highlighted row keeps its id while the list filters. */
     const visible = needle && searchOn
         ? all.map((option, index) => ({option, index}))
-            .filter(({option, index}) => index > 0 && option.toLowerCase().includes(needle))
+            .filter(({option, index}) => index > 0 && matches(option, needle))
         : all.map((option, index) => ({option, index}))
 
     /* Close on an outside press or Escape, exactly like the dashboard popovers. */
@@ -159,7 +187,7 @@ export const SelectField = ({
         setQuery(text)
         const wanted = text.trim().toLowerCase()
         /* +1 because `all` leads with the placeholder. */
-        const first = wanted ? options.findIndex((option) => option.toLowerCase().includes(wanted)) : -1
+        const first = wanted ? options.findIndex((option) => matches(option, wanted)) : -1
         setActive(first < 0 ? -1 : first + 1)
     }
 
@@ -195,7 +223,7 @@ export const SelectField = ({
 
     return (
         <div className={full ? 'sm:col-span-2' : undefined}>
-            <label className={labelClass} htmlFor={id}>{label}</label>
+            <label className={`${labelClass} select-field-label`} htmlFor={id}>{label}</label>
             <div className="relative" ref={wrapRef}>
                 <div
                     className={`${boxClass} ${error ? 'border-status-rose shadow-[0_0_0_3px_rgba(173,28,3,.12)]' : ''} ${open ? 'border-sage-700 shadow-[0_0_0_3px_rgba(2,132,199,.16)]' : ''} ${disabled ? 'cursor-not-allowed bg-cream opacity-70' : ''}`}>
@@ -215,7 +243,7 @@ export const SelectField = ({
                         onClick={() => (open ? setOpen(false) : openList())}
                         onKeyDown={onKeyDown}
                         className={`flex w-full min-w-0 flex-1 cursor-pointer items-center justify-between gap-2 self-stretch bg-transparent p-0 text-left text-[1rem] outline-none lg:text-[0.86rem] ${value ? 'text-ink' : 'text-[#8ba3b0]'} ${disabled ? 'cursor-not-allowed' : ''}`}>
-                        <span className="truncate">{value || placeholder}</span>
+                        <span className="truncate">{value ? display(value) : placeholder}</span>
                         <Chevron/>
                     </button>
                 </div>
@@ -239,8 +267,12 @@ export const SelectField = ({
                                     value={query}
                                     onChange={(event) => onSearchChange(event.target.value)}
                                     onKeyDown={onKeyDown}
-                                    placeholder={creatable ? `Search or type a new ${label.toLowerCase()}...` : `Search ${label.toLowerCase()}...`}
-                                    aria-label={`Search ${label}`}
+                                    placeholder={fill(
+                                        (creatable ? texts?.searchCreate : texts?.search) ??
+                                        (creatable ? 'Search or type a new {{label}}...' : 'Search {{label}}...'),
+                                        {label: label.toLowerCase()},
+                                    )}
+                                    aria-label={fill(texts?.searchAria ?? 'Search {{label}}', {label})}
                                     autoComplete="off"
                                     className="min-w-0 flex-1 bg-transparent text-[0.92rem] text-ink outline-none"/>
                             </div>
@@ -257,10 +289,10 @@ export const SelectField = ({
                                 onClick={() => choose(customRow)}
                                 className="mb-1 flex w-full cursor-pointer items-center justify-between gap-3 rounded-[7px] bg-[#eef4ee] px-3 py-3 text-left text-[1rem] leading-snug text-sage-700 sm:text-[0.9rem] lg:py-2.5">
                                 <span className="min-w-0 truncate">
-                                    Use “{customRow}”
+                                    {fill(texts?.use ?? 'Use “{{value}}”', {value: customRow})}
                                 </span>
                                 <span
-                                    className="flex-none text-[0.72rem] font-semibold tracking-wide uppercase">New</span>
+                                    className="flex-none text-[0.72rem] font-semibold tracking-wide uppercase">{texts?.newBadge ?? 'New'}</span>
                             </button>
                         )}
 
@@ -282,7 +314,7 @@ export const SelectField = ({
                                     } ${isPlaceholder ? 'text-[#6f7d74]' : 'text-ink'} ${
                                         isSelected ? 'font-semibold' : 'font-normal'
                                     }`}>
-                                    <span className="min-w-0 truncate">{option}</span>
+                                    <span className="min-w-0 truncate">{isPlaceholder ? option : display(option)}</span>
                                     {isSelected && !isPlaceholder &&
                                         <span className="flex-none text-sage-700"><Check/></span>}
                                 </div>
@@ -291,7 +323,7 @@ export const SelectField = ({
 
                         {!visible.length && !customRow && (
                             <div className="px-3 py-6 text-center text-[0.92rem] text-[#6f7d74]">
-                                Nothing matches “{query}”.
+                                {fill(texts?.noMatch ?? 'Nothing matches “{{query}}”.', {query})}
                             </div>
                         )}
                     </div>

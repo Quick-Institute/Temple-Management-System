@@ -39,18 +39,18 @@ export const TempleTransfersCard = () => {
         <section className="card p-0">
             <header className="flex flex-wrap items-center gap-2.5 border-b border-line-soft px-5 py-4">
                 <span
-                    className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-accent-blue-50 text-accent-blue ring-1 ring-accent-blue/20">
+                    className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-accent-purple-50 text-accent-purple ring-1 ring-accent-purple/20">
                     <Inbox size={17} strokeWidth={1.9}/>
                 </span>
                 <div className="min-w-0 flex-1">
-                    <h2 className="font-temple text-[1.15rem] text-sage-900">{t('transfer.heading')}</h2>
+                    <h2 className="font-temple text-[1.15rem] text-ink">{t('transfer.heading')}</h2>
                     <p className="text-[0.82rem] text-ink-soft">
                         {t('transfer.subtitle', {temple: role === 'superAdmin' ? t('nav.temples') : myTemple ?? ''})}
                     </p>
                 </div>
                 <span className={`rounded-full px-2.5 py-1 text-[0.74rem] font-bold ${
                     waiting.length
-                        ? 'bg-accent-gold-50 text-status-amber ring-1 ring-accent-gold/30'
+                        ? 'bg-accent-blue-50 text-status-blue ring-1 ring-accent-blue/30'
                         : 'bg-cream text-muted'
                 }`}>
                     {waiting.length ? t('transfer.waiting', {count: waiting.length}) : t('transfer.nothingWaiting')}
@@ -119,11 +119,11 @@ const LimitedProfilePanel = ({request, onClose}: { request: TransferRequest; onC
                 onClick={(event) => event.stopPropagation()}>
                 <div className="flex items-start gap-3">
                     <span
-                        className="grid h-14 w-14 flex-none place-items-center rounded-2xl bg-sky-100 text-[1.05rem] font-bold text-sage-900 ring-1 ring-sky-300/60">
+                        className="grid h-14 w-14 flex-none place-items-center rounded-2xl bg-cream text-[1.05rem] font-bold text-ink ring-1 ring-line">
                         {initials}
                     </span>
                     <div className="min-w-0 flex-1">
-                        <h2 className="truncate font-temple text-[1.3rem] leading-tight text-sage-900">
+                        <h2 className="truncate font-temple text-[1.3rem] leading-tight text-ink">
                             {request.memberName}
                         </h2>
                         <p className="text-[0.86rem] text-ink-soft">
@@ -134,7 +134,7 @@ const LimitedProfilePanel = ({request, onClose}: { request: TransferRequest; onC
                             <ShieldCheck size={12}/> Limited view
                         </p>
                     </div>
-                    <button className="rounded-lg p-1.5 text-muted hover:bg-cream hover:text-sage-900"
+                    <button className="rounded-lg p-1.5 text-muted hover:bg-cream hover:text-ink"
                             onClick={onClose} aria-label="Close profile">
                         <X size={17}/>
                     </button>
@@ -145,7 +145,7 @@ const LimitedProfilePanel = ({request, onClose}: { request: TransferRequest; onC
                         <div key={row.label}
                              className="flex items-start gap-2.5 rounded-xl border border-line-soft bg-white px-3 py-2.5">
                             <span
-                                className="mt-0.5 grid h-7 w-7 flex-none place-items-center rounded-lg bg-cream text-sage-800">
+                                className="mt-0.5 grid h-7 w-7 flex-none place-items-center rounded-lg bg-cream text-ink">
                                 <row.icon size={14} strokeWidth={1.9}/>
                             </span>
                             <div className="min-w-0">
@@ -171,7 +171,7 @@ const LimitedProfilePanel = ({request, onClose}: { request: TransferRequest; onC
                     <span>{request.status}</span>
                 </div>
 
-                <p className="mt-3 rounded-xl border border-accent-blue/25 bg-accent-blue-50 px-3 py-2 text-[0.8rem] leading-relaxed text-accent-blue">
+                <p className="mt-3 rounded-xl border border-line bg-cream/70 px-3 py-2 text-[0.8rem] leading-relaxed text-ink-soft">
                     Only the details needed to decide the transfer are shown. The family's address,
                     identity number, bookings and donations are not visible to the temple.
                 </p>
@@ -202,7 +202,7 @@ const RequestRow = ({
         <li className="flex flex-col gap-3 px-5 py-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
-                    <p className="text-[0.98rem] font-bold text-sage-900">
+                    <p className="text-[0.98rem] font-bold text-ink">
                         {request.familyName}
                         <span className="ml-2 text-[0.84rem] font-normal text-ink-soft">
                             {request.memberName}
@@ -211,12 +211,12 @@ const RequestRow = ({
                     <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[0.86rem] text-ink-soft">
                         <span>{request.fromTemple}</span>
                         <ArrowRight size={13} className="text-muted"/>
-                        <strong className="font-semibold text-sage-900">{request.toTemple}</strong>
+                        <strong className="font-semibold text-ink">{request.toTemple}</strong>
                     </p>
                 </div>
                 <span className={`rounded-md border px-2 py-0.5 text-[0.7rem] font-bold ${
                     pending
-                        ? 'border-accent-gold/40 bg-accent-gold-50 text-status-amber'
+                        ? 'border-accent-blue/30 bg-accent-blue-50 text-status-blue'
                         : request.status === 'Approved'
                             ? 'border-accent-green/30 bg-accent-green-50 text-accent-green'
                             : 'border-status-rose/30 bg-lotus-50 text-status-rose'
@@ -234,7 +234,7 @@ const RequestRow = ({
                     {request.reviewNote ? ` · note: ${request.reviewNote}` : ''}
                 </p>
                 <button type="button" onClick={onViewProfile}
-                        className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1 text-[0.78rem] font-semibold text-sage-800 transition hover:border-sage-300 hover:bg-sage-50">
+                        className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1 text-[0.78rem] font-semibold text-ink transition hover:border-sage-300 hover:bg-cream">
                     <Eye size={14}/> {t('transfer.viewProfile')}
                 </button>
             </div>
@@ -250,8 +250,10 @@ const RequestRow = ({
                             onClick={() => approveTransfer(request.id, note || undefined)}>
                         <Check size={15}/> {t('transfer.approve')}
                     </button>
-                    <button className="btn btn-secondary px-3! py-1.5! text-[0.84rem]"
-                            onClick={() => rejectTransfer(request.id, note || undefined)}>
+                    {/* Destructive action: white button, red outline and red label. */}
+                    <button
+                        className="btn border-status-rose/45 bg-white px-3! py-1.5! text-[0.84rem] text-status-rose hover:border-status-rose hover:bg-lotus-50"
+                        onClick={() => rejectTransfer(request.id, note || undefined)}>
                         <X size={15}/> {t('transfer.reject')}
                     </button>
                 </div>

@@ -435,9 +435,6 @@ html[data-lang='si'] h2 {
 }
 
 
-
-
-
 /* ==========================================================================
    TEMPLE PORTAL SCOPED STYLES (Admin Pages Styling)
    Exclusively applies to your Temple pages (.temple-portal)
@@ -498,6 +495,69 @@ html[data-lang='si'] h2 {
 
 .temple-portal .font-serif {
     font-family: 'Petrona', Georgia, serif !important;
+}
+
+/* Temple Information pages use the same body typeface as User Management
+   (.temple-portal): Plus Jakarta Sans, with a Sinhala fallback. Headings keep
+   the Petrona display face through .font-temple. */
+.temple-info-scope {
+    font-family: 'Plus Jakarta Sans', 'Noto Sans Sinhala', 'Iskoola Pota', 'Nirmala UI', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+}
+
+.temple-info-scope button,
+.temple-info-scope input,
+.temple-info-scope select,
+.temple-info-scope textarea {
+    font-family: inherit;
+}
+
+/* Slightly larger, easier-to-read form text on the Temple Information screens. */
+.temple-info-scope .field-label {
+    font-size: 1.06rem;
+}
+
+.temple-info-scope .field-input {
+    font-size: 1.06rem;
+}
+
+.temple-info-scope .field-hint {
+    font-size: 0.9rem;
+}
+
+/* The shared SelectField draws its own label and rows, so it needs the same bump.
+   These selectors are unlayered, so they win over the component's utility sizes. */
+.temple-info-scope .select-field-label {
+    font-size: 1.06rem;
+}
+
+.temple-info-scope [role='combobox'] {
+    font-size: 1.04rem;
+}
+
+.temple-info-scope [role='option'] {
+    font-size: 1rem;
+}
+
+/* Temple Information reads in neutral ink - only status colours stay coloured.
+   Kept in the base layer so an explicit utility (the sky-blue hero heading, a status
+   badge) still overrides it. */
+@layer base {
+    .temple-info-scope h1,
+    .temple-info-scope h2,
+    .temple-info-scope h3,
+    .temple-info-scope h4 {
+        color: var(--color-ink);
+    }
+}
+
+/* Outline / ghost buttons and quiet links inherit a blue label from the shared
+   component classes; neutralise the label, keep the button chrome. */
+@layer components {
+    .temple-info-scope .btn-outline,
+    .temple-info-scope .btn-ghost,
+    .temple-info-scope .subtle-link {
+        color: var(--color-ink);
+    }
 }
 
 .temple-portal .card {

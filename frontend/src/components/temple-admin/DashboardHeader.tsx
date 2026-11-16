@@ -22,6 +22,7 @@ import {Icon} from '@iconify/react'
 import type {RoleKey} from '../../data/permissions'
 import {usePermissions} from '../../hooks/usePermissions'
 import {useActiveTemple} from '../../hooks/useActiveTemple'
+import {assignedTemplesFor} from '../../data/templeAccess'
 import {LanguageToggle} from '../LanguageToggle'
 import {useTranslation} from 'react-i18next'
 import {useAuth} from '../../context/AuthContext'
@@ -76,15 +77,16 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
     const searchRef = useRef<HTMLDivElement>(null)
     const searchInputRef = useRef<HTMLInputElement>(null)
 
+    const searchableTemples = useMemo(() => assignedTemplesFor(user, records), [user, records])
     const hits: SearchHit[] = useMemo(
         () =>
             query.trim()
                 ? searchContent(query, (user?.role ?? 'templeAdmin') as RoleKey, can, {
-                    temples: records,
+                    temples: searchableTemples,
                     members,
                 })
                 : [],
-        [query, user?.role, records, members, can],
+        [query, user?.role, searchableTemples, members, can],
     )
 
     useEffect(() => {
@@ -168,19 +170,20 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
 
     return (
         <header className={`sticky top-0 z-40 border-b border-line bg-paper/97 backdrop-blur ${className}`}>
-            <div className="flex items-center gap-2.5 px-3 py-2.5 sm:px-5">
+            <div className="flex flex-wrap items-center gap-2.5 px-3 py-2.5 sm:px-5">
                 <button
-                    className="flex-none rounded-xl border border-line bg-white p-2.5 text-sage-800 hover:bg-cream lg:hidden"
+                    className="order-1 flex-none rounded-xl border border-line bg-white p-2.5 text-sage-800 hover:bg-cream lg:hidden"
                     onClick={handleMenuClick}
                     aria-label={t('shell.openMenu')}
                 >
-                    <Menu size={18} />
+                    <Menu size={18}/>
                 </button>
 
-                {/* Search */}
-                <div className="relative mx-auto min-w-0 max-w-xl flex-1" ref={searchRef}>
+                {/* Search - own full-width row below xl so it can never collapse to an icon. */}
+                <div className="relative order-3 mx-auto w-full min-w-0 xl:order-2 xl:w-auto xl:max-w-xl xl:flex-1"
+                     ref={searchRef}>
                     <div className="flex items-center gap-2 rounded-full border border-line bg-cream px-4 py-2.5">
-                        <Search size={17} className="flex-none text-muted" />
+                        <Search size={17} className="flex-none text-muted"/>
                         <input
                             ref={searchInputRef}
                             value={query}
@@ -208,10 +211,11 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                                 }}
                                 aria-label={t('shell.clearSearch')}
                             >
-                                <X size={15} />
+                                <X size={15}/>
                             </button>
                         ) : (
-                            <kbd className="hidden flex-none rounded border border-line bg-paper px-1.5 py-0.5 text-[0.66rem] font-semibold text-muted sm:block">
+                            <kbd
+                                className="hidden flex-none rounded border border-line bg-paper px-1.5 py-0.5 text-[0.66rem] font-semibold text-muted sm:block">
                                 ⌘K
                             </kbd>
                         )}
@@ -241,11 +245,13 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                                                     index === activeHit ? 'bg-sage-50' : 'bg-paper'
                                                 }`}
                                             >
-                                                <span className="grid h-8 w-8 flex-none place-items-center rounded-lg bg-cream text-sage-800">
-                                                    <Icon icon={SEARCH_ICON[hit.icon]} className="size-4" />
+                                                <span
+                                                    className="grid h-8 w-8 flex-none place-items-center rounded-lg bg-cream text-sage-800">
+                                                    <Icon icon={SEARCH_ICON[hit.icon]} className="size-4"/>
                                                 </span>
                                                 <span className="min-w-0 flex-1">
-                                                    <span className="block truncate text-[0.88rem] font-semibold text-ink">
+                                                    <span
+                                                        className="block truncate text-[0.88rem] font-semibold text-ink">
                                                         {hit.label}
                                                     </span>
                                                     <span className="block truncate text-[0.74rem] text-muted">
@@ -267,12 +273,12 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                     )}
                 </div>
 
-                <div className="ml-auto flex flex-none items-center gap-2 sm:gap-3">
-                    <LanguageToggle tone="bar" label={false} className="hidden sm:flex" />
+                <div className="order-2 ml-auto flex flex-none items-center gap-1.5 sm:gap-3 xl:order-3">
+                    <LanguageToggle tone="bar" label={false} className="flex"/>
 
-                    {/* Temple switcher */}
+                    {/* Temple switcher - a compact icon button on phones, full pill from md up. */}
                     {canSwitch && (
-                        <div className="relative hidden md:block" ref={templeRef}>
+                        <div className="xl:relative" ref={templeRef}>
                             <button
                                 onClick={() => {
                                     setTempleMenu((open) => !open)
@@ -282,13 +288,14 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                                 aria-haspopup="menu"
                                 aria-expanded={templeMenu}
                                 aria-label={t('shell.switchTemple')}
-                                title={t('shell.switchTemple')}
-                                className="flex max-w-60 items-center gap-2 rounded-full border border-line bg-white py-1.5 pr-2.5 pl-2 text-left transition hover:border-sage-300 hover:bg-cream"
+                                title={workingTemple?.name ?? t('shell.switchTemple')}
+                                className="flex items-center gap-2 rounded-full border border-line bg-white p-1.5 text-left transition hover:border-sage-300 hover:bg-cream md:max-w-40 md:py-1.5 md:pr-2.5 md:pl-2 xl:max-w-60"
                             >
-                                <span className="grid h-7 w-7 flex-none place-items-center rounded-full bg-sage-800 text-white">
-                                    <Building2 size={14} strokeWidth={2} />
+                                <span
+                                    className="grid h-7 w-7 flex-none place-items-center rounded-full bg-sage-800 text-white">
+                                    <Building2 size={14} strokeWidth={2}/>
                                 </span>
-                                <span className="min-w-0">
+                                <span className="hidden min-w-0 md:block">
                                     <span className="block truncate text-[0.82rem] font-semibold text-sage-900">
                                         {workingTemple?.name ?? t('shell.switchTemple')}
                                     </span>
@@ -298,7 +305,7 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                                 </span>
                                 <ChevronDown
                                     size={14}
-                                    className={`flex-none text-muted transition ${templeMenu ? 'rotate-180' : ''}`}
+                                    className={`hidden flex-none text-muted transition md:block ${templeMenu ? 'rotate-180' : ''}`}
                                 />
                             </button>
 
@@ -306,7 +313,7 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                                 <div
                                     role="menu"
                                     aria-label={t('shell.yourTemples')}
-                                    className="absolute top-full right-0 z-50 mt-2 w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-line bg-paper shadow-xl"
+                                    className="absolute inset-x-3 top-full z-50 mt-2 overflow-hidden rounded-xl border border-line bg-paper shadow-xl xl:inset-x-auto xl:right-0 xl:w-[min(22rem,calc(100vw-1.5rem))]"
                                 >
                                     <p className="border-b border-line-soft bg-cream/60 px-4 py-2 text-[0.7rem] font-bold tracking-[0.12em] text-muted uppercase">
                                         {t('shell.yourTemples')}
@@ -335,17 +342,18 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                                                             }`}
                                                         >
                                                             {current ? (
-                                                                <Check size={13} strokeWidth={3} />
+                                                                <Check size={13} strokeWidth={3}/>
                                                             ) : (
-                                                                <Building2 size={13} />
+                                                                <Building2 size={13}/>
                                                             )}
                                                         </span>
                                                         <span className="min-w-0 flex-1">
-                                                            <span className="block truncate text-[0.86rem] font-semibold text-sage-900">
+                                                            <span
+                                                                className="block truncate text-[0.86rem] font-semibold text-sage-900">
                                                                 {record.name}
                                                             </span>
                                                             <span className="block truncate text-[0.72rem] text-muted">
-                                                                {record.village}, {record.district} · {record.status}
+                                                                {record.village}, {record.district} · {t(`temple.status.${record.status}`)}
                                                             </span>
                                                         </span>
                                                     </button>
@@ -359,7 +367,7 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                     )}
 
                     {/* Notifications bell */}
-                    <div className="relative" ref={bellRef}>
+                    <div className="xl:relative" ref={bellRef}>
                         <button
                             className="relative grid h-10 w-10 place-items-center rounded-full text-sage-800 hover:bg-cream"
                             onClick={() => {
@@ -370,9 +378,10 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                             aria-haspopup="dialog"
                             aria-label={`${t('shell.notifications')}${unread ? ` - ${unread} ${t('shell.unread')}` : ''}`}
                         >
-                            <Bell size={19} strokeWidth={1.8} />
+                            <Bell size={19} strokeWidth={1.8}/>
                             {unread > 0 && (
-                                <span className="absolute -top-0.5 -right-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-status-rose px-1 text-[0.64rem] font-bold text-white ring-2 ring-white">
+                                <span
+                                    className="absolute -top-0.5 -right-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-status-rose px-1 text-[0.64rem] font-bold text-white ring-2 ring-white">
                                     {unread}
                                 </span>
                             )}
@@ -382,9 +391,10 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                             <div
                                 role="dialog"
                                 aria-label={t('shell.notifications')}
-                                className="fixed inset-x-3 top-[4.4rem] z-50 overflow-hidden rounded-xl border border-line bg-paper shadow-xl sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-[min(92vw,24rem)]"
+                                className="absolute inset-x-3 top-full z-50 mt-2 overflow-hidden rounded-xl border border-line bg-paper shadow-xl xl:inset-x-auto xl:right-0 xl:w-[min(92vw,24rem)]"
                             >
-                                <div className="flex items-center justify-between gap-2 border-b border-line-soft px-4 py-3">
+                                <div
+                                    className="flex items-center justify-between gap-2 border-b border-line-soft px-4 py-3">
                                     <div>
                                         <div className="font-temple text-[1rem] text-sage-900">
                                             {t('shell.notifications')}
@@ -417,7 +427,7 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                                             onClick={() => setBell(false)}
                                             aria-label={t('shell.notifications')}
                                         >
-                                            <X size={15} />
+                                            <X size={15}/>
                                         </button>
                                     </div>
                                 </div>
@@ -494,10 +504,10 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                         )}
                     </div>
 
-                    <span className="hidden h-7 w-px bg-line sm:block" />
+                    <span className="hidden h-7 w-px bg-line sm:block"/>
 
                     {/* Account menu */}
-                    <div className="relative" ref={menuRef}>
+                    <div className="xl:relative" ref={menuRef}>
                         <button
                             className="flex items-center gap-2 rounded-full py-1 pr-2 pl-1 hover:bg-cream"
                             onClick={() => {
@@ -507,7 +517,8 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                             aria-haspopup="menu"
                             aria-expanded={menu}
                         >
-                            <span className="grid h-9 w-9 place-items-center rounded-full bg-gold-500 text-[0.78rem] font-bold text-sage-950 ring-2 ring-gold-200">
+                            <span
+                                className="grid h-9 w-9 place-items-center rounded-full bg-gold-500 text-[0.78rem] font-bold text-sage-950 ring-2 ring-gold-200">
                                 {user?.initials ?? 'TA'}
                             </span>
                             <span className="hidden text-left md:block">
@@ -518,18 +529,19 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                                     {user?.roleLabel ?? 'Temple Admin'}
                                 </span>
                             </span>
-                            <ChevronDown size={15} className="hidden text-muted md:block" />
+                            <ChevronDown size={15} className="hidden text-muted md:block"/>
                         </button>
 
                         {menu && (
                             <div
                                 role="menu"
                                 aria-label="Account"
-                                className="absolute top-full right-0 z-50 mt-2 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-line bg-paper shadow-xl"
+                                className="absolute inset-x-3 top-full z-50 mt-2 overflow-hidden rounded-xl border border-line bg-paper shadow-xl xl:inset-x-auto xl:right-0 xl:w-[min(18rem,calc(100vw-1.5rem))]"
                             >
                                 <div className="border-b border-line-soft px-4 py-3">
                                     <div className="flex items-center gap-2.5">
-                                        <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-gold-500 text-[0.78rem] font-bold text-sage-950 ring-2 ring-gold-200">
+                                        <span
+                                            className="grid h-9 w-9 flex-none place-items-center rounded-full bg-gold-500 text-[0.78rem] font-bold text-sage-950 ring-2 ring-gold-200">
                                             {user?.initials ?? 'TA'}
                                         </span>
                                         <span className="min-w-0">
@@ -542,7 +554,7 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                                         </span>
                                     </div>
                                     <div className="mt-2 flex items-center gap-1.5 text-[0.72rem] text-muted">
-                                        <Landmark size={13} strokeWidth={1.8} />{' '}
+                                        <Landmark size={13} strokeWidth={1.8}/>{' '}
                                         {user?.templeName ?? 'Sri Sambodhi Maha Viharaya'}
                                     </div>
                                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -561,30 +573,30 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                                     {
                                         label: 'My profile',
                                         to: adminRoutes.profile,
-                                        icon: <User size={16} strokeWidth={1.8} />,
+                                        icon: <User size={16} strokeWidth={1.8}/>,
                                     },
                                     ...(can('manageUserRoles')
                                         ? [
-                                              {
-                                                  label: 'User management',
-                                                  to: adminRoutes.users,
-                                                  icon: <Users size={16} strokeWidth={1.8} />,
-                                              },
-                                          ]
+                                            {
+                                                label: 'User management',
+                                                to: adminRoutes.users,
+                                                icon: <Users size={16} strokeWidth={1.8}/>,
+                                            },
+                                        ]
                                         : []),
                                     ...(can('manageOptionalModules')
                                         ? [
-                                              {
-                                                  label: 'Settings',
-                                                  to: adminRoutes.settings,
-                                                  icon: (
-                                                      <SettingsGlyph
-                                                          size={16}
-                                                          strokeWidth={1.8}
-                                                      />
-                                                  ),
-                                              },
-                                          ]
+                                            {
+                                                label: 'Settings',
+                                                to: adminRoutes.settings,
+                                                icon: (
+                                                    <SettingsGlyph
+                                                        size={16}
+                                                        strokeWidth={1.8}
+                                                    />
+                                                ),
+                                            },
+                                        ]
                                         : []),
                                 ].map((entry) => (
                                     <button
@@ -609,7 +621,7 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                                         navigate(authRoutes.login)
                                     }}
                                 >
-                                    <LogOut size={16} strokeWidth={1.8} /> Sign out
+                                    <LogOut size={16} strokeWidth={1.8}/> Sign out
                                 </button>
                             </div>
                         )}
