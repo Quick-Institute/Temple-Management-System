@@ -127,7 +127,10 @@ export const permissionMatrix: PermissionRow[] = [
         levels: {
             superAdmin: F,
             templeAdmin: O,
-            coAdmin: L,
+            /* Frontend override: a Co-Administrator may read, update and delete the temple
+               information of the temple they are assigned to - but never create a new temple.
+               Create stays with Super Admin / Temple Admin (see canCreateTemple). */
+            coAdmin: O,
             religiousRepresentative: L,
             committeeRepresentative: L,
             family: L

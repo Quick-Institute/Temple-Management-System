@@ -85,6 +85,16 @@ const SEED: TempleRecord[] = [
                 appointedOn: '2024-02-06',
                 status: 'Active',
             },
+            {
+                id: 'co-3',
+                role: 'Village Representative',
+                name: 'Sunil Fernando',
+                email: 'coadmin@temple.lk',
+                phone: '+94 71 555 8899',
+                reference: 'NIC 198512304568',
+                appointedOn: '2024-02-06',
+                status: 'Active',
+            },
         ],
         committee: [
             {role: 'Chief Incumbent', name: 'Ven. Kamburugamuwa Dhammika Thero', phone: '+94 31 223 4478'},
@@ -295,6 +305,34 @@ const nextRegistrationId = (name: string, existing: TempleRecord[]): string => {
 
 const today = () => new Date().toISOString().slice(0, 10)
 
+/**
+ * A failed Co-Administrator save. `messageKey` + `params` let the screen show the reason in the
+ * signed-in language; `message` stays as the plain English fallback for any caller that does not
+ * translate, so nothing that already reads `message` breaks.
+ */
+type CoAdminError = {
+    ok: false
+    messageKey: string
+    params?: Record<string, string>
+    message: string
+}
+
+const CO_ADMIN_ERROR_EN: Record<string, string> = {
+    'temple.co.errName': 'Enter the name of the person.',
+    'temple.co.errEmail': 'Enter a valid email address.',
+    'temple.co.errTakenOther': '{{email}} is already a Co-Administrator of {{temple}}. One Co-Administrator can serve only one temple.',
+    'temple.co.errTakenSame': '{{email}} is already a Co-Administrator of this temple.',
+    'temple.co.errNoTemple': 'That temple no longer exists.',
+}
+
+const coAdminError = (messageKey: string, params?: Record<string, string>): CoAdminError => ({
+    ok: false,
+    messageKey,
+    params,
+    message: (CO_ADMIN_ERROR_EN[messageKey] ?? messageKey)
+        .replace(/\{\{(\w+)\}\}/g, (_, key: string) => params?.[key] ?? ''),
+})
+
 /* -------------------------------- context --------------------------------- */
 
 type TempleStoreValue = {
@@ -316,14 +354,11 @@ type TempleStoreValue = {
      * Appoint a Co-Administrator to one temple. A person may serve only one temple, so the call
      * fails when that email is already appointed somewhere else.
      */
-    addCoAdmin: (recordId: string, draft: Omit<CoAdministrator, 'id' | 'appointedOn'>) => { ok: true } | {
-        ok: false;
-        message: string
-    }
+    addCoAdmin: (recordId: string, draft: Omit<CoAdministrator, 'id' | 'appointedOn'>) => { ok: true } | CoAdminError
     /** Change the details of a Co-Administrator already on this temple. */
     updateCoAdmin: (recordId: string, coAdminId: string, draft: Omit<CoAdministrator, 'id' | 'appointedOn'>) => {
         ok: true
-    } | { ok: false; message: string }
+    } | CoAdminError
     /** Where a person is already a Co-Administrator, if anywhere. */
     coAdminAssignment: (email: string) => { templeId: string; templeName: string } | null
     /** System administrator actions - kept here so the demo can actually reach an approved state. */
@@ -451,21 +486,18 @@ export const TempleStoreProvider = ({children}: { children: ReactNode }) => {
 
     const addCoAdmin = useCallback<TempleStoreValue['addCoAdmin']>((recordId, draft) => {
         const email = draft.email.trim().toLowerCase()
-        if (!draft.name.trim()) return {ok: false, message: 'Enter the name of the person.'}
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return {ok: false, message: 'Enter a valid email address.'}
+        if (!draft.name.trim()) return coAdminError('temple.co.errName')
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return coAdminError('temple.co.errEmail')
 
         const taken = coAdminAssignment(email)
         const target = records.find((record) => record.id === recordId)
         if (taken && taken.templeId !== recordId) {
-            return {
-                ok: false,
-                message: `${email} is already a Co-Administrator of ${taken.templeName}. One Co-Administrator can serve only one temple.`
-            }
+            return coAdminError('temple.co.errTakenOther', {email, temple: taken.templeName})
         }
         if (taken && taken.templeId === recordId) {
-            return {ok: false, message: `${email} is already a Co-Administrator of this temple.`}
+            return coAdminError('temple.co.errTakenSame', {email})
         }
-        if (!target) return {ok: false, message: 'That temple no longer exists.'}
+        if (!target) return coAdminError('temple.co.errNoTemple')
 
         const admin: CoAdministrator = {
             ...draft,
@@ -481,11 +513,11 @@ export const TempleStoreProvider = ({children}: { children: ReactNode }) => {
 
     const updateCoAdmin = useCallback<TempleStoreValue['updateCoAdmin']>((recordId, coAdminId, draft) => {
         const email = draft.email.trim().toLowerCase()
-        if (!draft.name.trim()) return {ok: false, message: 'Enter the name of the person.'}
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return {ok: false, message: 'Enter a valid email address.'}
+        if (!draft.name.trim()) return coAdminError('temple.co.errName')
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return coAdminError('temple.co.errEmail')
 
         const target = records.find((record) => record.id === recordId)
-        if (!target) return {ok: false, message: 'That temple no longer exists.'}
+        if (!target) return coAdminError('temple.co.errNoTemple')
 
         /* Someone else may already hold this email - here or at another temple. */
         for (const record of records) {
@@ -493,12 +525,9 @@ export const TempleStoreProvider = ({children}: { children: ReactNode }) => {
                 admin.id !== coAdminId && admin.email.trim().toLowerCase() === email
             ))
             if (!clash) continue
-            return {
-                ok: false,
-                message: record.id === recordId
-                    ? `${email} is already a Co-Administrator of this temple.`
-                    : `${email} is already a Co-Administrator of ${record.name}. One Co-Administrator can serve only one temple.`,
-            }
+            return record.id === recordId
+                ? coAdminError('temple.co.errTakenSame', {email})
+                : coAdminError('temple.co.errTakenOther', {email, temple: record.name})
         }
 
         setRecords((current) => current.map((record) => (

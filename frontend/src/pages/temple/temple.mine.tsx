@@ -14,6 +14,7 @@ import {
     X,
 } from 'lucide-react'
 import {AppShell} from '../../layouts/AppShell'
+import TempleFooterWave from '../../components/TempleFooterWave'
 import {useAuth} from '../../context/AuthContext'
 import {usePermissions} from '../../hooks/usePermissions'
 import {useTemples} from '../../data/templeStore.tsx'
@@ -24,19 +25,19 @@ import {useTranslation} from 'react-i18next'
 import type {Temple} from '../../data/temples'
 
 const STATUS_TONE: Record<TransferStatus, string> = {
-    Pending: 'border-accent-gold/40 bg-accent-gold-50 text-status-amber',
+    Pending: 'border-accent-blue/30 bg-accent-blue-50 text-status-blue',
     Approved: 'border-accent-green/30 bg-accent-green-50 text-accent-green',
     Rejected: 'border-status-rose/30 bg-lotus-50 text-status-rose',
 }
 
 const Row = ({icon: Icon, label, value}: { icon: typeof Landmark; label: string; value: string }) => (
     <div className="flex items-start gap-2.5">
-        <span className="mt-0.5 grid h-8 w-8 flex-none place-items-center rounded-lg bg-cream text-sage-800">
+        <span className="mt-0.5 grid h-8 w-8 flex-none place-items-center rounded-lg bg-cream text-ink-soft">
             <Icon size={15} strokeWidth={1.9}/>
         </span>
         <div className="min-w-0">
             <dt className="text-[0.72rem] font-bold tracking-widest text-muted uppercase">{label}</dt>
-            <dd className="text-[0.95rem] text-ink">{value}</dd>
+            <dd className="text-[1rem] text-ink">{value}</dd>
         </div>
     </div>
 )
@@ -82,8 +83,8 @@ export const MyTemplePage = () => {
             <AppShell>
                 <div className="card mx-auto max-w-160 p-8 text-center">
                     <CircleAlert className="mx-auto text-status-amber"/>
-                    <h1 className="mt-2 font-temple text-[1.3rem] text-sage-900">{t('temple.noTempleLinked')}</h1>
-                    <p className="mt-1 text-[0.92rem] text-ink-soft">
+                    <h1 className="mt-2 font-temple text-[1.3rem] text-ink">{t('temple.noTempleLinked')}</h1>
+                    <p className="mt-1 text-[0.98rem] text-ink-soft">
                         {t('temple.noTempleHelp')}
                     </p>
                 </div>
@@ -92,8 +93,8 @@ export const MyTemplePage = () => {
     }
 
     return (
-        <AppShell>
-            <div className="mx-auto flex max-w-7xl flex-col gap-4">
+        <AppShell footer={<TempleFooterWave/>}>
+            <div className="temple-info-scope mx-auto flex max-w-380 flex-col gap-4">
                 {/* Temple header */}
                 <header className="card overflow-hidden p-0">
                     <div className="relative h-36 w-full overflow-hidden sm:h-44">
@@ -102,21 +103,21 @@ export const MyTemplePage = () => {
                         <div
                             className="absolute inset-0 bg-linear-to-r from-sage-950/80 via-sage-950/45 to-transparent"/>
                         <div className="absolute inset-x-0 bottom-0 p-5">
-                            <p className="text-[0.7rem] font-bold tracking-[0.18em] text-sky-200 uppercase">
+                            <p className="text-[0.76rem] font-bold tracking-[0.18em] text-white/85 uppercase">
                                 {t('temple.myTemple')}
                             </p>
                             <h1 className="mt-0.5 font-temple text-[1.7rem] leading-tight text-white drop-shadow">
                                 {temple.name}
                             </h1>
-                            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.86rem] text-sky-100">
+                            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.92rem] text-white/85">
                                 <span className="inline-flex items-center gap-1.5">
                                     <MapPin size={14}/> {temple.village}, {temple.district}
                                 </span>
-                                <span className="mono rounded bg-white/15 px-2 py-0.5 text-[0.78rem]">
-                                    {temple.registrationId ?? 'Not registered yet'}
+                                <span className="mono rounded bg-white/15 px-2 py-0.5 text-[0.84rem]">
+                                    {temple.registrationId ?? t('temple.notRegistered')}
                                 </span>
-                                <span className="rounded-full border border-white/40 px-2 py-0.5 text-[0.74rem]">
-                                    {temple.status}
+                                <span className="rounded-full border border-white/40 px-2 py-0.5 text-[0.8rem]">
+                                    {t(`temple.status.${temple.status}`)}
                                 </span>
                             </p>
                         </div>
@@ -133,24 +134,24 @@ export const MyTemplePage = () => {
                 </header>
 
                 {/* Everything on this page is for reading only - the Temple Admin keeps the records. */}
-                <p className="flex items-start gap-2 rounded-xl border border-line bg-cream/70 px-4 py-3 text-[0.92rem] text-ink-soft">
-                    <CircleAlert size={17} className="mt-0.5 flex-none text-sage-600"/>
+                <p className="flex items-start gap-2 rounded-xl border border-line bg-cream/70 px-4 py-3 text-[0.98rem] text-ink-soft">
+                    <CircleAlert size={17} className="mt-0.5 flex-none text-status-amber"/>
                     {t('temple.readOnlyNote')}
                 </p>
 
                 <div className="grid gap-4 lg:grid-cols-2">
                     <section className="card p-5">
-                        <h2 className="font-temple text-[1.1rem] text-sage-900">{t('temple.danaSessions')}</h2>
+                        <h2 className="font-temple text-[1.16rem] text-ink">{t('temple.danaSessions')}</h2>
                         <ul className="mt-2 flex list-none flex-wrap gap-2 p-0">
                             {temple.danaSessions.map((session) => (
                                 <li key={session}
-                                    className="rounded-lg border border-line bg-cream px-3 py-1.5 text-[0.86rem] text-ink">
+                                    className="rounded-lg border border-line bg-cream px-3 py-1.5 text-[0.92rem] text-ink">
                                     {session}
                                 </li>
                             ))}
                         </ul>
-                        <h3 className="mt-4 font-temple text-[1rem] text-sage-900">{t('temple.hallsCapacity')}</h3>
-                        <ul className="mt-1.5 flex list-none flex-col gap-1 p-0 text-[0.9rem] text-ink-soft">
+                        <h3 className="mt-4 font-temple text-[1rem] text-ink">{t('temple.hallsCapacity')}</h3>
+                        <ul className="mt-1.5 flex list-none flex-col gap-1 p-0 text-[0.95rem] text-ink-soft">
                             {temple.capacity.map((hall) => (
                                 <li key={hall.id} className="flex justify-between gap-3 border-b border-line-soft pb-1">
                                     <span>{hall.label}</span>
@@ -161,17 +162,17 @@ export const MyTemplePage = () => {
                     </section>
 
                     <section className="card p-5">
-                        <h2 className="font-temple text-[1.1rem] text-sage-900">{t('temple.facilities')}</h2>
+                        <h2 className="font-temple text-[1.16rem] text-ink">{t('temple.facilities')}</h2>
                         <ul className="mt-2 flex list-none flex-wrap gap-1.5 p-0">
                             {temple.facilities.map((facility) => (
                                 <li key={facility}
-                                    className="rounded-md border border-line bg-white px-2.5 py-1 text-[0.82rem] text-ink-soft">
+                                    className="rounded-md border border-line bg-white px-2.5 py-1 text-[0.88rem] text-ink-soft">
                                     {facility}
                                 </li>
                             ))}
                         </ul>
-                        <h3 className="mt-4 font-temple text-[1rem] text-sage-900">{t('temple.committee')}</h3>
-                        <ul className="mt-1.5 flex list-none flex-col gap-1 p-0 text-[0.88rem] text-ink-soft">
+                        <h3 className="mt-4 font-temple text-[1rem] text-ink">{t('temple.committee')}</h3>
+                        <ul className="mt-1.5 flex list-none flex-col gap-1 p-0 text-[0.93rem] text-ink-soft">
                             {temple.committee.slice(0, 4).map((member) => (
                                 <li key={member.name}
                                     className="flex flex-wrap justify-between gap-2 border-b border-line-soft pb-1">
@@ -190,6 +191,7 @@ export const MyTemplePage = () => {
                         options={options}
                         requests={myRequests}/>
                 )}
+
             </div>
         </AppShell>
     )
@@ -232,19 +234,19 @@ const TransferPanel = ({
         <section className="card p-5">
             <div className="flex items-start gap-3">
                 <span
-                    className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-accent-blue-50 text-accent-blue ring-1 ring-accent-blue/20">
+                    className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-accent-purple-50 text-accent-purple ring-1 ring-accent-purple/20">
                     <ArrowRightLeft size={18} strokeWidth={1.9}/>
                 </span>
                 <div>
-                    <h2 className="font-temple text-[1.15rem] text-sage-900">{t('temple.transferTitle')}</h2>
-                    <p className="mt-0.5 text-[0.9rem] leading-relaxed text-ink-soft">
+                    <h2 className="font-temple text-[1.2rem] text-ink">{t('temple.transferTitle')}</h2>
+                    <p className="mt-0.5 text-[0.95rem] leading-relaxed text-ink-soft">
                         {t('temple.transferIntro')}
                     </p>
                 </div>
             </div>
 
             {pending ? (
-                <p className="mt-4 flex items-start gap-2 rounded-xl border border-accent-gold/30 bg-accent-gold-50 px-4 py-3 text-[0.9rem] text-status-amber">
+                <p className="mt-4 flex items-start gap-2 rounded-xl border border-accent-blue/30 bg-accent-blue-50 px-4 py-3 text-[0.95rem] text-status-blue">
                     <Clock size={16} className="mt-0.5 flex-none"/>
                     {t('temple.requestPending')}
                 </p>
@@ -267,7 +269,7 @@ const TransferPanel = ({
                             value={reason}
                             onChange={(event) => setReason(event.target.value)}
                             placeholder={t('temple.whyMovingPlaceholder')}
-                            className="rounded-xl border border-line bg-white px-3 py-2.5 text-[0.92rem] placeholder:text-[#8299a8] focus:outline-none"/>
+                            className="rounded-xl border border-line bg-white px-3 py-2.5 text-[0.98rem] placeholder:text-[#8299a8] focus:outline-none"/>
                     </label>
                     <button className="btn btn-primary" onClick={submit} disabled={!target || !reason.trim()}>
                         <Send size={15}/> {t('temple.sendRequest')}
@@ -286,21 +288,21 @@ const TransferPanel = ({
                     {requests.map((request) => (
                         <li key={request.id} className="rounded-xl border border-line bg-white px-4 py-3">
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                                <span className="text-[0.92rem] font-semibold text-sage-900">
+                                <span className="text-[0.98rem] font-semibold text-ink">
                                     {request.fromTemple} → {request.toTemple}
                                 </span>
                                 <span
-                                    className={`rounded-md border px-2 py-0.5 text-[0.7rem] font-bold ${STATUS_TONE[request.status]}`}>
+                                    className={`rounded-md border px-2 py-0.5 text-[0.76rem] font-bold ${STATUS_TONE[request.status]}`}>
                                     {request.status}
                                 </span>
                             </div>
-                            <p className="mt-1 text-[0.82rem] text-ink-soft">{request.reason}</p>
-                            <p className="mt-0.5 text-[0.74rem] text-muted">
+                            <p className="mt-1 text-[0.88rem] text-ink-soft">{request.reason}</p>
+                            <p className="mt-0.5 text-[0.8rem] text-muted">
                                 {request.id} · sent {prettyDate(request.submittedOn)}
                                 {request.reviewNote ? ` · note: ${request.reviewNote}` : ''}
                             </p>
                             {request.status === 'Rejected' && (
-                                <p className="mt-1 inline-flex items-center gap-1.5 text-[0.78rem] text-status-rose">
+                                <p className="mt-1 inline-flex items-center gap-1.5 text-[0.84rem] text-status-rose">
                                     <X size={13}/> Not approved. You can send a new request.
                                 </p>
                             )}

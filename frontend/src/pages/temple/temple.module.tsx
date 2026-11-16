@@ -18,6 +18,9 @@ import {
 import {AppShell} from '../../layouts/AppShell'
 import {currentTemple} from '../../data/demo'
 import {type AdminModuleKey, adminRoutes} from '../../routes/adminRoutes'
+import {usePermissions} from '../../hooks/usePermissions'
+import {useActiveTemple} from '../../hooks/useActiveTemple'
+import {canCreateTemple} from '../../data/templeAccess'
 
 /**
  * Placeholder screen for the rail modules that are not built yet. They are real routes, so every
@@ -140,7 +143,25 @@ const MODULES: Record<AdminModuleKey, ModuleConfig> = {
 export const TempleModulePage = ({module}: { module: AdminModuleKey }) => {
     const config = MODULES[module]
     const {pathname} = useLocation()
-    const baseLinks: { label: string; to: string; icon: ReactNode }[] = BASE_LINKS
+    const {role} = usePermissions()
+    const {temple} = useActiveTemple()
+    const mayCreate = canCreateTemple(role)
+
+    /* A Co-Administrator (or any read-only role) never sees the "Add temple" shortcut. */
+    const baseLinks: { label: string; to: string; icon: ReactNode }[] = BASE_LINKS.filter(
+        (link) => mayCreate || link.to !== adminRoutes.templeAdd,
+    )
+
+    /* The Settings module links to "Edit temple details". Point it at the temple this account is
+       actually working on so a Co-Administrator lands on their own assigned temple's edit form. */
+    const related = (config.related ?? [])
+        .map((link) => {
+            if (link.to.startsWith(adminRoutes.templeAdd)) {
+                return temple ? {...link, to: `${adminRoutes.templeAdd}?mode=edit&id=${temple.id}`} : null
+            }
+            return link
+        })
+        .filter((link): link is { label: string; to: string } => link !== null)
 
     return (
         <AppShell>
@@ -198,8 +219,8 @@ export const TempleModulePage = ({module}: { module: AdminModuleKey }) => {
                                 </Link>
                             ))}
 
-                            {config.related
-                                ?.filter((link) => !BASE_LINKS.some((base) => base.to === link.to))
+                            {related
+                                .filter((link) => !baseLinks.some((base) => base.to === link.to))
                                 .map((link) => (
                                     <Link key={link.to} to={link.to}
                                           className="flex items-center gap-2 rounded-xl border border-line px-3 py-2.5 text-[0.86rem] font-medium text-ink-soft transition hover:border-sage-300 hover:bg-sage-50 hover:text-sage-900">

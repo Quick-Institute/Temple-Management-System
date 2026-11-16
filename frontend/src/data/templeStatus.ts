@@ -22,9 +22,10 @@ export type CapacityField = {
 }
 
 /**
- * A Co-Administrator appointed by the Temple Admin (proposal 10.2.3). Only two appointments are
- * possible per temple - an Authorized Religious Representative and a Designated Technical
- * Administrator - and neither gives platform-level (Super Administrator) access.
+ * A Co-Administrator appointed by the Temple Admin (proposal 10.2.3). A temple may appoint as
+ * many as it needs; the proposal names two designations - an Authorized Religious Representative
+ * and a Designated Technical Administrator - but the list is not capped and the designation is
+ * free text. No appointment gives platform-level (Super Administrator) access.
  */
 /** Any designation can be appointed; these two are the ones the proposal names. */
 export type CoAdministratorRole = string
@@ -113,12 +114,25 @@ export const canDrop = (status: TempleStatus) =>
 
 export const statusTone: Record<TempleStatus, string> = {
     Active: 'border-accent-green/30 bg-accent-green-50 text-accent-green',
-    'Pending approval': 'border-accent-gold/40 bg-accent-gold-50 text-status-amber',
-    'Changes requested': 'border-accent-blue/30 bg-accent-blue-50 text-accent-blue',
+    'Pending approval': 'border-accent-blue/30 bg-accent-blue-50 text-status-blue',
+    'Changes requested': 'border-accent-purple/30 bg-accent-purple-50 text-accent-purple',
     'Deletion requested': 'border-status-rose/30 bg-lotus-50 text-status-rose',
 }
 
-export const prettyDate = (iso: string | null) =>
-    iso
-        ? new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: 'numeric'})
-        : '-'
+/* Sinhala month names are spelled out rather than taken from Intl: a browser with a reduced
+   locale set (and some headless builds) silently falls back to English for 'si-LK'. */
+const SI_MONTHS = [
+    'ජනවාරි', 'පෙබරවාරි', 'මාර්තු', 'අප්‍රේල්', 'මැයි', 'ජූනි',
+    'ජූලි', 'අගෝස්තු', 'සැප්තැම්බර්', 'ඔක්තෝබර්', 'නොවැම්බර්', 'දෙසැම්බර්',
+]
+
+export const prettyDate = (iso: string | null, language?: string) => {
+    if (!iso) return '-'
+    const date = new Date(`${iso}T00:00:00`)
+    if (Number.isNaN(date.getTime())) return '-'
+    if (language === 'si') {
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${day} ${SI_MONTHS[date.getMonth()]} ${date.getFullYear()}`
+    }
+    return date.toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: 'numeric'})
+}
