@@ -1,3 +1,4 @@
+
 import {Navigate, Route, Routes, useParams, useSearchParams} from 'react-router-dom'
 import {ForgotPasswordPage} from '../pages/auth/auth.forgot-password'
 import {AuthLoginPage} from '../pages/auth/auth.login'
@@ -33,6 +34,13 @@ import DanaSchedulePage from '../pages/family/DanaSchedulePage'
 import DanaBookingPage from '../pages/family/DanaBookingPage'
 import BookingConfirmationPage from '../pages/family/BookingConfirmationPage'
 import MyBookingsPage from '../pages/family/MyBookingsPage'
+
+// Communications module pages
+import ActivitiesPage from '../pages/communications/activities/ActivitiesPage'
+import AnnouncementsPage from '../pages/communications/announcements/AnnouncementsPage'
+import UserAnnouncementsPage from '../pages/communications/announcements/UserAnnouncementsPage'
+import NotificationsPage from '../pages/communications/notifications/NotificationsPage'
+import UserNotificationsPage from '../pages/communications/notifications/UserNotificationsPage'
 
 
 //User and  families pages
@@ -170,6 +178,13 @@ export const AppRoutes = () => (
             {/* Dashboard resolves by user type: family, temple admin or staff representative. */}
             <Route path={adminRoutes.dashboard} element={<DashboardRoute/>}/>
             <Route path={adminRoutes.profile} element={<ProfilePage/>}/>
+
+            {/* Communications: Community Announcements and Notifications */}
+            <Route path="/community/announcements"
+                   element={<RequirePermission permission="manageAnnouncements"><UserAnnouncementsPage/></RequirePermission>}/>
+            <Route path="/community/notifications"
+                   element={<RequirePermission permission="manageAnnouncements"><UserNotificationsPage/></RequirePermission>}/>
+
             <Route path={adminRoutes.myFamily}
                    element={<RequirePermission
                        permission="changeRegisteredTemple"><PlaceholderPage/></RequirePermission>}/>
@@ -220,12 +235,18 @@ export const AppRoutes = () => (
                element={<RequirePermissionShell
                    permission="manageUserRoles"><UsersRolesPage/></RequirePermissionShell>}/>
 
+        {/* Communications: Events */}
         <Route path={adminRoutes.events}
-               element={<RequirePermissionShell permission="manageTempleRecords"><TempleModulePage
-                   module="events"/></RequirePermissionShell>}/>
+               element={<RequirePermissionShell permission="manageTempleRecords"><AppShell><ActivitiesPage/></AppShell></RequirePermissionShell>}/>
+
+        {/* Communications: Announcements */}
         <Route path={adminRoutes.announcements}
-               element={<RequirePermissionShell permission="manageAnnouncements"><TempleModulePage
-                   module="announcements"/></RequirePermissionShell>}/>
+               element={<RequirePermissionShell permission="manageAnnouncements"><AppShell><AnnouncementsPage/></AppShell></RequirePermissionShell>}/>
+
+        {/* Communications: Admin Notifications */}
+        <Route path="/notifications"
+               element={<RequirePermissionShell permission="manageAnnouncements"><AppShell><NotificationsPage/></AppShell></RequirePermissionShell>}/>
+
         <Route path={adminRoutes.families}
                element={<RequirePermissionShell
                    permission="registerFamilyQr"><FamiliesPage/></RequirePermissionShell>}/>

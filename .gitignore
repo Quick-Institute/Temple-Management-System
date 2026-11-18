@@ -2,8 +2,6 @@
 node_modules
 
 # Environment variables and secrets
-.env
-.env.*
 !.env.example
 
 # Build output
@@ -31,7 +29,6 @@ coverage/
 .vite/
 
 # IDE and editor files
-.vscode/
 .idea/
 
 # Operating system files
@@ -56,3 +53,4 @@ desktop.ini
 *.key
 *.cert
 
+config.bat
