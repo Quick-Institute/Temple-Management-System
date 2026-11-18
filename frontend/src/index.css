@@ -14,7 +14,25 @@
     font-weight: 400 700;
     font-display: swap;
     src: url('./assets/fonts/petrona-latin.woff2') format('woff2');
-    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    unicode-range: U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
 }
 
 @font-face {
@@ -524,6 +542,9 @@ html[data-lang='si'] h2 {
     font-size: 0.9rem;
 }
 
+
+
+
 /* The shared SelectField draws its own label and rows, so it needs the same bump.
    These selectors are unlayered, so they win over the component's utility sizes. */
 .temple-info-scope .select-field-label {
@@ -538,10 +559,33 @@ html[data-lang='si'] h2 {
     font-size: 1rem;
 }
 
+
+
+.temple-portal .form-input.has-error {
+    border-color: #ef4444 !important;
+    background-color: #fff8f8 !important;
+    box-shadow: 0 0 0 3.5px rgba(239, 68, 68, 0.2) !important;
+}
+
+.temple-portal .form-error-msg {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    color: #dc2626 !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    margin-top: 5px !important;
+}
+
+.temple-portal .form-error-msg span {
+    color: #dc2626 !important;
+}
+
 /* Temple Information reads in neutral ink - only status colours stay coloured.
    Kept in the base layer so an explicit utility (the sky-blue hero heading, a status
    badge) still overrides it. */
 @layer base {
+
     .temple-info-scope h1,
     .temple-info-scope h2,
     .temple-info-scope h3,
@@ -553,6 +597,7 @@ html[data-lang='si'] h2 {
 /* Outline / ghost buttons and quiet links inherit a blue label from the shared
    component classes; neutralise the label, keep the button chrome. */
 @layer components {
+
     .temple-info-scope .btn-outline,
     .temple-info-scope .btn-ghost,
     .temple-info-scope .subtle-link {
