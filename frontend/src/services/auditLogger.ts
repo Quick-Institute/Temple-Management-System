@@ -14,17 +14,11 @@ export interface AuditTrailRecord {
   statusBadge?: string;
 }
 
-// Redact sensitive identifiable info (NIC, phone numbers, credentials) before saving locally
-function redactSensitiveData(text?: string): string {
-  if (!text) return '';
-  return text
-    .replace(/\b(07\d{8}|0\d{9})\b/g, '07*-***-****')
-    .replace(/\b(\d{9}[vVxX]|\d{12})\b/g, '************')
-    .replace(/(password\s*[:=]\s*)[^\s,]+/gi, '$1********');
-}
+// In-memory audit trail cache for current browser session (prevents clear text storage of sensitive info)
+const sessionAuditLogs: AuditTrailRecord[] = [];
 
 /**
- * Record an audit log entry in localStorage and sync with the backend
+ * Record an audit log entry in session memory and sync with the backend
  */
 export async function recordAuditAction(entry: {
   adminName?: string;
@@ -56,34 +50,15 @@ export async function recordAuditAction(entry: {
     statusBadge: entry.statusBadge || (entry.action === 'Deactivated' ? 'deactivated' : 'active'),
   };
 
-  try {
-    const existing: AuditTrailRecord[] = JSON.parse(localStorage.getItem('temple_audit_logs') || '[]');
-    // Sanitize before storing in browser localStorage to prevent plaintext sensitive info storage
-    const sanitizedRecord: AuditTrailRecord = {
-      ...record,
-      targetName: redactSensitiveData(record.targetName),
-      reason: redactSensitiveData(record.reason),
-    };
-    localStorage.setItem('temple_audit_logs', JSON.stringify([sanitizedRecord, ...existing]));
-  } catch (err) {
-    console.warn('Failed to record audit log to localStorage:', err);
-  }
+  sessionAuditLogs.unshift(record);
 
   return record;
 }
 
 /**
- * Fetch unified audit logs (combining PostgreSQL backend logs and localStorage session logs)
+ * Fetch unified audit logs (combining PostgreSQL backend logs and in-memory session logs)
  */
 export async function fetchUnifiedAuditLogs(targetType?: string): Promise<AuditTrailRecord[]> {
-  const localLogs: AuditTrailRecord[] = (() => {
-    try {
-      return JSON.parse(localStorage.getItem('temple_audit_logs') || '[]');
-    } catch {
-      return [];
-    }
-  })();
-
   try {
     const res = await auditApi.getAll(targetType ? { targetType, limit: 50 } : { limit: 50 });
     if (res && res.data && Array.isArray(res.data)) {
@@ -110,7 +85,7 @@ export async function fetchUnifiedAuditLogs(targetType?: string): Promise<AuditT
       const seen = new Set<string>();
       const unified: AuditTrailRecord[] = [];
 
-      for (const item of [...localLogs, ...serverLogs]) {
+      for (const item of [...sessionAuditLogs, ...serverLogs]) {
         const key = `${item.targetId}_${item.action}_${item.timestamp.slice(0, 11)}`;
         if (!seen.has(key)) {
           seen.add(key);
@@ -121,8 +96,8 @@ export async function fetchUnifiedAuditLogs(targetType?: string): Promise<AuditT
       return unified;
     }
   } catch (err) {
-    console.warn('Backend audit logs fetch fallback to local cache:', err);
+    console.warn('Backend audit logs fetch fallback:', err);
   }
 
-  return localLogs;
+  return [...sessionAuditLogs];
 }

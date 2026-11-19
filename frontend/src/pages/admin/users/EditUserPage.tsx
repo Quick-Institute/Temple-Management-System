@@ -7,6 +7,7 @@ import TempleFooterWave from '../../../components/TempleFooterWave.tsx';
 import { INITIAL_ROSTER, type AuditLogRecord } from '../../../data/seed';
 import { usersApi } from '../../../services/api.ts';
 import { useActiveTemple } from '../../../hooks/useActiveTemple';
+import { recordAuditAction as recordAuditActionService } from '../../../services/auditLogger';
 import {
   formatSriLankanPhone,
   isValidSriLankanPhone,
@@ -67,24 +68,14 @@ function loadUserRecord(targetId: string) {
 
 // Record Audit Trail Helper
 function recordAuditAction(targetName: string, idVal: string, action: AuditLogRecord['action'], reason: string) {
-  try {
-    const saved = JSON.parse(localStorage.getItem('temple_audit_logs') || '[]');
-    const newRecord: AuditLogRecord = {
-      id: `AUD-2026-${Date.now().toString().slice(-4)}`,
-      timestamp: new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-      adminName: 'Nimal Perera',
-      adminRole: 'Co-Administrator',
-      targetType: 'User',
-      targetName,
-      targetId: `USR-${idVal}`,
-      action,
-      reason,
-      statusBadge: action === 'Deactivated' ? 'deactivated' : 'active'
-    };
-    localStorage.setItem('temple_audit_logs', JSON.stringify([newRecord, ...saved]));
-  } catch (err) {
-    console.error(err);
-  }
+  recordAuditActionService({
+    targetType: 'User',
+    targetName,
+    targetId: `USR-${idVal}`,
+    action: action as any,
+    reason,
+    statusBadge: action === 'Deactivated' ? 'deactivated' : 'active',
+  });
 }
 
 export default function EditUserPage() {
