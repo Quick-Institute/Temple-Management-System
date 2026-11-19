@@ -6,6 +6,13 @@ import DashboardHeader from '../../../components/temple-admin/DashboardHeader';
 import TempleFooterWave, { GoldenLotusIcon } from '../../../components/TempleFooterWave.tsx';
 import { SRI_LANKA_DISTRICTS, INITIAL_FAMILIES, KNOWN_DEVOTEES_REGISTRY } from '../../../data/seed';
 import { familiesApi } from '../../../services/api.ts';
+import { useActiveTemple } from '../../../hooks/useActiveTemple';
+import {
+  formatSriLankanPhone,
+  isValidSriLankanPhone,
+  formatSriLankanNic,
+  getNicValidation,
+} from '../../../utils/sriLankanValidation';
 
 interface FamilyMemberInput {
   id: number;
@@ -18,11 +25,12 @@ interface FamilyMemberInput {
 export default function AddFamilyPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { temple } = useActiveTemple();
 
   // Form State
   const [formData, setFormData] = useState({
-    templeName: 'Sri Sambodhi Maha Viharaya',
-    templeCode: 'TPL-2026-0482',
+    templeName: temple?.name || 'Sri Sambodhi Maha Viharaya',
+    templeCode: temple?.registrationId || 'TPL-2026-0482',
     firstName: '',
     lastName: '',
     nic: '',
@@ -166,7 +174,15 @@ export default function AddFamilyPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let nextValue = value;
+
+    if (name === 'phone') {
+      nextValue = formatSriLankanPhone(value);
+    } else if (name === 'nic') {
+      nextValue = formatSriLankanNic(value);
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: nextValue }));
     if (fieldErrors[name]) {
       setFieldErrors((prev) => {
         const copy = { ...prev };
@@ -222,10 +238,13 @@ export default function AddFamilyPage() {
     }
     if (!data.phone.trim()) {
       errs.phone = 'Mobile Phone Number is required';
-    } else {
-      const digits = data.phone.replace(/[^0-9]/g, '');
-      if (digits.length < 9) {
-        errs.phone = 'Please enter a valid phone number (min 9 digits)';
+    } else if (!isValidSriLankanPhone(data.phone)) {
+      errs.phone = 'Please enter a valid 10-digit Sri Lankan phone number (e.g. 071-2345678)';
+    }
+    if (data.nic && data.nic.trim()) {
+      const nicCheck = getNicValidation(data.nic);
+      if (!nicCheck.isValid) {
+        errs.nic = nicCheck.message || 'Invalid Sri Lankan National ID (NIC)';
       }
     }
     if (!data.email.trim()) {
@@ -780,7 +799,7 @@ export default function AddFamilyPage() {
                     </label>
                     <div className="relative group">
                       <input
-                        className="form-input font-mono uppercase"
+                        className={`form-input font-mono uppercase ${fieldErrors.nic ? 'has-error' : ''}`}
                         id="nic"
                         name="nic"
                         value={formData.nic}
@@ -789,7 +808,19 @@ export default function AddFamilyPage() {
                         type="text"
                       />
                     </div>
-                    <p className="form-hint">12-digit new format or 9-digit + V old format</p>
+                    {fieldErrors.nic ? (
+                      <p className="form-error-msg">
+                        <span className="material-symbols-outlined text-[15px]">error</span>
+                        <span>{fieldErrors.nic}</span>
+                      </p>
+                    ) : formData.nic && getNicValidation(formData.nic).isValid ? (
+                      <p className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1 mt-1">
+                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                        <span>{getNicValidation(formData.nic).type} Verified</span>
+                      </p>
+                    ) : (
+                      <p className="form-hint">12-digit new format or 9-digit + V/X old format</p>
+                    )}
                   </div>
 
                   {/* Phone Number */}
@@ -805,7 +836,7 @@ export default function AddFamilyPage() {
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        placeholder="+94 77 123 4567"
+                        placeholder="07X-XXXXXXX"
                         type="tel"
                       />
                     </div>
@@ -814,8 +845,13 @@ export default function AddFamilyPage() {
                         <span className="material-symbols-outlined text-[15px]">error</span>
                         <span>{fieldErrors.phone}</span>
                       </p>
+                    ) : isValidSriLankanPhone(formData.phone) ? (
+                      <p className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1 mt-1">
+                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                        <span>Valid Sri Lankan Phone ({formData.phone})</span>
+                      </p>
                     ) : (
-                      <p className="form-hint">Used for SMS alerts and Dana turn notices</p>
+                      <p className="form-hint">Auto-formats to 07X-XXXXXXX for SMS and Dana turn notices</p>
                     )}
                   </div>
 

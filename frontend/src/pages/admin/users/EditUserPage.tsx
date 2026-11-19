@@ -6,6 +6,13 @@ import DashboardHeader from '../../../components/temple-admin/DashboardHeader';
 import TempleFooterWave from '../../../components/TempleFooterWave.tsx';
 import { INITIAL_ROSTER, type AuditLogRecord } from '../../../data/seed';
 import { usersApi } from '../../../services/api.ts';
+import { useActiveTemple } from '../../../hooks/useActiveTemple';
+import {
+  formatSriLankanPhone,
+  isValidSriLankanPhone,
+  formatSriLankanNic,
+  getNicValidation,
+} from '../../../utils/sriLankanValidation';
 
 // Helper to load user record without cascading renders
 function loadUserRecord(targetId: string) {
@@ -82,6 +89,7 @@ function recordAuditAction(targetName: string, idVal: string, action: AuditLogRe
 export default function EditUserPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { temple } = useActiveTemple();
   const { id: routeId } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
   const targetId = routeId || searchParams.get('id') || '2';
@@ -93,57 +101,6 @@ export default function EditUserPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [notificationMsg, setNotificationMsg] = useState<{ type: 'success' | 'warning' | 'error'; title: string; desc: string } | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const validateEditForm = (): Record<string, string> => {
-    const errs: Record<string, string> = {};
-
-    if (!formData.firstName?.trim()) {
-      errs.firstName = 'First Name is required';
-    }
-    if (!formData.lastName?.trim()) {
-      errs.lastName = 'Last Name / Family Name is required';
-    }
-    if (!formData.email?.trim()) {
-      errs.email = 'Official Email Address is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      errs.email = 'Please enter a valid email address (e.g. official@temple.lk)';
-    }
-    if (formData.phone?.trim()) {
-      const digits = formData.phone.replace(/[^0-9]/g, '');
-      if (digits.length < 9) {
-        errs.phone = 'Please enter a valid phone number (minimum 9 digits)';
-      }
-    }
-    if (formData.resetPassword) {
-      if (!formData.newPassword) {
-        errs.newPassword = 'New password is required';
-      } else if (formData.newPassword.length < 6) {
-        errs.newPassword = 'Password must be at least 6 characters';
-      }
-      if (!formData.confirmPassword) {
-        errs.confirmPassword = 'Confirm Password is required';
-      } else if (formData.newPassword !== formData.confirmPassword) {
-        errs.confirmPassword = 'Passwords do not match';
-      }
-    }
-
-    if (formData.status === 'deactivated') {
-      if (!formData.deactivateReason?.trim()) {
-        errs.deactivateReason = 'Deactivation reason is required';
-      }
-      if (!formData.deactivateNotes?.trim() || formData.deactivateNotes.trim().length < 5) {
-        errs.deactivateNotes = 'Administrative notes / reference is required (minimum 5 characters)';
-      }
-    }
-
-    return errs;
-  };
-
-  useEffect(() => {
-    const handleToggle = () => setMobileMenuOpen((prev) => !prev);
-    window.addEventListener('toggle-temple-sidebar', handleToggle);
-    return () => window.removeEventListener('toggle-temple-sidebar', handleToggle);
-  }, []);
 
   // Form State
   const [formData, setFormData] = useState(() => initialRecord || {
@@ -181,6 +138,71 @@ export default function EditUserPage() {
     newPassword: '',
     confirmPassword: ''
   });
+
+  const isCrossTempleRestricted = useMemo(() => {
+    if (!temple || !formData.templeName) return false;
+    const isSame =
+      formData.templeName.toLowerCase() === temple.name.toLowerCase() ||
+      (Boolean(temple.registrationId) && Boolean(formData.templeCode) && (formData.templeCode === temple.registrationId || formData.templeCode === 'TPL-2026-0482')) ||
+      (temple.name.toLowerCase().includes('sambodhi') && formData.templeName.toLowerCase().includes('sambodhi'));
+    return !isSame;
+  }, [temple, formData.templeName, formData.templeCode]);
+
+  const validateEditForm = (): Record<string, string> => {
+    const errs: Record<string, string> = {};
+
+    if (!formData.firstName?.trim()) {
+      errs.firstName = 'First Name is required';
+    }
+    if (!formData.lastName?.trim()) {
+      errs.lastName = 'Last Name / Family Name is required';
+    }
+    if (!formData.email?.trim()) {
+      errs.email = 'Official Email Address is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      errs.email = 'Please enter a valid email address (e.g. official@temple.lk)';
+    }
+    if (formData.phone?.trim()) {
+      if (!isValidSriLankanPhone(formData.phone)) {
+        errs.phone = 'Please enter a valid 10-digit Sri Lankan phone number (e.g. 071-2345678)';
+      }
+    }
+    if (formData.nic?.trim()) {
+      const nicCheck = getNicValidation(formData.nic);
+      if (!nicCheck.isValid) {
+        errs.nic = nicCheck.message || 'Invalid Sri Lankan National ID (NIC)';
+      }
+    }
+    if (formData.resetPassword) {
+      if (!formData.newPassword) {
+        errs.newPassword = 'New password is required';
+      } else if (formData.newPassword.length < 6) {
+        errs.newPassword = 'Password must be at least 6 characters';
+      }
+      if (!formData.confirmPassword) {
+        errs.confirmPassword = 'Confirm Password is required';
+      } else if (formData.newPassword !== formData.confirmPassword) {
+        errs.confirmPassword = 'Passwords do not match';
+      }
+    }
+
+    if (formData.status === 'deactivated') {
+      if (!formData.deactivateReason?.trim()) {
+        errs.deactivateReason = 'Deactivation reason is required';
+      }
+      if (!formData.deactivateNotes?.trim() || formData.deactivateNotes.trim().length < 5) {
+        errs.deactivateNotes = 'Administrative notes / reference is required (minimum 5 characters)';
+      }
+    }
+
+    return errs;
+  };
+
+  useEffect(() => {
+    const handleToggle = () => setMobileMenuOpen((prev) => !prev);
+    window.addEventListener('toggle-temple-sidebar', handleToggle);
+    return () => window.removeEventListener('toggle-temple-sidebar', handleToggle);
+  }, []);
 
   // Fetch updated official user record from PostgreSQL backend API
   useEffect(() => {
@@ -232,6 +254,15 @@ export default function EditUserPage() {
   // Form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isCrossTempleRestricted) {
+      setNotificationMsg({
+        type: 'error',
+        title: 'Access Denied',
+        desc: 'You do not have administrative permission to modify official user accounts of another temple.'
+      });
+      return;
+    }
 
     const errs = validateEditForm();
     if (Object.keys(errs).length > 0) {
@@ -508,6 +539,19 @@ export default function EditUserPage() {
               </div>
             )}
 
+            {/* Cross-Temple Access Restriction Alert */}
+            {isCrossTempleRestricted && (
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 flex items-start gap-3 shadow-xs">
+                <span className="material-symbols-outlined text-amber-600 text-[24px] shrink-0 mt-0.5">lock</span>
+                <div>
+                  <h4 className="font-bold text-[14px]">Restricted Cross-Temple Access</h4>
+                  <p className="text-[12.5px] text-amber-800 mt-0.5 leading-relaxed">
+                    This official user account belongs to <strong>{formData.templeName}</strong> ({formData.templeCode}). You are currently logged in under <strong>{temple?.name}</strong>. Only administrators belonging to that temple are authorized to modify this official profile.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Form Container */}
             <form onSubmit={handleSubmit} className="space-y-6">
 
@@ -639,9 +683,26 @@ export default function EditUserPage() {
                       id="nic"
                       type="text"
                       value={formData.nic}
-                      onChange={(e) => setFormData({ ...formData, nic: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl text-[13px] font-mono border border-gray-300 focus:outline-none focus:border-[#0C4A6E] focus:ring-2 focus:ring-[#0C4A6E]/10 bg-white text-gray-900 shadow-2xs"
+                      onChange={(e) => {
+                        const next = formatSriLankanNic(e.target.value);
+                        setFormData({ ...formData, nic: next });
+                        if (fieldErrors.nic) setFieldErrors({ ...fieldErrors, nic: '' });
+                      }}
+                      className={`w-full px-3.5 py-2.5 rounded-xl text-[13px] font-mono border focus:outline-none bg-white text-gray-900 shadow-2xs ${fieldErrors.nic ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300 focus:border-[#0C4A6E] focus:ring-2 focus:ring-[#0C4A6E]/10'}`}
                     />
+                    {fieldErrors.nic ? (
+                      <p className="text-[11px] text-red-600 font-semibold mt-1 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[13px]">error</span>
+                        <span>{fieldErrors.nic}</span>
+                      </p>
+                    ) : formData.nic && getNicValidation(formData.nic).isValid ? (
+                      <p className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1 mt-1">
+                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                        <span>{getNicValidation(formData.nic).type} Verified</span>
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-gray-500 mt-1">9 digits + V/X or 12 digits</p>
+                    )}
                   </div>
 
                   <div>
@@ -676,16 +737,24 @@ export default function EditUserPage() {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => {
-                        setFormData({ ...formData, phone: e.target.value });
+                        const next = formatSriLankanPhone(e.target.value);
+                        setFormData({ ...formData, phone: next });
                         if (fieldErrors.phone) setFieldErrors({ ...fieldErrors, phone: '' });
                       }}
                       className={`w-full px-3.5 py-2.5 rounded-xl text-[13px] font-mono border focus:outline-none bg-white text-gray-900 shadow-2xs transition-colors ${fieldErrors.phone ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300 focus:border-[#0C4A6E] focus:ring-2 focus:ring-[#0C4A6E]/10'}`}
                     />
-                    {fieldErrors.phone && (
+                    {fieldErrors.phone ? (
                       <p className="text-[11px] text-red-600 font-semibold mt-1 flex items-center gap-1">
                         <span className="material-symbols-outlined text-[13px]">error</span>
                         <span>{fieldErrors.phone}</span>
                       </p>
+                    ) : formData.phone && isValidSriLankanPhone(formData.phone) ? (
+                      <p className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1 mt-1">
+                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                        <span>Valid Sri Lankan Phone ({formData.phone})</span>
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-gray-500 mt-1">Auto-formats to 07X-XXXXXXX</p>
                     )}
                   </div>
                 </div>
@@ -1029,8 +1098,8 @@ export default function EditUserPage() {
                 <div className="flex items-center gap-3">
                   <button
                     type="submit"
-                    disabled={isSaving}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-[13px] font-bold text-white bg-[#0284C7] hover:bg-[#0369A1] border border-sky-400/50 shadow-md shadow-sky-600/25 transition-all cursor-pointer"
+                    disabled={isSaving || isCrossTempleRestricted}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-[13px] font-bold text-white bg-[#0284C7] hover:bg-[#0369A1] disabled:opacity-50 disabled:cursor-not-allowed border border-sky-400/50 shadow-md shadow-sky-600/25 transition-all cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px] text-white">save</span>
                     <span>{isSaving ? t('common.saving', 'Saving Changes...') : t('common.save', 'Save Official Profile Changes')}</span>

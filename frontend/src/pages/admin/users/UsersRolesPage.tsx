@@ -1,15 +1,20 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Sidebar from '../../../components/Sidebar';
 import DashboardHeader from '../../../components/temple-admin/DashboardHeader';
 import TempleFooterWave, { GoldenLotusIcon } from '../../../components/TempleFooterWave.tsx';
 import { usersApi, type ApiUserRecord } from '../../../services/api.ts';
+import { useActiveTemple } from '../../../hooks/useActiveTemple';
+import { recordAuditAction } from '../../../services/auditLogger';
 import { INITIAL_ROSTER, type UserOfficial } from '../../../data/seed';
 
 export default function UsersRolesPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { temple } = useActiveTemple();
+  const currentTempleCode = temple?.registrationId || 'TPL-2026-0482';
+  const currentTempleName = temple?.name || 'Sri Sambodhi Maha Viharaya';
   const [users, setUsers] = useState<UserOfficial[]>(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('temple_registered_users') || '[]');
@@ -50,7 +55,8 @@ export default function UsersRolesPage() {
   // Fetch real-time users from PostgreSQL Backend API (FR-08, FR-09)
   useEffect(() => {
     let isMounted = true;
-    usersApi.getAll()
+    const tCode = temple?.registrationId || undefined;
+    usersApi.getAll(tCode ? { templeCode: tCode } : undefined)
       .then((res) => {
         if (isMounted && res.data && res.data.length > 0) {
           const mapped: UserOfficial[] = res.data.map((u: ApiUserRecord) => ({
@@ -66,9 +72,9 @@ export default function UsersRolesPage() {
             designation: u.designation || 'Committee Member',
             role: u.role || 'official',
             roleDisplay: u.designation || 'Committee Member',
-            roleSubtitle: `${u.committeeName || 'Dayaka Sabhawa'} • ${u.templeName || 'Sri Sambodhi Maha Viharaya'}`,
-            templeName: u.templeName || 'Sri Sambodhi Maha Viharaya',
-            templeCode: u.templeCode || 'TPL-2026-0482',
+            roleSubtitle: `${u.committeeName || 'Dayaka Sabhawa'} • ${u.templeName || currentTempleName}`,
+            templeName: u.templeName || currentTempleName,
+            templeCode: u.templeCode || currentTempleCode,
             status: ((u.status as string) || 'active') as 'active' | 'deactivated' | 'permanent',
             isPermanent: Boolean(u.isPermanent),
             avatar: u.avatar || 'U',
@@ -96,7 +102,7 @@ export default function UsersRolesPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [temple?.registrationId, currentTempleName, currentTempleCode]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [committeeFilter, setCommitteeFilter] = useState("all");
@@ -130,42 +136,22 @@ export default function UsersRolesPage() {
     setIsUserCardModalOpen(true);
   };
 
-  // CSV Export Handler
-  const exportUsersToCSV = () => {
-    const headers = ['ID', 'Full Name', 'Designation', 'Committee', 'Email', 'Phone', 'NIC', 'Status'];
-    const rows = users.map((u) => [
-      `USR-${u.id}`,
-      `"${(u.name || `${u.firstName || ''} ${u.lastName || ''}`).replace(/"/g, '""')}"`,
-      `"${(u.designation || '').replace(/"/g, '""')}"`,
-      `"${(u.committeeName || '').replace(/"/g, '""')}"`,
-      u.email || '',
-      `"${u.phone || ''}"`,
-      `"${u.nic || ''}"`,
-      u.status || 'active'
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Temple_Officials_Registry_2026.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    setNotificationMsg({
-      type: 'success',
-      title: 'Registry Exported',
-      desc: `Exported ${users.length} official devotee records to Temple_Officials_Registry_2026.csv.`
-    });
-    setTimeout(() => setNotificationMsg(null), 4000);
-  };
-
-
+  // Multi-tenancy check helper
+  const isTempleUser = useCallback((u: UserOfficial) => {
+    if (!temple) return true;
+    return (
+      !u.templeName ||
+      u.templeName.toLowerCase() === temple.name.toLowerCase() ||
+      (Boolean(temple.registrationId) && Boolean(u.templeCode) && u.templeCode === temple.registrationId) ||
+      (temple.name.toLowerCase().includes('sambodhi') && u.templeName.toLowerCase().includes('sambodhi'))
+    );
+  }, [temple]);
 
   // Filtered Users
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
+      if (!isTempleUser(u)) return false;
+
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -191,7 +177,39 @@ export default function UsersRolesPage() {
 
       return matchesSearch && matchesCommittee && matchesStatus;
     });
-  }, [users, searchQuery, committeeFilter, statusFilter]);
+  }, [users, searchQuery, committeeFilter, statusFilter, isTempleUser]);
+
+  // CSV Export Handler
+  const exportUsersToCSV = () => {
+    const targetList = filteredUsers.length > 0 ? filteredUsers : users.filter(isTempleUser);
+    const headers = ['ID', 'Full Name', 'Designation', 'Committee', 'Email', 'Phone', 'NIC', 'Status'];
+    const rows = targetList.map((u) => [
+      `USR-${u.id}`,
+      `"${(u.name || `${u.firstName || ''} ${u.lastName || ''}`).replace(/"/g, '""')}"`,
+      `"${(u.designation || '').replace(/"/g, '""')}"`,
+      `"${(u.committeeName || '').replace(/"/g, '""')}"`,
+      u.email || '',
+      `"${u.phone || ''}"`,
+      `"${u.nic || ''}"`,
+      u.status || 'active'
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `Temple_Officials_Registry_2026.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setNotificationMsg({
+      type: 'success',
+      title: 'Registry Exported',
+      desc: `Exported ${targetList.length} official devotee records to Temple_Officials_Registry_2026.csv.`
+    });
+    setTimeout(() => setNotificationMsg(null), 4000);
+  };
 
   // Deactivate & Reactivate Actions with Reason Support
   const handleOpenDeactivateUser = (user: UserOfficial) => {
@@ -256,6 +274,16 @@ export default function UsersRolesPage() {
       deactivateNotes: deactivateNotes.trim(),
     }).catch(console.error);
 
+    // Record into Audit Trail
+    recordAuditAction({
+      targetType: 'User',
+      targetName: deactivatingUser.name,
+      targetId: `USR-${deactivatingUser.id}`,
+      action: 'Deactivated',
+      reason: `${deactivateReason} ${deactivateNotes ? `• ${deactivateNotes.trim()}` : ''}`,
+      statusBadge: 'deactivated',
+    });
+
     if (selectedUserForDetails && selectedUserForDetails.id === deactivatingUser.id) {
       setSelectedUserForDetails((prev) => (prev ? {
         ...prev,
@@ -303,6 +331,16 @@ export default function UsersRolesPage() {
       deactivateReason: undefined,
       deactivateNotes: undefined,
     }).catch(console.error);
+
+    // Record into Audit Trail
+    recordAuditAction({
+      targetType: 'User',
+      targetName: user.name,
+      targetId: `USR-${user.id}`,
+      action: 'Reactivated',
+      reason: 'Official account restored to active committee duties',
+      statusBadge: 'active',
+    });
 
     if (selectedUserForDetails && selectedUserForDetails.id === user.id) {
       setSelectedUserForDetails((prev) => (prev ? {
@@ -445,6 +483,16 @@ export default function UsersRolesPage() {
     // Call Backend API Delete (FR-08, FR-14)
     usersApi.delete(deletingUser.id).catch(console.error);
 
+    // Record into Audit Trail
+    recordAuditAction({
+      targetType: 'User',
+      targetName: deletingUser.name,
+      targetId: `USR-${deletingUser.id}`,
+      action: 'Deleted',
+      reason: 'Official account permanently removed from temple ledger by admin',
+      statusBadge: 'deleted',
+    });
+
     if (selectedUserForDetails && selectedUserForDetails.id === deletingUser.id) {
       setIsDetailsOpen(false);
       setSelectedUserForDetails(null);
@@ -560,9 +608,9 @@ export default function UsersRolesPage() {
                 </div>
                 <div>
                   <div className="text-[10px] sm:text-[11.5px] text-gray-500 font-medium">{t('users.kpi.total', 'Total Officials')}</div>
-                  <div className="text-[17px] sm:text-[22px] font-bold text-gray-900 leading-tight mt-0.5">{users.length}</div>
+                  <div className="text-[17px] sm:text-[22px] font-bold text-gray-900 leading-tight mt-0.5">{users.filter(isTempleUser).length}</div>
                   <div className="text-[9.5px] sm:text-[10.5px] text-[#16A34A] font-semibold flex items-center gap-0.5 mt-0.5">
-                    <span>↑ 2 this month</span>
+                    <span>↑ {users.filter(u => isTempleUser(u) && (u.status === 'active' || u.status === 'permanent')).length} active</span>
                   </div>
                 </div>
               </div>
@@ -578,7 +626,7 @@ export default function UsersRolesPage() {
                 <div>
                   <div className="text-[10px] sm:text-[11.5px] text-gray-500 font-medium">{t('users.kpi.dayaka', 'Dayaka Sabhawa')}</div>
                   <div className="text-[17px] sm:text-[22px] font-bold text-gray-900 leading-tight mt-0.5">
-                    {users.filter(u => u.committeeName === 'Dayaka Sabhawa').length}
+                    {users.filter(u => isTempleUser(u) && u.committeeName === 'Dayaka Sabhawa').length}
                   </div>
                   <div className="text-[9.5px] sm:text-[10.5px] text-[#16A34A] font-semibold flex items-center gap-0.5 mt-0.5">
                     <span>Executive Board</span>
@@ -597,7 +645,7 @@ export default function UsersRolesPage() {
                 <div>
                   <div className="text-[10px] sm:text-[11.5px] text-gray-500 font-medium">{t('users.kpi.event', 'Event Committee')}</div>
                   <div className="text-[17px] sm:text-[22px] font-bold text-gray-900 leading-tight mt-0.5">
-                    {users.filter(u => u.committeeName === 'Event or Programme Committee').length}
+                    {users.filter(u => isTempleUser(u) && u.committeeName === 'Event or Programme Committee').length}
                   </div>
                   <div className="text-[9.5px] sm:text-[10.5px] text-[#16A34A] font-semibold flex items-center gap-0.5 mt-0.5">
                     <span>Coordinating</span>
@@ -616,7 +664,7 @@ export default function UsersRolesPage() {
                 <div>
                   <div className="text-[10px] sm:text-[11.5px] text-gray-500 font-medium">{t('users.kpi.roles', 'Active Logins')}</div>
                   <div className="text-[17px] sm:text-[22px] font-bold text-gray-900 leading-tight mt-0.5">
-                    {users.filter(u => u.status === 'active' || u.status === 'permanent').length}
+                    {users.filter(u => isTempleUser(u) && (u.status === 'active' || u.status === 'permanent')).length}
                   </div>
                   <div className="text-[9.5px] sm:text-[10.5px] text-[#16A34A] font-semibold flex items-center gap-0.5 mt-0.5">
                     <span>Verified Logins</span>
@@ -635,7 +683,7 @@ export default function UsersRolesPage() {
                 <div>
                   <div className="text-[10px] sm:text-[11.5px] text-gray-500 font-medium">{t('families.kpi.deactivated', 'Deactivated')}</div>
                   <div className="text-[17px] sm:text-[22px] font-bold text-gray-900 leading-tight mt-0.5">
-                    {users.filter(u => u.status === 'deactivated').length}
+                    {users.filter(u => isTempleUser(u) && u.status === 'deactivated').length}
                   </div>
                   <div className="text-[9.5px] sm:text-[10.5px] text-rose-600 font-semibold flex items-center gap-0.5 mt-0.5">
                     <span>Revoked Access</span>

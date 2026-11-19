@@ -5,6 +5,8 @@ import Sidebar from '../../../components/Sidebar';
 import DashboardHeader from '../../../components/temple-admin/DashboardHeader';
 import TempleFooterWave, { GoldenLotusIcon } from '../../../components/TempleFooterWave.tsx';
 import { familiesApi, type ApiFamilyRecord } from '../../../services/api.ts';
+import { useActiveTemple } from '../../../hooks/useActiveTemple';
+import { recordAuditAction } from '../../../services/auditLogger';
 import {
   INITIAL_FAMILIES,
   INITIAL_INCOMING_TRANSFERS,
@@ -30,6 +32,10 @@ interface ClearanceCertState {
 export default function FamiliesPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { temple } = useActiveTemple();
+  const currentTempleCode = temple?.registrationId || 'TPL-2026-0482';
+  const currentTempleName = temple?.name || 'Sri Sambodhi Maha Viharaya';
+
   const [families, setFamilies] = useState<FamilyRecord[]>(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('temple_registered_families') || '[]');
@@ -59,7 +65,8 @@ export default function FamiliesPage() {
   // Fetch real-time families from PostgreSQL Backend API (FR-23, FR-09)
   useEffect(() => {
     let isMounted = true;
-    familiesApi.getAll()
+    const tCode = temple?.registrationId || undefined;
+    familiesApi.getAll(tCode ? { templeCode: tCode } : undefined)
       .then((res) => {
         if (isMounted && res.data && res.data.length > 0) {
           const mapped = res.data.map((f: ApiFamilyRecord) => ({
@@ -81,11 +88,12 @@ export default function FamiliesPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [temple?.registrationId]);
 
   const handleRefreshData = () => {
     setIsLoading(true);
-    familiesApi.getAll()
+    const tCode = temple?.registrationId || undefined;
+    familiesApi.getAll(tCode ? { templeCode: tCode } : undefined)
       .then((res) => {
         if (res.data) {
           const mapped = res.data.map((f: ApiFamilyRecord) => ({
@@ -175,9 +183,22 @@ export default function FamiliesPage() {
   // Notification message
   const [notificationMsg, setNotificationMsg] = useState(null);
 
+  // Multi-tenancy: isolate records to the currently active temple
+  const templeFamilies = useMemo(() => {
+    return families.filter((f) => {
+      if (!temple) return true;
+      return (
+        !f.templeName ||
+        f.templeName.toLowerCase() === temple.name.toLowerCase() ||
+        (Boolean(temple.registrationId) && Boolean(f.templeCode) && f.templeCode === temple.registrationId) ||
+        (temple.name.toLowerCase().includes('sambodhi') && f.templeName.toLowerCase().includes('sambodhi'))
+      );
+    });
+  }, [families, temple]);
+
   // Filtered families
   const filteredFamilies = useMemo(() => {
-    return families.filter((f) => {
+    return templeFamilies.filter((f) => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -205,7 +226,7 @@ export default function FamiliesPage() {
 
       return matchesSearch && matchesWard && matchesStatus;
     });
-  }, [families, searchQuery, wardFilter, statusFilter]);
+  }, [templeFamilies, searchQuery, wardFilter, statusFilter]);
 
   // Handlers
   const handleOpenDetails = (family) => {
@@ -278,6 +299,16 @@ export default function FamiliesPage() {
     // Call Backend API Delete
     familiesApi.delete(deletingFamily.id).catch((err) => {
       console.warn('Backend delete sync:', err);
+    });
+
+    // Record into Audit Trail
+    recordAuditAction({
+      targetType: 'Family',
+      targetName: deletingFamily.name,
+      targetId: String(deletingFamily.id),
+      action: 'Deleted',
+      reason: 'Permanently removed from parish ledger by temple administrator',
+      statusBadge: 'deleted',
     });
 
     setFamilies((prev) => prev.filter((f) => f.id !== deletingFamily.id));
@@ -444,24 +475,14 @@ export default function FamiliesPage() {
     }
 
     // Record into immutable audit logs
-    const auditRecord = {
-      id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      timestamp: new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-      adminName: 'Nimal Perera',
-      adminRole: 'Co-Administrator',
+    recordAuditAction({
       targetType: 'Family',
       targetName: selectedFamily.name,
-      targetId: selectedFamily.id,
+      targetId: String(selectedFamily.id),
       action: 'Deactivated',
       reason: `${deactivateReason} ${deactivateNotes ? `• ${deactivateNotes}` : ''}`,
-      statusBadge: 'deactivated'
-    };
-    try {
-      const existing = JSON.parse(localStorage.getItem('temple_audit_logs') || '[]');
-      localStorage.setItem('temple_audit_logs', JSON.stringify([auditRecord, ...existing]));
-    } catch (err) {
-      console.error(err);
-    }
+      statusBadge: 'deactivated',
+    });
 
     setIsDeactivateOpen(false);
     setNotificationMsg({
@@ -507,24 +528,14 @@ export default function FamiliesPage() {
     }
 
     // Record into immutable audit logs
-    const auditRecord = {
-      id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      timestamp: new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-      adminName: 'Nimal Perera',
-      adminRole: 'Co-Administrator',
+    recordAuditAction({
       targetType: 'Family',
       targetName: family.name,
-      targetId: family.id,
+      targetId: String(family.id),
       action: 'Reactivated',
       reason: 'Reinstated to active parish register / devotions resumed',
-      statusBadge: 'active'
-    };
-    try {
-      const existing = JSON.parse(localStorage.getItem('temple_audit_logs') || '[]');
-      localStorage.setItem('temple_audit_logs', JSON.stringify([auditRecord, ...existing]));
-    } catch (err) {
-      console.error('Failed to update audit logs:', err);
-    }
+      statusBadge: 'active',
+    });
 
     setNotificationMsg({
       type: 'success',
@@ -653,8 +664,8 @@ export default function FamiliesPage() {
     const newEnrolledFamily = {
       key: `transfer_${Date.now()}`,
       id: acceptFormData.assignedFamilyId,
-      templeName: 'Sri Sambodhi Maha Viharaya',
-      templeCode: 'TPL-2026-0482',
+      templeName: currentTempleName,
+      templeCode: currentTempleCode,
       firstName: selectedIncoming.firstName,
       lastName: selectedIncoming.lastName,
       name: selectedIncoming.name,
@@ -856,9 +867,9 @@ export default function FamiliesPage() {
                 </div>
                 <div className="min-w-0">
                   <div className="text-[10px] sm:text-[11.5px] text-gray-500 font-medium truncate">{t('families.kpi.total', 'Total Families')}</div>
-                  <div className="text-[16px] sm:text-[22px] font-bold text-gray-900 leading-tight mt-0.5">{families.length}</div>
+                  <div className="text-[16px] sm:text-[22px] font-bold text-gray-900 leading-tight mt-0.5">{templeFamilies.length}</div>
                   <div className="text-[9.5px] sm:text-[10.5px] text-[#16A34A] font-semibold flex items-center gap-0.5 mt-0.5">
-                    <span>↑ 12 active</span>
+                    <span>↑ {templeFamilies.filter(f => f.status === 'Active').length} active</span>
                   </div>
                 </div>
               </div>
@@ -874,7 +885,7 @@ export default function FamiliesPage() {
                 <div className="min-w-0">
                   <div className="text-[10px] sm:text-[11.5px] text-gray-500 font-medium truncate">{t('families.kpi.active', 'Active Dayakas')}</div>
                   <div className="text-[16px] sm:text-[22px] font-bold text-gray-900 leading-tight mt-0.5">
-                    {families.filter(f => f.status === 'Active').length}
+                    {templeFamilies.filter(f => f.status === 'Active').length}
                   </div>
                   <div className="text-[9.5px] sm:text-[10.5px] text-[#16A34A] font-semibold flex items-center gap-0.5 mt-0.5">
                     <span>{t('families.kpi.parish', 'Parish Devotees')}</span>

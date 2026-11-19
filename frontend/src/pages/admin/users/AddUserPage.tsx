@@ -5,15 +5,23 @@ import Sidebar from '../../../components/Sidebar';
 import DashboardHeader from '../../../components/temple-admin/DashboardHeader';
 import TempleFooterWave, { GoldenLotusIcon } from '../../../components/TempleFooterWave.tsx';
 import { usersApi } from '../../../services/api.ts';
+import { useActiveTemple } from '../../../hooks/useActiveTemple';
+import {
+  formatSriLankanPhone,
+  isValidSriLankanPhone,
+  formatSriLankanNic,
+  getNicValidation,
+} from '../../../utils/sriLankanValidation';
 
 export default function AddUserPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { temple } = useActiveTemple();
 
   // Form State with user's required fields
   const [formData, setFormData] = useState({
-    templeName: 'Sri Sambodhi Maha Viharaya',
-    templeCode: 'TPL-2026-0482',
+    templeName: temple?.name || 'Sri Sambodhi Maha Viharaya',
+    templeCode: temple?.registrationId || 'TPL-2026-0482',
     firstName: '',
     lastName: '',
     email: '',
@@ -90,7 +98,15 @@ export default function AddUserPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let nextValue = value;
+
+    if (name === 'phoneNumber') {
+      nextValue = formatSriLankanPhone(value);
+    } else if (name === 'nic_id') {
+      nextValue = formatSriLankanNic(value);
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: nextValue }));
     if (fieldErrors[name]) {
       setFieldErrors((prev) => {
         const copy = { ...prev };
@@ -128,10 +144,13 @@ export default function AddUserPage() {
     }
     if (!data.phoneNumber.trim()) {
       errs.phoneNumber = 'Phone Number is required';
-    } else {
-      const digits = data.phoneNumber.replace(/[^0-9]/g, '');
-      if (digits.length < 9) {
-        errs.phoneNumber = 'Please enter a valid phone number (min 9 digits)';
+    } else if (!isValidSriLankanPhone(data.phoneNumber)) {
+      errs.phoneNumber = 'Please enter a valid 10-digit Sri Lankan phone number (e.g. 071-2345678)';
+    }
+    if (data.nic_id && data.nic_id.trim()) {
+      const nicCheck = getNicValidation(data.nic_id);
+      if (!nicCheck.isValid) {
+        errs.nic_id = nicCheck.message || 'Invalid Sri Lankan National ID (NIC)';
       }
     }
     if (!data.committeeName) {
@@ -688,7 +707,7 @@ export default function AddUserPage() {
                     </label>
                     <div className="relative group">
                       <input
-                        className="form-input font-mono uppercase"
+                        className={`form-input font-mono uppercase ${fieldErrors.nic_id ? 'has-error' : ''}`}
                         id="nic_id"
                         name="nic_id"
                         value={formData.nic_id}
@@ -697,7 +716,19 @@ export default function AddUserPage() {
                         type="text"
                       />
                     </div>
-                    <p className="form-hint">Official identification verification for temple register</p>
+                    {fieldErrors.nic_id ? (
+                      <p className="form-error-msg">
+                        <span className="material-symbols-outlined text-[15px]">error</span>
+                        <span>{fieldErrors.nic_id}</span>
+                      </p>
+                    ) : formData.nic_id && getNicValidation(formData.nic_id).isValid ? (
+                      <p className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1 mt-1">
+                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                        <span>{getNicValidation(formData.nic_id).type} Verified</span>
+                      </p>
+                    ) : (
+                      <p className="form-hint">Official identification verification (9-digit+V/X or 12-digit)</p>
+                    )}
                   </div>
 
                   {/* Phone Number */}
@@ -713,7 +744,7 @@ export default function AddUserPage() {
                         name="phoneNumber"
                         value={formData.phoneNumber}
                         onChange={handleChange}
-                        placeholder="+94 77 123 4567"
+                        placeholder="07X-XXXXXXX"
                         type="tel"
                       />
                     </div>
@@ -722,8 +753,13 @@ export default function AddUserPage() {
                         <span className="material-symbols-outlined text-[15px]">error</span>
                         <span>{fieldErrors.phoneNumber}</span>
                       </p>
+                    ) : isValidSriLankanPhone(formData.phoneNumber) ? (
+                      <p className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1 mt-1">
+                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                        <span>Valid Sri Lankan Phone ({formData.phoneNumber})</span>
+                      </p>
                     ) : (
-                      <p className="form-hint">Used for SMS alerts and WhatsApp notices</p>
+                      <p className="form-hint">Auto-formats to 07X-XXXXXXX for SMS alerts and WhatsApp notices</p>
                     )}
                   </div>
 
