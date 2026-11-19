@@ -9,7 +9,7 @@ export interface AuditTrailRecord {
   targetType: 'Family' | 'User' | 'Transfer' | 'Role';
   targetName: string;
   targetId: string;
-  action: 'Created' | 'Updated' | 'Deleted' | 'Deactivated' | 'Reactivated' | 'Transferred' | 'RoleChanged';
+  action: 'Created' | 'Updated' | 'Deleted' | 'Deactivated' | 'Reactivated' | 'Transferred' | 'RoleChanged' | 'Role Updated' | 'Transfer Approved';
   reason?: string;
   statusBadge?: string;
 }

@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next';
 import Sidebar from '../../../components/Sidebar';
 import DashboardHeader from '../../../components/temple-admin/DashboardHeader';
 import TempleFooterWave from '../../../components/TempleFooterWave.tsx';
-import { INITIAL_ROSTER, type AuditLogRecord } from '../../../data/seed';
+import { INITIAL_ROSTER } from '../../../data/seed';
 import { usersApi } from '../../../services/api.ts';
 import { useActiveTemple } from '../../../hooks/useActiveTemple';
-import { recordAuditAction as recordAuditActionService } from '../../../services/auditLogger';
+import { recordAuditAction as recordAuditActionService, type AuditTrailRecord } from '../../../services/auditLogger';
 import {
   formatSriLankanPhone,
   isValidSriLankanPhone,
@@ -15,11 +15,12 @@ import {
   getNicValidation,
 } from '../../../utils/sriLankanValidation';
 import { secureRandomString } from '../../../utils/cryptoRandom';
+import { getSessionUsers, saveSessionUser } from '../../../utils/sessionCache';
 
 // Helper to load user record without cascading renders
 function loadUserRecord(targetId: string) {
   try {
-    const savedUsers: Record<string, unknown>[] = JSON.parse(localStorage.getItem('temple_registered_users') || '[]');
+    const savedUsers = getSessionUsers();
     const allUsers = [...savedUsers, ...INITIAL_ROSTER];
     const found = allUsers.find((u) => String(u.id) === String(targetId)) as Record<string, unknown> | undefined;
 
@@ -67,12 +68,12 @@ function loadUserRecord(targetId: string) {
 }
 
 // Record Audit Trail Helper
-function recordAuditAction(targetName: string, idVal: string, action: AuditLogRecord['action'], reason: string) {
+function recordAuditAction(targetName: string, idVal: string, action: AuditTrailRecord['action'], reason: string) {
   recordAuditActionService({
     targetType: 'User',
     targetName,
     targetId: `USR-${idVal}`,
-    action: action as any,
+    action,
     reason,
     statusBadge: action === 'Deactivated' ? 'deactivated' : 'active',
   });
@@ -314,18 +315,8 @@ export default function EditUserPage() {
         });
       }
 
-      // Save to localStorage as cache
-      const savedUsers: Record<string, unknown>[] = JSON.parse(localStorage.getItem('temple_registered_users') || '[]');
-      const existingIdx = savedUsers.findIndex((u) => String(u.id) === String(formData.id));
-
-      let updatedList = [];
-      if (existingIdx >= 0) {
-        updatedList = savedUsers.map((u) => (String(u.id) === String(formData.id) ? updatedUser : u));
-      } else {
-        const otherSaved = savedUsers.filter((u) => String(u.id) !== String(formData.id));
-        updatedList = [updatedUser, ...otherSaved];
-      }
-      localStorage.setItem('temple_registered_users', JSON.stringify(updatedList));
+      // Save to session cache without storing unencrypted sensitive data in localStorage
+      saveSessionUser(updatedUser);
 
       // Audit Log check
       if (initialData) {
@@ -442,7 +433,7 @@ export default function EditUserPage() {
         ) : (
           /* Main Page Content */
           <main className="p-5 sm:p-7 max-w-5xl mx-auto w-full space-y-6">
-            
+
             {/* Page Header Hero Card */}
             <div className="rounded-2xl bg-gradient-to-r from-[#0C4A6E] via-[#0369A1] to-[#0C4A6E] text-white p-6 sm:p-7 shadow-xl border border-sky-400/40 relative overflow-hidden">
               <div className="absolute right-0 top-0 opacity-10 pointer-events-none translate-x-10 -translate-y-8 text-sky-200">
@@ -511,13 +502,12 @@ export default function EditUserPage() {
 
             {/* Notification Toast Alert */}
             {notificationMsg && (
-              <div className={`p-4 rounded-xl border flex items-start gap-3 shadow-md animate-fade-up ${
-                notificationMsg.type === 'success'
+              <div className={`p-4 rounded-xl border flex items-start gap-3 shadow-md animate-fade-up ${notificationMsg.type === 'success'
                   ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
                   : notificationMsg.type === 'warning'
-                  ? 'bg-amber-50 border-amber-200 text-amber-900'
-                  : 'bg-rose-50 border-rose-200 text-rose-900'
-              }`}>
+                    ? 'bg-amber-50 border-amber-200 text-amber-900'
+                    : 'bg-rose-50 border-rose-200 text-rose-900'
+                }`}>
                 <span className="material-symbols-outlined text-[20px] flex-shrink-0 mt-0.5">
                   {notificationMsg.type === 'success' ? 'verified' : 'info'}
                 </span>
@@ -835,11 +825,10 @@ export default function EditUserPage() {
                             setFormData({ ...formData, deactivateReason: e.target.value });
                             if (fieldErrors.deactivateReason) setFieldErrors({ ...fieldErrors, deactivateReason: '' });
                           }}
-                          className={`w-full px-3.5 py-2.5 rounded-xl text-[12.5px] border focus:outline-none transition-all cursor-pointer ${
-                            fieldErrors.deactivateReason
+                          className={`w-full px-3.5 py-2.5 rounded-xl text-[12.5px] border focus:outline-none transition-all cursor-pointer ${fieldErrors.deactivateReason
                               ? 'border-red-500 bg-red-50/20 text-red-950 focus:border-red-500'
                               : 'border-amber-300 focus:border-[#0C4A6E] bg-white text-gray-900 shadow-2xs'
-                          }`}
+                            }`}
                         >
                           <option value="">-- Select Deactivation Reason (Required) --</option>
                           <option value="Term Completed / Routine Committee Rotation">
@@ -882,11 +871,10 @@ export default function EditUserPage() {
                             if (fieldErrors.deactivateNotes) setFieldErrors({ ...fieldErrors, deactivateNotes: '' });
                           }}
                           placeholder="e.g. Dayaka Sabhawa Meeting Minute #14/2026"
-                          className={`w-full px-3.5 py-2.5 rounded-xl text-[12.5px] border focus:outline-none transition-all ${
-                            fieldErrors.deactivateNotes
+                          className={`w-full px-3.5 py-2.5 rounded-xl text-[12.5px] border focus:outline-none transition-all ${fieldErrors.deactivateNotes
                               ? 'border-red-500 bg-red-50/20 text-red-950 focus:border-red-500'
                               : 'border-amber-300 focus:border-[#0C4A6E] bg-white text-gray-900 shadow-2xs'
-                          }`}
+                            }`}
                         />
                         {fieldErrors.deactivateNotes && (
                           <p className="text-[11.5px] text-red-600 font-semibold mt-1 flex items-center gap-1">

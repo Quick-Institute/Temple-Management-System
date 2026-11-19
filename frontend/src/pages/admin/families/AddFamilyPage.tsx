@@ -14,6 +14,7 @@ import {
   getNicValidation,
 } from '../../../utils/sriLankanValidation';
 import { secureRandomInt, secureRandomString } from '../../../utils/cryptoRandom';
+import { saveSessionFamily, getSessionFamilies } from '../../../utils/sessionCache';
 
 interface FamilyMemberInput {
   id: number;
@@ -84,7 +85,7 @@ export default function AddFamilyPage() {
 
     // 2. Check against local cache & existing registered families
     try {
-      const saved = JSON.parse(localStorage.getItem('temple_registered_families') || '[]');
+      const saved = getSessionFamilies() as unknown as typeof INITIAL_FAMILIES;
       const allFamilies = [...saved, ...INITIAL_FAMILIES];
       for (const fam of allFamilies) {
         const famPhoneClean = fam.phone ? fam.phone.replace(/[^0-9]/g, '') : '';
@@ -371,12 +372,8 @@ export default function AddFamilyPage() {
         ]
       };
 
-      try {
-        const existing = JSON.parse(localStorage.getItem('temple_registered_families') || '[]');
-        localStorage.setItem('temple_registered_families', JSON.stringify([newFamilyRecord, ...existing]));
-      } catch {
-        // ignore
-      }
+      // Update session cache without storing unencrypted sensitive data in localStorage
+      saveSessionFamily(newFamilyRecord);
 
       setNotificationMsg(`Family "${familyHeadName}" (${generatedFamilyId}) registered successfully!`);
       setTimeout(() => {

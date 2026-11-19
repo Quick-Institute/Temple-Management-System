@@ -13,6 +13,7 @@ import {
   getNicValidation,
 } from '../../../utils/sriLankanValidation';
 import { secureRandomString } from '../../../utils/cryptoRandom';
+import { saveSessionUser } from '../../../utils/sessionCache';
 
 export default function AddUserPage() {
   const navigate = useNavigate();
@@ -259,13 +260,8 @@ export default function AddUserPage() {
         isPermanent: false
       };
 
-      // Save to localStorage so UsersRolesPage immediately picks it up
-      try {
-        const existing = JSON.parse(localStorage.getItem('temple_registered_users') || '[]');
-        localStorage.setItem('temple_registered_users', JSON.stringify([newUser, ...existing]));
-      } catch (err) {
-        console.error('Storage error:', err);
-      }
+      // Save to session cache without storing unencrypted sensitive data in localStorage
+      saveSessionUser(newUser);
 
       setNotificationMsg(`User "${newUser.name}" (${effectiveDesignation} - ${effectiveCommittee}) registered successfully!`);
       setTimeout(() => {
@@ -995,8 +991,8 @@ export default function AddUserPage() {
                     <div className="relative group">
                       <input
                         className={`form-input pr-12 font-mono ${fieldErrors.confirmPassword || (formData.confirmPassword && formData.password !== formData.confirmPassword)
-                            ? 'has-error'
-                            : ''
+                          ? 'has-error'
+                          : ''
                           }`}
                         id="confirmPassword"
                         name="confirmPassword"

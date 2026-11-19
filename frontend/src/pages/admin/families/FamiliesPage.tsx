@@ -8,6 +8,7 @@ import { familiesApi, type ApiFamilyRecord } from '../../../services/api.ts';
 import { useActiveTemple } from '../../../hooks/useActiveTemple';
 import { recordAuditAction } from '../../../services/auditLogger';
 import { secureRandomInt } from '../../../utils/cryptoRandom';
+import { updateSessionFamilies, getSessionFamilies } from '../../../utils/sessionCache';
 import {
   INITIAL_FAMILIES,
   INITIAL_INCOMING_TRANSFERS,
@@ -39,8 +40,8 @@ export default function FamiliesPage() {
 
   const [families, setFamilies] = useState<FamilyRecord[]>(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem('temple_registered_families') || '[]');
-      if (Array.isArray(saved) && saved.length > 0) return saved as FamilyRecord[];
+      const saved = getSessionFamilies();
+      if (Array.isArray(saved) && saved.length > 0) return saved as unknown as FamilyRecord[];
       return INITIAL_FAMILIES;
     } catch {
       return INITIAL_FAMILIES;
@@ -76,11 +77,7 @@ export default function FamiliesPage() {
             key: f.id,
           }));
           setFamilies(mapped as unknown as FamilyRecord[]);
-          try {
-            localStorage.setItem('temple_registered_families', JSON.stringify(mapped));
-          } catch {
-            // ignore
-          }
+          updateSessionFamilies(mapped);
         }
       })
       .catch((err) => {
@@ -453,11 +450,7 @@ export default function FamiliesPage() {
         : f
     );
     setFamilies(updated);
-    try {
-      localStorage.setItem('temple_registered_families', JSON.stringify(updated));
-    } catch (err) {
-      console.error(err);
-    }
+    updateSessionFamilies(updated as unknown as Record<string, unknown>[]);
 
     // Call Backend API Status Deactivate (FR-16)
     familiesApi.updateStatus(selectedFamily.id, {
@@ -506,11 +499,7 @@ export default function FamiliesPage() {
         : f
     );
     setFamilies(updated);
-    try {
-      localStorage.setItem('temple_registered_families', JSON.stringify(updated));
-    } catch (err) {
-      console.error('Failed to save families to localStorage:', err);
-    }
+    updateSessionFamilies(updated as unknown as Record<string, unknown>[]);
 
     // Call Backend API Status Reactivate (FR-16)
     familiesApi.updateStatus(family.id, {
@@ -612,11 +601,7 @@ export default function FamiliesPage() {
         : f
     );
     setFamilies(updated);
-    try {
-      localStorage.setItem('temple_registered_families', JSON.stringify(updated));
-    } catch (err) {
-      console.error('Failed to save families to localStorage:', err);
-    }
+    updateSessionFamilies(updated as unknown as Record<string, unknown>[]);
 
     // Call Backend API Transfer (FR-35, FR-36, FR-16)
     familiesApi.transfer(selectedFamily.id, {
@@ -687,11 +672,7 @@ export default function FamiliesPage() {
 
     const updatedFamilies = [newEnrolledFamily, ...families];
     setFamilies(updatedFamilies);
-    try {
-      localStorage.setItem('temple_registered_families', JSON.stringify(updatedFamilies));
-    } catch (err) {
-      console.error(err);
-    }
+    updateSessionFamilies(updatedFamilies as unknown as Record<string, unknown>[]);
 
     const remainingIncoming = incomingTransfers.filter((t) => t.id !== selectedIncoming.id);
     setIncomingTransfers(remainingIncoming);
@@ -1652,9 +1633,9 @@ export default function FamiliesPage() {
                         </div>
                         <div className="flex items-center gap-1 justify-end font-mono text-[10.5px]">
                           <span className="material-symbols-outlined text-[13px] text-[#0C4A6E] flex-shrink-0">call</span>
-                          <a href={`tel:${fam.phone}`} className="text-[#0C4A6E] font-semibold hover:underline truncate">
+                          <span className="text-[#0C4A6E] font-semibold truncate select-all">
                             {fam.phone}
-                          </a>
+                          </span>
                         </div>
                       </div>
 
@@ -2127,12 +2108,9 @@ export default function FamiliesPage() {
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block">
                         Primary Email Address
                       </span>
-                      <a
-                        href={`mailto:${selectedFamily.email || ''}`}
-                        className="font-mono text-[12.5px] font-semibold text-gray-900 hover:text-[#0C4A6E] hover:underline block break-all whitespace-normal mt-0.5 select-all"
-                      >
+                      <span className="font-mono text-[12.5px] font-semibold text-gray-900 block break-all whitespace-normal mt-0.5 select-all">
                         {selectedFamily.email || '—'}
-                      </a>
+                      </span>
                       <span className="text-[10.5px] text-gray-400 mt-0.5 block">Official Digital Notification Mail</span>
                     </div>
                   </div>
@@ -2144,12 +2122,9 @@ export default function FamiliesPage() {
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block">
                         Primary Contact Number
                       </span>
-                      <a
-                        href={`tel:${selectedFamily.phone || ''}`}
-                        className="font-mono text-[12.5px] font-semibold text-gray-900 hover:text-[#0C4A6E] hover:underline block truncate mt-0.5"
-                      >
+                      <span className="font-mono text-[12.5px] font-semibold text-gray-900 block truncate mt-0.5 select-all">
                         {selectedFamily.phone}
-                      </a>
+                      </span>
                       <span className="text-[10.5px] text-gray-400 mt-0.5 block">Direct Mobile / Voice Line</span>
                     </div>
                   </div>

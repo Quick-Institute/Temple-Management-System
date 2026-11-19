@@ -7,6 +7,7 @@ import TempleFooterWave, { GoldenLotusIcon } from '../../../components/TempleFoo
 import { usersApi, type ApiUserRecord } from '../../../services/api.ts';
 import { useActiveTemple } from '../../../hooks/useActiveTemple';
 import { recordAuditAction } from '../../../services/auditLogger';
+import { updateSessionUsers, getSessionUsers } from '../../../utils/sessionCache';
 import { INITIAL_ROSTER, type UserOfficial } from '../../../data/seed';
 
 export default function UsersRolesPage() {
@@ -17,8 +18,8 @@ export default function UsersRolesPage() {
   const currentTempleName = temple?.name || 'Sri Sambodhi Maha Viharaya';
   const [users, setUsers] = useState<UserOfficial[]>(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem('temple_registered_users') || '[]');
-      if (Array.isArray(saved) && saved.length > 0) return saved;
+      const saved = getSessionUsers();
+      if (Array.isArray(saved) && saved.length > 0) return saved as unknown as UserOfficial[];
       return INITIAL_ROSTER;
     } catch {
       return INITIAL_ROSTER;
@@ -35,7 +36,7 @@ export default function UsersRolesPage() {
 
   useEffect(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem('temple_registered_users') || '[]');
+      const saved = getSessionUsers() as unknown as UserOfficial[];
       let updated = false;
       const sanitized = saved.map((u: UserOfficial) => {
         if (u.avatar === 'MA') {
@@ -45,7 +46,7 @@ export default function UsersRolesPage() {
         return u;
       });
       if (updated) {
-        localStorage.setItem('temple_registered_users', JSON.stringify(sanitized));
+        updateSessionUsers(sanitized as unknown as Record<string, unknown>[]);
       }
     } catch {
       // ignore
@@ -89,11 +90,7 @@ export default function UsersRolesPage() {
             permFinance: Boolean(u.permFinance),
           }));
           setUsers(mapped);
-          try {
-            localStorage.setItem('temple_registered_users', JSON.stringify(mapped));
-          } catch {
-            // ignore
-          }
+          updateSessionUsers(mapped as unknown as Record<string, unknown>[]);
         }
       })
       .catch((err) => {
@@ -260,12 +257,7 @@ export default function UsersRolesPage() {
     });
 
     setUsers(updatedUsers);
-
-    try {
-      localStorage.setItem('temple_registered_users', JSON.stringify(updatedUsers));
-    } catch (err) {
-      console.error(err);
-    }
+    updateSessionUsers(updatedUsers as unknown as Record<string, unknown>[]);
 
     // Call Backend API Deactivate (FR-16)
     usersApi.updateStatus(deactivatingUser.id, {
@@ -318,12 +310,7 @@ export default function UsersRolesPage() {
     });
 
     setUsers(updatedUsers);
-
-    try {
-      localStorage.setItem('temple_registered_users', JSON.stringify(updatedUsers));
-    } catch (err) {
-      console.error(err);
-    }
+    updateSessionUsers(updatedUsers as unknown as Record<string, unknown>[]);
 
     // Call Backend API Reactivate (FR-16)
     usersApi.updateStatus(user.id, {
@@ -436,12 +423,7 @@ export default function UsersRolesPage() {
 
     const updatedUsers = users.map((u) => (u.id === finalized.id ? finalized : u));
     setUsers(updatedUsers);
-
-    try {
-      localStorage.setItem('temple_registered_users', JSON.stringify(updatedUsers));
-    } catch (err) {
-      console.error(err);
-    }
+    updateSessionUsers(updatedUsers as unknown as Record<string, unknown>[]);
 
     if (selectedUserForDetails && selectedUserForDetails.id === finalized.id) {
       setSelectedUserForDetails(finalized);
@@ -473,12 +455,7 @@ export default function UsersRolesPage() {
 
     const updatedUsers = users.filter((u) => u.id !== deletingUser.id);
     setUsers(updatedUsers);
-
-    try {
-      localStorage.setItem('temple_registered_users', JSON.stringify(updatedUsers));
-    } catch (err) {
-      console.error(err);
-    }
+    updateSessionUsers(updatedUsers as unknown as Record<string, unknown>[]);
 
     // Call Backend API Delete (FR-08, FR-14)
     usersApi.delete(deletingUser.id).catch(console.error);
@@ -1048,9 +1025,9 @@ export default function UsersRolesPage() {
 
                         <div className="flex items-center gap-1 font-mono text-[11px] text-[#0C4A6E]">
                           <span className="material-symbols-outlined text-[13px] text-[#0284C7] shrink-0">call</span>
-                          <a href={`tel:${u.phone}`} className="font-semibold hover:underline">
+                          <span className="font-semibold select-all">
                             {u.phone}
-                          </a>
+                          </span>
                         </div>
                       </div>
 
@@ -1497,12 +1474,9 @@ export default function UsersRolesPage() {
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block">
                         Primary Email Address
                       </span>
-                      <a
-                        href={`mailto:${selectedUserForDetails.email || 'sunil.j@gmail.com'}`}
-                        className="font-mono text-[12.5px] font-semibold text-gray-900 hover:text-[#0C4A6E] hover:underline block truncate mt-0.5"
-                      >
+                      <span className="font-mono text-[12.5px] font-semibold text-gray-900 block truncate mt-0.5 select-all">
                         {selectedUserForDetails.email || 'sunil.j@gmail.com'}
-                      </a>
+                      </span>
                       <span className="text-[10.5px] text-gray-400 mt-0.5 block">Official Digital Notification Mail</span>
                     </div>
                   </div>
@@ -1514,12 +1488,9 @@ export default function UsersRolesPage() {
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block">
                         Primary Contact Number
                       </span>
-                      <a
-                        href={`tel:${selectedUserForDetails.phone || '+94 71 889 0012'}`}
-                        className="font-mono text-[12.5px] font-semibold text-gray-900 hover:text-[#0C4A6E] hover:underline block truncate mt-0.5"
-                      >
+                      <span className="font-mono text-[12.5px] font-semibold text-gray-900 block truncate mt-0.5 select-all">
                         {selectedUserForDetails.phone || '+94 71 889 0012'}
-                      </a>
+                      </span>
                       <span className="text-[10.5px] text-gray-400 mt-0.5 block">Direct Mobile / Voice Line</span>
                     </div>
                   </div>

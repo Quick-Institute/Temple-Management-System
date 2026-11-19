@@ -14,11 +14,12 @@ import {
   formatSriLankanNic,
   getNicValidation,
 } from '../../../utils/sriLankanValidation';
+import { saveSessionFamily, getSessionFamilies } from '../../../utils/sessionCache';
 
-// Helper to load family from localStorage or seed fallback without cascading effect renders
+// Helper to load family from session or seed fallback without cascading effect renders
 function loadFamilyRecord(targetId: string) {
   try {
-    const savedFamilies: Record<string, unknown>[] = JSON.parse(localStorage.getItem('temple_registered_families') || '[]');
+    const savedFamilies = getSessionFamilies();
     const allFamilies = [...savedFamilies, ...INITIAL_FAMILIES];
     const found = allFamilies.find((f) => String(f.id).toLowerCase() === String(targetId).toLowerCase());
     if (found) {
@@ -292,17 +293,8 @@ export default function EditFamilyPage() {
         })),
       });
 
-      const savedFamilies: Record<string, unknown>[] = JSON.parse(localStorage.getItem('temple_registered_families') || '[]');
-      const existingIdx = savedFamilies.findIndex((f) => String(f.id).toLowerCase() === String(formData.id).toLowerCase());
-
-      let updatedList = [];
-      if (existingIdx >= 0) {
-        updatedList = savedFamilies.map((f) => (String(f.id).toLowerCase() === String(formData.id).toLowerCase() ? updatedFamily : f));
-      } else {
-        const otherSaved = savedFamilies.filter((f) => String(f.id).toLowerCase() !== String(formData.id).toLowerCase());
-        updatedList = [updatedFamily, ...otherSaved];
-      }
-      localStorage.setItem('temple_registered_families', JSON.stringify(updatedList));
+      // Update in-memory session cache without persisting unencrypted sensitive data to localStorage
+      saveSessionFamily(updatedFamily);
 
       setNotificationMsg({
         type: 'success',
