@@ -1,8 +1,14 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
+import { randomInt, randomBytes } from "crypto";
 import pool from "../config/database.js";
 import { logAuditTrail } from "../services/audit.service.js";
 import { getOrCreateTemple } from "../services/temple.service.js";
+
+// Helper to generate cryptographically secure identifiers
+function generateSecureId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${randomBytes(3).toString("hex")}`;
+}
 
 // Helper to format clean alphanumeric phone and NIC
 function sanitize(val?: string | null): string {
@@ -337,8 +343,8 @@ export async function createFamily(req: Request, res: Response) {
     );
 
     // Generate Unique Family Code & QR Pass
-    const familyCode = `FAM-${Math.floor(1000 + Math.random() * 9000)}`;
-    const familyId = `fam-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const familyCode = `FAM-${randomInt(1000, 10000)}`;
+    const familyId = generateSecureId("fam");
     const familyQrPass = `PASS-${familyCode}-${Date.now().toString().slice(-4)}`;
 
     // Optional password hashing
@@ -399,7 +405,7 @@ export async function createFamily(req: Request, res: Response) {
     if (Array.isArray(members) && members.length > 0) {
       for (const m of members) {
         if (!m.fullName && !m.name) continue;
-        const mId = `mem-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+        const mId = generateSecureId("mem");
         const mName = (m.fullName || m.name || "").trim();
         const mRole = m.relationship || m.role || "Dependent";
         const mAge = Number(m.age) || null;
@@ -539,7 +545,7 @@ export async function updateFamily(req: Request, res: Response) {
       await client.query(`DELETE FROM family_members WHERE "familyId" = $1`, [familyDbId]);
       for (const m of members) {
         if (!m.fullName && !m.name) continue;
-        const mId = `mem-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+        const mId = generateSecureId("mem");
         await client.query(
           `INSERT INTO family_members ("id", "familyId", "fullName", "relationship", "age", "gender", "createdAt", "updatedAt")
            VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
@@ -668,8 +674,8 @@ export async function transferFamily(req: Request, res: Response) {
     }
 
     const family = checkRes.rows[0];
-    const transferId = `trf-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-    const certificateNumber = `TRF-CERT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const transferId = generateSecureId("trf");
+    const certificateNumber = `TRF-CERT-${new Date().getFullYear()}-${randomInt(1000, 10000)}`;
 
     // Insert Transfer Record
     await pool.query(

@@ -13,6 +13,7 @@ import {
   formatSriLankanNic,
   getNicValidation,
 } from '../../../utils/sriLankanValidation';
+import { secureRandomInt, secureRandomString } from '../../../utils/cryptoRandom';
 
 interface FamilyMemberInput {
   id: number;
@@ -152,10 +153,7 @@ export default function AddFamilyPage() {
   // Auto-generate strong password
   const handleAutoGeneratePassword = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
-    let randomPass = 'Dayaka#';
-    for (let i = 0; i < 8; i++) {
-      randomPass += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
+    const randomPass = 'Dayaka#' + secureRandomString(chars, 8);
     setFormData((prev) => ({
       ...prev,
       password: randomPass,
@@ -339,7 +337,7 @@ export default function AddFamilyPage() {
         })),
       });
 
-      const generatedFamilyId = res.data?.familyCode || `FAM-${Math.floor(1000 + Math.random() * 9000)}`;
+      const generatedFamilyId = res.data?.familyCode || `FAM-${secureRandomInt(1000, 10000)}`;
 
       // Update localStorage cache as smooth fallback
       const newFamilyRecord = {

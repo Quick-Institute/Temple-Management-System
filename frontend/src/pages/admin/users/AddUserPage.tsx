@@ -12,6 +12,7 @@ import {
   formatSriLankanNic,
   getNicValidation,
 } from '../../../utils/sriLankanValidation';
+import { secureRandomString } from '../../../utils/cryptoRandom';
 
 export default function AddUserPage() {
   const navigate = useNavigate();
@@ -76,10 +77,7 @@ export default function AddUserPage() {
   // Auto-generate strong password
   const handleAutoGeneratePassword = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
-    let randomPass = 'Lotus#';
-    for (let i = 0; i < 8; i++) {
-      randomPass += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
+    const randomPass = 'Lotus#' + secureRandomString(chars, 8);
     setFormData((prev) => ({
       ...prev,
       password: randomPass,

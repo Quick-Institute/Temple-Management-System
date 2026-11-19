@@ -1,4 +1,5 @@
 import { auditApi } from './api';
+import { secureRandomInt } from '../utils/cryptoRandom';
 
 export interface AuditTrailRecord {
   id: string;
@@ -11,6 +12,15 @@ export interface AuditTrailRecord {
   action: 'Created' | 'Updated' | 'Deleted' | 'Deactivated' | 'Reactivated' | 'Transferred' | 'RoleChanged';
   reason?: string;
   statusBadge?: string;
+}
+
+// Redact sensitive identifiable info (NIC, phone numbers, credentials) before saving locally
+function redactSensitiveData(text?: string): string {
+  if (!text) return '';
+  return text
+    .replace(/\b(07\d{8}|0\d{9})\b/g, '07*-***-****')
+    .replace(/\b(\d{9}[vVxX]|\d{12})\b/g, '************')
+    .replace(/(password\s*[:=]\s*)[^\s,]+/gi, '$1********');
 }
 
 /**
@@ -26,7 +36,7 @@ export async function recordAuditAction(entry: {
   reason?: string;
   statusBadge?: string;
 }): Promise<AuditTrailRecord> {
-  const auditCode = `AUD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const auditCode = `AUD-${new Date().getFullYear()}-${secureRandomInt(1000, 10000)}`;
   const record: AuditTrailRecord = {
     id: auditCode,
     timestamp: new Date().toLocaleString('en-GB', {
@@ -48,7 +58,13 @@ export async function recordAuditAction(entry: {
 
   try {
     const existing: AuditTrailRecord[] = JSON.parse(localStorage.getItem('temple_audit_logs') || '[]');
-    localStorage.setItem('temple_audit_logs', JSON.stringify([record, ...existing]));
+    // Sanitize before storing in browser localStorage to prevent plaintext sensitive info storage
+    const sanitizedRecord: AuditTrailRecord = {
+      ...record,
+      targetName: redactSensitiveData(record.targetName),
+      reason: redactSensitiveData(record.reason),
+    };
+    localStorage.setItem('temple_audit_logs', JSON.stringify([sanitizedRecord, ...existing]));
   } catch (err) {
     console.warn('Failed to record audit log to localStorage:', err);
   }
@@ -110,4 +126,3 @@ export async function fetchUnifiedAuditLogs(targetType?: string): Promise<AuditT
 
   return localLogs;
 }
-

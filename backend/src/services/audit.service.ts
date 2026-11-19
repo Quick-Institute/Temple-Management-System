@@ -1,3 +1,4 @@
+import { randomInt, randomBytes } from "crypto";
 import pool from "../config/database.js";
 
 export interface AuditLogInput {
@@ -14,8 +15,8 @@ export interface AuditLogInput {
 
 export async function logAuditTrail(input: AuditLogInput): Promise<void> {
   try {
-    const auditCode = `AUD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const id = `aud-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const auditCode = `AUD-${new Date().getFullYear()}-${randomInt(1000, 10000)}`;
+    const id = `aud-${Date.now()}-${randomBytes(3).toString("hex")}`;
 
     await pool.query(
       `INSERT INTO audit_logs (

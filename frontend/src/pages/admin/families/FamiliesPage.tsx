@@ -7,6 +7,7 @@ import TempleFooterWave, { GoldenLotusIcon } from '../../../components/TempleFoo
 import { familiesApi, type ApiFamilyRecord } from '../../../services/api.ts';
 import { useActiveTemple } from '../../../hooks/useActiveTemple';
 import { recordAuditAction } from '../../../services/auditLogger';
+import { secureRandomInt } from '../../../utils/cryptoRandom';
 import {
   INITIAL_FAMILIES,
   INITIAL_INCOMING_TRANSFERS,
@@ -588,7 +589,7 @@ export default function FamiliesPage() {
       ? (transferData.destinationTempleCustom || 'Affiliated Temple')
       : transferData.destinationTemple;
 
-    const certNo = `CERT-TR-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const certNo = `CERT-TR-2026-${secureRandomInt(1000, 10000)}`;
 
     const updated = families.map((f) =>
       f.id === selectedFamily.id
@@ -643,7 +644,7 @@ export default function FamiliesPage() {
   // Incoming Transfer Handlers
   const handleStartAcceptIncoming = (incoming) => {
     setSelectedIncoming(incoming);
-    const nextIdNum = Math.floor(820 + Math.random() * 170);
+    const nextIdNum = secureRandomInt(820, 990);
     setAcceptFormData({
       assignedFamilyId: `FAM-0${nextIdNum}`,
       assignedWard: incoming.ward || 'meda-gama',

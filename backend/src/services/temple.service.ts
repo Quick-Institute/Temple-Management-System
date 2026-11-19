@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import pool from "../config/database.js";
 
 export async function getOrCreateTemple(
@@ -19,7 +20,7 @@ export async function getOrCreateTemple(
   }
 
   // 2. Otherwise insert new temple record with QR Code URL
-  const templeId = `tpl-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+  const templeId = `tpl-${Date.now()}-${randomBytes(3).toString("hex")}`;
   const qrCodeUrl = `temple.lk/join/${cleanCode}`;
 
   const insertRes = await pool.query(

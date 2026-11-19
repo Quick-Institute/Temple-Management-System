@@ -13,6 +13,7 @@ import {
   formatSriLankanNic,
   getNicValidation,
 } from '../../../utils/sriLankanValidation';
+import { secureRandomString } from '../../../utils/cryptoRandom';
 
 // Helper to load user record without cascading renders
 function loadUserRecord(targetId: string) {
@@ -376,10 +377,7 @@ export default function EditUserPage() {
   // Generate strong random password
   const handleGeneratePassword = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
-    let randomPass = 'Vihara#';
-    for (let i = 0; i < 7; i++) {
-      randomPass += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
+    const randomPass = 'Vihara#' + secureRandomString(chars, 8);
     setFormData((prev) => ({
       ...prev,
       resetPassword: true,
