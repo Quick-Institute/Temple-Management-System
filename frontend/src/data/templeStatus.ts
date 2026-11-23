@@ -94,6 +94,11 @@ export type TempleRecord = {
      * than one temple, which is why the temple admin can switch between them.
      */
     ownerEmail?: string
+    /**
+     * Further Temple Admin accounts that hold the same rights over this temple - a second incumbent,
+     * or an assistant who administers the Dana and the register alongside the chief incumbent.
+     */
+    ownerEmails?: string[]
 }
 
 /** Short label for a designation badge; unknown designations show as typed. */

@@ -10,6 +10,7 @@ import {
     dayLabel,
     familyChoices,
     findSlot,
+    formatContact,
     updateBooking,
     updateBookingStatus,
 } from '../../data/danaAdminStore'
@@ -17,8 +18,10 @@ import {
 /*
  * The families assigned to one Dana offering.
  *
- * The admin sees three things per family and nothing more: the family name, the village and a masked
- * contact number (077****567). No address, no identity number, no full phone number leaves the store.
+ * The admin sees three things per family and nothing more: the family name, the village and the
+ * contact number, in full - the temple's own admin rings a family to verify a place. No address and no
+ * identity number is ever shown. The rows are only ever the ones booked under the temple in the top
+ * bar, so switching temple changes the list.
  *
  * Assigning follows the registration rule: the picker only offers the families registered under the
  * temple in the top bar, and it is searchable. For a special Dana the admin can also place a
@@ -78,7 +81,7 @@ export const AssignedFamiliesPanel = ({
 
     /* Reading the store here keeps the table live and the picker tied to the current temple. */
     const record = findSlot(slot.date, slot.kind)
-    const assignees = assigneesFor(slot.date, slot.kind)
+    const assignees = assigneesFor(slot.date, slot.kind, templeRef)
     const choices = familyChoices(templeRef)
     const dateText = dayLabel(slot.date, locale)
 
@@ -182,7 +185,15 @@ export const AssignedFamiliesPanel = ({
                                         </span>
                                     </td>
                                     <td className="px-3 py-3">{person.village}</td>
-                                    <td className="px-3 py-3 whitespace-nowrap tabular-nums">{person.contactMasked}</td>
+                                    <td className="px-3 py-3 whitespace-nowrap">
+                                        {person.contact ? (
+                                            <a href={`tel:${person.contact}`}
+                                               title={t('danaAdmin.callToVerify')}
+                                               className="font-semibold text-sage-900 underline decoration-sage-300 decoration-from-font underline-offset-2 tabular-nums hover:text-sage-700">
+                                                {formatContact(person.contact)}
+                                            </a>
+                                        ) : '—'}
+                                    </td>
                                     <td className="px-3 py-3">
                                         <span
                                             className={`inline-block rounded border px-2 py-0.5 text-[0.85rem] font-bold ${STATUS_STYLE[person.status]}`}>
@@ -195,7 +206,7 @@ export const AssignedFamiliesPanel = ({
                                                   onSubmit={onSaveEdit}>
                                                 {!person.temporary && (
                                                     <select aria-label={t('danaAdmin.chooseFamily')}
-                                                            className="h-9 max-w-52 rounded-md border border-line bg-white px-2 text-[0.9rem]"
+                                                            className="h-9 max-w-64 rounded-md border border-line bg-white px-2 text-[0.9rem]"
                                                             value={editing.familyId}
                                                             onChange={(event) => setEditing({
                                                                 ...editing,
@@ -203,7 +214,7 @@ export const AssignedFamiliesPanel = ({
                                                             })}>
                                                         {choices.map((family) => (
                                                             <option key={family.id} value={family.id}>
-                                                                {family.name} · {family.village}
+                                                                {family.name} · {family.village} · {formatContact(family.contact)}
                                                             </option>
                                                         ))}
                                                     </select>
@@ -296,7 +307,7 @@ export const AssignFamilyForm = ({
     const byId = new Map(choices.map((family) => [family.id, family]))
     const familyLabel = (familyId: string) => {
         const family = byId.get(familyId)
-        return family ? `${family.name} · ${family.village} · ${family.contactMasked}` : familyId
+        return family ? `${family.name} · ${family.village} · ${formatContact(family.contact)}` : familyId
     }
 
     const onSubmit = (event: FormEvent) => {
@@ -305,6 +316,7 @@ export const AssignFamilyForm = ({
             createBooking({
                 date: slot.date,
                 kind: slot.kind,
+                templeRef,
                 participants: Number(draft.participants) || 1,
                 ...(draft.temporary
                     ? {temporary: {name: draft.name, village: draft.village, contact: draft.contact}}

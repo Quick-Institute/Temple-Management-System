@@ -18,7 +18,8 @@ const sameEmail = (a?: string | null, b?: string | null) =>
  * Temples this account is scoped to.
  *
  * - Super Administrator: every temple.
- * - Temple Admin: temples they own (`ownerEmail`).
+ * - Temple Admin: temples they own (`ownerEmail`, or any entry in `ownerEmails` - a
+ *   temple can be administered by more than one Temple Admin account).
  * - Co-Administrator: the temple whose Co-Administrator list contains their email.
  *   The demo account also carries `templeName`, so that is used as a frontend
  *   fallback until backend assignments exist.
@@ -35,7 +36,10 @@ export const assignedTemplesFor = (
     if (role === 'superAdmin') return records
 
     if (role === 'templeAdmin') {
-        const owned = records.filter((record) => sameEmail(record.ownerEmail, user.identifier))
+        const owned = records.filter((record) =>
+            sameEmail(record.ownerEmail, user.identifier) ||
+            (record.ownerEmails ?? []).some((email) => sameEmail(email, user.identifier)),
+        )
         if (owned.length) return owned
         return records.filter((record) => record.name === user.templeName)
     }
