@@ -125,7 +125,7 @@ export async function checkDuplicate(req: Request, res: Response) {
 // GET /api/families - List families with dependents (FR-23, FR-09)
 export async function getFamilies(req: Request, res: Response) {
   try {
-    const { q, ward, status, templeCode } = req.query;
+    const { q, ward, status, templeCode, templeName, templeId } = req.query;
 
     let queryText = `
       SELECT 
@@ -177,10 +177,24 @@ export async function getFamilies(req: Request, res: Response) {
 
     const queryParams: unknown[] = [];
 
-    // Multi-tenancy temple isolation (FR-09)
-    if (templeCode && typeof templeCode === "string" && templeCode.trim() !== "") {
-      queryParams.push(templeCode.trim());
-      queryText += ` AND (t."code" = $${queryParams.length} OR t."code" IS NULL)`;
+    // Multi-tenancy temple isolation (FR-09) - completely dynamic per logged-in temple
+    if (templeCode || templeName || templeId) {
+      const conditions: string[] = [];
+      if (templeCode && typeof templeCode === "string" && templeCode.trim() !== "") {
+        queryParams.push(templeCode.trim());
+        conditions.push(`LOWER(t."code") = LOWER($${queryParams.length})`);
+      }
+      if (templeName && typeof templeName === "string" && templeName.trim() !== "") {
+        queryParams.push(templeName.trim());
+        conditions.push(`LOWER(t."name") = LOWER($${queryParams.length})`);
+      }
+      if (templeId && typeof templeId === "string" && templeId.trim() !== "") {
+        queryParams.push(templeId.trim());
+        conditions.push(`t."id" = $${queryParams.length}`);
+      }
+      if (conditions.length > 0) {
+        queryText += ` AND (${conditions.join(" OR ")})`;
+      }
     }
 
     // Ward filter
@@ -335,10 +349,10 @@ export async function createFamily(req: Request, res: Response) {
       }
     }
 
-    // Resolve Temple
+    // Resolve Temple dynamically from request payload
     const templeId = await getOrCreateTemple(
-      templeCode || "TPL-2026-0482",
-      templeName || "Sri Sambodhi Maha Viharaya",
+      templeCode || "",
+      templeName || "",
       { address, village, district, postalCode }
     );
 

@@ -6,22 +6,37 @@ export async function getOrCreateTemple(
   name: string,
   extra?: { address?: string; village?: string; district?: string; postalCode?: string }
 ): Promise<string> {
-  const cleanCode = (code || "TPL-2026-0482").trim();
-  const cleanName = (name || "Sri Sambodhi Maha Viharaya").trim();
+  const cleanCode = (code || "").trim();
+  const cleanName = (name || "").trim();
 
-  // 1. Check if temple already exists by code
-  const existing = await pool.query(
-    `SELECT "id" FROM temples WHERE LOWER("code") = LOWER($1) LIMIT 1`,
-    [cleanCode]
-  );
+  // 1. Check if temple already exists by code or by name
+  if (cleanCode || cleanName) {
+    const existing = await pool.query(
+      `SELECT "id", "code", "name" FROM temples 
+       WHERE (LOWER("code") = LOWER($1) AND $1 <> '') 
+          OR (LOWER("name") = LOWER($2) AND $2 <> '') 
+       LIMIT 1`,
+      [cleanCode, cleanName]
+    );
 
-  if (existing.rows.length > 0) {
-    return existing.rows[0].id;
+    if (existing.rows.length > 0) {
+      const found = existing.rows[0];
+      // Keep code in sync if a new valid code is provided
+      if (cleanCode && found.code !== cleanCode) {
+        await pool.query(
+          `UPDATE temples SET "code" = $1, "updatedAt" = CURRENT_TIMESTAMP WHERE "id" = $2`,
+          [cleanCode, found.id]
+        );
+      }
+      return found.id;
+    }
   }
 
   // 2. Otherwise insert new temple record with QR Code URL
   const templeId = `tpl-${Date.now()}-${randomBytes(3).toString("hex")}`;
-  const qrCodeUrl = `temple.lk/join/${cleanCode}`;
+  const effectiveCode = cleanCode || `TPL-${Date.now().toString().slice(-4)}`;
+  const effectiveName = cleanName || "Buddhist Temple";
+  const qrCodeUrl = `temple.lk/join/${effectiveCode}`;
 
   const insertRes = await pool.query(
     `INSERT INTO temples (
@@ -30,16 +45,15 @@ export async function getOrCreateTemple(
     RETURNING "id"`,
     [
       templeId,
-      cleanCode,
-      cleanName,
-      extra?.address || "Kadokkele, Gampaha",
-      extra?.village || "Temple Road",
-      extra?.district || "Gampaha",
-      extra?.postalCode || "82200",
+      effectiveCode,
+      effectiveName,
+      extra?.address || "Temple Premises",
+      extra?.village || "Parish",
+      extra?.district || "Colombo",
+      extra?.postalCode || "00100",
       qrCodeUrl
     ]
   );
 
   return insertRes.rows[0].id;
 }
-

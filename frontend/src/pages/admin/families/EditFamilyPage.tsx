@@ -27,8 +27,8 @@ function loadFamilyRecord(targetId: string) {
       const last = (found.lastName as string) || (found.name as string)?.split(' ').slice(1).join(' ') || '';
       return {
         id: String(found.id || targetId),
-        templeName: (found.templeName as string) || 'Sri Sambodhi Maha Viharaya',
-        templeCode: (found.templeCode as string) || 'TPL-2026-0482',
+        templeName: (found.templeName as string) || '',
+        templeCode: (found.templeCode as string) || '',
         name: (found.name as string) || `${first} ${last}`.trim(),
         firstName: first,
         lastName: last,
@@ -76,8 +76,8 @@ export default function EditFamilyPage() {
   // Form State
   const [formData, setFormData] = useState(() => initialRecord || {
     id: targetId,
-    templeName: 'Sri Sambodhi Maha Viharaya',
-    templeCode: 'TPL-2026-0482',
+    templeName: temple?.name || '',
+    templeCode: temple?.registrationId || temple?.id || '',
     name: '',
     firstName: '',
     lastName: '',
@@ -102,11 +102,12 @@ export default function EditFamilyPage() {
 
   const isCrossTempleRestricted = useMemo(() => {
     if (!temple || !formData.templeName) return false;
-    const isSame =
-      formData.templeName.toLowerCase() === temple.name.toLowerCase() ||
-      (Boolean(temple.registrationId) && Boolean(formData.templeCode) && (formData.templeCode === temple.registrationId || formData.templeCode === 'TPL-2026-0482')) ||
-      (temple.name.toLowerCase().includes('sambodhi') && formData.templeName.toLowerCase().includes('sambodhi'));
-    return !isSame;
+    const isSameName = formData.templeName.toLowerCase().trim() === temple.name.toLowerCase().trim();
+    const isSameCode = Boolean(temple.registrationId) && Boolean(formData.templeCode) && 
+      formData.templeCode.toLowerCase().trim() === temple.registrationId.toLowerCase().trim();
+    const isSameId = Boolean(temple.id) && Boolean(formData.templeCode) &&
+      formData.templeCode.toLowerCase().trim() === temple.id.toLowerCase().trim();
+    return !(isSameName || isSameCode || isSameId);
   }, [temple, formData.templeName, formData.templeCode]);
 
   const validateEditForm = (): Record<string, string> => {

@@ -7,7 +7,7 @@ import { getOrCreateTemple } from "../services/temple.service.js";
 // GET /api/users - List users with search & filters (FR-08, FR-09)
 export async function getUsers(req: Request, res: Response) {
   try {
-    const { q, committee, status, templeCode } = req.query;
+    const { q, committee, status, templeCode, templeName, templeId } = req.query;
 
     let queryText = `
       SELECT 
@@ -49,10 +49,24 @@ export async function getUsers(req: Request, res: Response) {
 
     const queryParams: unknown[] = [];
 
-    // Filter by Temple Code (FR-09 multi-tenancy)
-    if (templeCode && typeof templeCode === "string" && templeCode.trim() !== "") {
-      queryParams.push(templeCode.trim());
-      queryText += ` AND (t."code" = $${queryParams.length} OR t."code" IS NULL)`;
+    // Filter by Temple Code (FR-09 multi-tenancy) - completely dynamic per active temple
+    if (templeCode || templeName || templeId) {
+      const conditions: string[] = [];
+      if (templeCode && typeof templeCode === "string" && templeCode.trim() !== "") {
+        queryParams.push(templeCode.trim());
+        conditions.push(`LOWER(t."code") = LOWER($${queryParams.length})`);
+      }
+      if (templeName && typeof templeName === "string" && templeName.trim() !== "") {
+        queryParams.push(templeName.trim());
+        conditions.push(`LOWER(t."name") = LOWER($${queryParams.length})`);
+      }
+      if (templeId && typeof templeId === "string" && templeId.trim() !== "") {
+        queryParams.push(templeId.trim());
+        conditions.push(`t."id" = $${queryParams.length}`);
+      }
+      if (conditions.length > 0) {
+        queryText += ` AND (${conditions.join(" OR ")})`;
+      }
     }
 
     // Filter by Committee
@@ -199,10 +213,10 @@ export async function createUser(req: Request, res: Response) {
       }
     }
 
-    // Resolve Temple ID
+    // Resolve Temple ID dynamically from request payload
     const templeId = await getOrCreateTemple(
-      templeCode || "TPL-2026-0482",
-      templeName || "Sri Sambodhi Maha Viharaya"
+      templeCode || "",
+      templeName || ""
     );
 
     // Hash Password (FR-01)
