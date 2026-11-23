@@ -4,6 +4,13 @@ import {AuthLoginPage} from '../pages/auth/auth.login'
 import {RegisterPage} from '../pages/auth/auth.register'
 import {ResetPasswordPage} from '../pages/auth/auth.reset-password'
 import {SocialSignInRoute} from '../pages/auth/auth.social'
+import {CompleteProfilePage} from '../pages/auth/auth.complete-profile'
+import {
+    VerifyEmailExpiredPage,
+    VerifyEmailInvalidPage,
+    VerifyEmailPage,
+    VerifyEmailSuccessPage,
+} from '../pages/auth/auth.verify-email'
 import {PrivacyPage} from '../pages/legal/legal.privacy'
 import {TermsPage} from '../pages/legal/legal.terms'
 import {AddTemplePage} from '../pages/temple/temple.add'
@@ -15,6 +22,7 @@ import {ProfilePage} from '../pages/profile.page'
 import {adminRoutes} from './adminRoutes'
 import {authRoutes} from './authRoutes'
 import {AccessDenied, RequirePermission, RequirePermissionShell} from './guards'
+import {RequireCompleteProfile} from './RequireCompleteProfile'
 import {usePermissions} from '../hooks/usePermissions'
 import {useAuth} from '../context/AuthContext'
 import {useTemples} from '../data/templeStore'
@@ -33,6 +41,7 @@ import DanaSchedulePage from '../pages/family/DanaSchedulePage'
 import DanaBookingPage from '../pages/family/DanaBookingPage'
 import BookingConfirmationPage from '../pages/family/BookingConfirmationPage'
 import MyBookingsPage from '../pages/family/MyBookingsPage'
+import {DanaManagementPage} from '../pages/admin/dana/DanaManagementPage'
 
 
 //User and  families pages
@@ -129,8 +138,20 @@ const TempleFormGuard = () => {
     return <AppShell><AccessDenied permission="manageTempleInformation"/></AppShell>
 }
 
+/*
+ * Dana Management is shared ground: the Temple Admin gets the management screen (calendar, CRUD,
+ * chart, assigned devotees), while every other role keeps the read-only schedule it always had.
+ */
+const DanaScheduleRoute = () => {
+    const {role} = usePermissions()
+    const user = usePortalUser()
+    if (role === 'templeAdmin') {
+        return <RequirePermission permission="manageDanaSlots"><DanaManagementPage/></RequirePermission>
+    }
+    return <DanaSchedulePage user={user}/>
+}
+
 /* Upstream pages take the signed-in user as a prop; these wrappers read it from AuthContext. */
-const DanaScheduleRoute = () => <DanaSchedulePage user={usePortalUser()}/>
 const DanaBookingRoute = () => <DanaBookingPage user={usePortalUser()}/>
 const MyBookingsRoute = () => <MyBookingsPage user={usePortalUser()}/>
 
@@ -143,6 +164,12 @@ export const AppRoutes = () => (
         <Route path={authRoutes.registerRoot} element={<Navigate to={authRoutes.registerAdmin} replace/>}/>
         <Route path={authRoutes.registerCommitteeMemberAlias}
                element={<Navigate to={authRoutes.registerCommitteeMember} replace/>}/>
+        {/* Confirmation link from the registration email lands here, then forwards to a result screen. */}
+        <Route path={authRoutes.verifyEmail} element={<VerifyEmailPage/>}/>
+        <Route path={authRoutes.verifyEmailSuccess} element={<VerifyEmailSuccessPage/>}/>
+        <Route path={authRoutes.verifyEmailExpired} element={<VerifyEmailExpiredPage/>}/>
+        <Route path={authRoutes.verifyEmailInvalid} element={<VerifyEmailInvalidPage/>}/>
+        <Route path={authRoutes.completeProfile} element={<CompleteProfilePage/>}/>
         <Route path={authRoutes.forgotPassword} element={<ForgotPasswordPage/>}/>
         <Route path={authRoutes.resetPassword} element={<ResetPasswordPage/>}/>
 
@@ -158,11 +185,13 @@ export const AppRoutes = () => (
         <Route path={authRoutes.facebook} element={<SocialSignInRoute provider="Facebook"/>}/>
 
         {/* Donation Module (public) */}
-        <Route path="/donation" element={<DonationPage/>}/>
+        <Route path="/donation"
+               element={<RequireCompleteProfile feature="Donation"><DonationPage/></RequireCompleteProfile>}/>
         <Route path="/donation/success" element={<DonationSuccessPage/>}/>
 
         {/* Community Suggestions */}
-        <Route path="/suggestions" element={<SuggestionsPage/>}/>
+        <Route path="/suggestions"
+               element={<RequireCompleteProfile feature="Suggestions"><SuggestionsPage/></RequireCompleteProfile>}/>
         <Route path="/admin/suggestions" element={<AdminSuggestionsPage/>}/>
 
         {/* ------------------------------- portal group ------------------------------- */}
@@ -178,12 +207,14 @@ export const AppRoutes = () => (
             <Route path={adminRoutes.dana}
                    element={<RequirePermission permission="viewDanaSlots"><DanaScheduleRoute/></RequirePermission>}/>
             <Route path={portalRoutes.danaBooking}
-                   element={<RequirePermission permission="bookDanaSlot"><DanaBookingRoute/></RequirePermission>}/>
+                   element={<RequirePermission permission="bookDanaSlot"><RequireCompleteProfile
+                       feature="Dana booking"><DanaBookingRoute/></RequireCompleteProfile></RequirePermission>}/>
             <Route path={portalRoutes.danaConfirmation}
                    element={<RequirePermission
                        permission="bookDanaSlot"><BookingConfirmationPage/></RequirePermission>}/>
             <Route path={adminRoutes.myBookings}
-                   element={<RequirePermission permission="viewOwnBookings"><MyBookingsRoute/></RequirePermission>}/>
+                   element={<RequirePermission permission="viewOwnBookings"><RequireCompleteProfile
+                       feature="My bookings"><MyBookingsRoute/></RequireCompleteProfile></RequirePermission>}/>
             <Route path={portalRoutes.danaSchedule} element={<Navigate to={adminRoutes.dana} replace/>}/>
             <Route path="/bookings" element={<Navigate to={adminRoutes.myBookings} replace/>}/>
 

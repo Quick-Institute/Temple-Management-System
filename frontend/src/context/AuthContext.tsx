@@ -1,5 +1,6 @@
 import {createContext, type ReactNode, useContext, useMemo, useState} from 'react'
 import {authService, type LoginCredentials} from '../services/authService'
+import {clearDraft} from '../data/profileCompletion'
 import type {DemoUser} from '../data/demoUsers'
 
 type AuthContextValue = {
@@ -31,6 +32,8 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
         },
         signOut: () => {
             authService.signOut()
+            /* A half-filled social profile belongs to the account that was signed in, not the next one. */
+            clearDraft()
             setUser(null)
         },
     }), [isSigningIn, user])

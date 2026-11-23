@@ -3,8 +3,12 @@ import {Link, useNavigate} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import Sidebar from '../../../components/Sidebar';
 import DashboardHeader from '../../../components/temple-admin/DashboardHeader';
-import {useRailCollapse} from '../../../hooks/useRailCollapse';
 import TempleFooterWave, {GoldenLotusIcon} from '../../../components/TempleFooterWave.tsx';
+import {type ApiFamilyRecord, familiesApi} from '../../../services/api.ts';
+import {useActiveTemple} from '../../../hooks/useActiveTemple';
+import {recordAuditAction} from '../../../services/auditLogger';
+import {secureRandomInt} from '../../../utils/cryptoRandom';
+import {getSessionFamilies, updateSessionFamilies} from '../../../utils/sessionCache';
 import {
     AFFILIATED_TEMPLES,
     type FamilyRecord,
@@ -12,6 +16,15 @@ import {
     INITIAL_INCOMING_TRANSFERS,
     SRI_LANKA_DISTRICTS
 } from '../../../data/seed';
+
+/**
+ * First half of a "Temple - Village" label.
+ *
+ * Records saved by an older build (in localStorage, or carried in from a transfer request) do not
+ * always carry the same field, and a missing one used to take the whole screen down with
+ * "Cannot read properties of undefined (reading 'split')". Reading through this helper cannot fail.
+ */
+const templeHead = (value?: string | null): string => (value || '').split('-')[0].trim();
 
 interface ClearanceCertState {
     family: FamilyRecord;
@@ -30,10 +43,15 @@ interface ClearanceCertState {
 export default function FamiliesPage() {
     const navigate = useNavigate();
     const {t} = useTranslation();
-    const [families, setFamilies] = useState(() => {
+    const {temple} = useActiveTemple();
+    const currentTempleCode = temple?.registrationId || 'TPL-2026-0482';
+    const currentTempleName = temple?.name || 'Sri Sambodhi Maha Viharaya';
+
+    const [families, setFamilies] = useState<FamilyRecord[]>(() => {
         try {
-            const saved = JSON.parse(localStorage.getItem('temple_registered_families') || '[]');
-            return [...saved, ...INITIAL_FAMILIES];
+            const saved = getSessionFamilies();
+            if (Array.isArray(saved) && saved.length > 0) return saved as unknown as FamilyRecord[];
+            return INITIAL_FAMILIES;
         } catch {
             return INITIAL_FAMILIES;
         }
@@ -41,7 +59,6 @@ export default function FamiliesPage() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const {collapsed: railCollapsed, toggle: toggleRail} = useRailCollapse();
 
     useEffect(() => {
         const handleToggle = () => setMobileMenuOpen((prev) => !prev);
@@ -56,11 +73,50 @@ export default function FamiliesPage() {
         return () => clearTimeout(timer);
     }, []);
 
+    // Fetch real-time families from PostgreSQL Backend API (FR-23, FR-09)
+    useEffect(() => {
+        let isMounted = true;
+        const tCode = temple?.registrationId || undefined;
+        familiesApi.getAll(tCode ? {templeCode: tCode} : undefined)
+            .then((res) => {
+                if (isMounted && res.data && res.data.length > 0) {
+                    const mapped = res.data.map((f: ApiFamilyRecord) => ({
+                        ...f,
+                        id: f.familyCode || f.id,
+                        key: f.id,
+                    }));
+                    setFamilies(mapped as unknown as FamilyRecord[]);
+                    updateSessionFamilies(mapped);
+                }
+            })
+            .catch((err) => {
+                console.warn('Backend API connection offline, utilizing local storage cache:', err);
+            });
+        return () => {
+            isMounted = false;
+        };
+    }, [temple?.registrationId]);
+
     const handleRefreshData = () => {
         setIsLoading(true);
-        setTimeout(() => {
-            setIsLoading(false);
-        }, 650);
+        const tCode = temple?.registrationId || undefined;
+        familiesApi.getAll(tCode ? {templeCode: tCode} : undefined)
+            .then((res) => {
+                if (res.data) {
+                    const mapped = res.data.map((f: ApiFamilyRecord) => ({
+                        ...f,
+                        id: f.familyCode || f.id,
+                        key: f.id,
+                    }));
+                    setFamilies(mapped as unknown as FamilyRecord[]);
+                }
+            })
+            .catch(console.error)
+            .finally(() => {
+                setTimeout(() => {
+                    setIsLoading(false);
+                }, 400);
+            });
     };
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -84,14 +140,15 @@ export default function FamiliesPage() {
     const [deletingFamily, setDeletingFamily] = useState(null);
 
     // Deactivate modal form states
-    const [deactivateReason, setDeactivateReason] = useState('Relocated outside parish boundary');
+    const [deactivateReason, setDeactivateReason] = useState('');
     const [deactivateNotes, setDeactivateNotes] = useState('');
     const [deactivateAcknowledged, setDeactivateAcknowledged] = useState(false);
+    const [deactivateErrors, setDeactivateErrors] = useState<{ reason?: string; notes?: string; ack?: string }>({});
 
     // Transfer modal form states
     const [transferData, setTransferData] = useState({
         destinationDistrict: 'Hambantota',
-        destinationTemple: 'Bodhirukkaramaya — Walasmulla',
+        destinationTemple: 'Bodhirukkaramaya - Walasmulla',
         destinationTempleCustom: '',
         destinationTempleCode: 'TPL-2024-0198',
         transferReason: 'Permanent Residence Relocation',
@@ -107,7 +164,7 @@ export default function FamiliesPage() {
     const [incomingTransfers, setIncomingTransfers] = useState(() => {
         try {
             const saved = JSON.parse(localStorage.getItem('temple_incoming_transfers') || '[]');
-            if (saved && Array.isArray(saved)) return saved;
+            if (saved && Array.isArray(saved) && saved.length > 0) return saved;
             return INITIAL_INCOMING_TRANSFERS;
         } catch {
             return INITIAL_INCOMING_TRANSFERS;
@@ -133,13 +190,26 @@ export default function FamiliesPage() {
     // Notification message
     const [notificationMsg, setNotificationMsg] = useState(null);
 
+    // Multi-tenancy: isolate records to the currently active temple
+    const templeFamilies = useMemo(() => {
+        return families.filter((f) => {
+            if (!temple) return true;
+            return (
+                !f.templeName ||
+                f.templeName.toLowerCase() === temple.name.toLowerCase() ||
+                (Boolean(temple.registrationId) && Boolean(f.templeCode) && f.templeCode === temple.registrationId) ||
+                (temple.name.toLowerCase().includes('sambodhi') && f.templeName.toLowerCase().includes('sambodhi'))
+            );
+        });
+    }, [families, temple]);
+
     // Filtered families
     const filteredFamilies = useMemo(() => {
-        return families.filter((f) => {
+        return templeFamilies.filter((f) => {
             const q = searchQuery.toLowerCase().trim();
             const matchesSearch =
                 !q ||
-                f.name.toLowerCase().includes(q) ||
+                (f.name || '').toLowerCase().includes(q) ||
                 (f.firstName && f.firstName.toLowerCase().includes(q)) ||
                 (f.lastName && f.lastName.toLowerCase().includes(q)) ||
                 (f.templeName && f.templeName.toLowerCase().includes(q)) ||
@@ -150,7 +220,7 @@ export default function FamiliesPage() {
                 (f.district && f.district.toLowerCase().includes(q)) ||
                 (f.postalCode && f.postalCode.includes(q)) ||
                 (f.email && f.email.toLowerCase().includes(q)) ||
-                f.phone.includes(q);
+                (f.phone || '').includes(q);
 
             const matchesWard =
                 wardFilter === 'all' ||
@@ -163,7 +233,7 @@ export default function FamiliesPage() {
 
             return matchesSearch && matchesWard && matchesStatus;
         });
-    }, [families, searchQuery, wardFilter, statusFilter]);
+    }, [templeFamilies, searchQuery, wardFilter, statusFilter]);
 
     // Handlers
     const handleOpenDetails = (family) => {
@@ -233,6 +303,21 @@ export default function FamiliesPage() {
     const handleConfirmDelete = () => {
         if (!deletingFamily) return;
 
+        // Call Backend API Delete
+        familiesApi.delete(deletingFamily.id).catch((err) => {
+            console.warn('Backend delete sync:', err);
+        });
+
+        // Record into Audit Trail
+        recordAuditAction({
+            targetType: 'Family',
+            targetName: deletingFamily.name,
+            targetId: String(deletingFamily.id),
+            action: 'Deleted',
+            reason: 'Permanently removed from parish ledger by temple administrator',
+            statusBadge: 'deleted',
+        });
+
         setFamilies((prev) => prev.filter((f) => f.id !== deletingFamily.id));
         if (selectedFamily && selectedFamily.id === deletingFamily.id) {
             setIsDetailsOpen(false);
@@ -286,7 +371,7 @@ export default function FamiliesPage() {
             'Household Members Summary'
         ];
 
-        const rows = families.map((f: Record<string, unknown>) => [
+        const rows = families.map((f: FamilyRecord) => [
             `"${f.id || ''}"`,
             `"${((f.name as string) || `${(f.firstName as string) || ''} ${(f.lastName as string) || ''}`).replace(/"/g, '""')}"`,
             `"${((f.alias as string) || '').replace(/"/g, '""')}"`,
@@ -337,21 +422,39 @@ export default function FamiliesPage() {
         }, 400);
     };
 
-    const handleOpenDeactivate = (family) => {
+    const handleOpenDeactivate = (family: FamilyRecord) => {
         setSelectedFamily(family);
-        setDeactivateReason('Relocated outside parish boundary');
+        setDeactivateReason('');
         setDeactivateNotes('');
         setDeactivateAcknowledged(false);
+        setDeactivateErrors({});
         setIsDeactivateOpen(true);
     };
 
     const handleConfirmDeactivate = () => {
         if (!selectedFamily) return;
+
+        // Strict Required Validations for Deactivation
+        const errors: { reason?: string; notes?: string; ack?: string } = {};
+        if (!deactivateReason || !deactivateReason.trim()) {
+            errors.reason = 'Please select a primary reason for deactivating this household record.';
+        }
+        if (!deactivateNotes || deactivateNotes.trim().length < 5) {
+            errors.notes = 'Administrative notes / clergy reference is required (minimum 5 characters).';
+        }
+        if (!deactivateAcknowledged) {
+            errors.ack = 'You must confirm that this deactivation has been authorized by clergy or secretary.';
+        }
+
+        if (Object.keys(errors).length > 0) {
+            setDeactivateErrors(errors);
+            return;
+        }
         const updated = families.map((f) =>
             f.id === selectedFamily.id
                 ? {
                     ...f,
-                    status: 'Deactivated',
+                    status: 'Deactivated' as const,
                     deactivationReason: deactivateReason,
                     deactivationNotes: deactivateNotes,
                     deactivatedAt: new Date().toISOString()
@@ -359,11 +462,14 @@ export default function FamiliesPage() {
                 : f
         );
         setFamilies(updated);
-        try {
-            localStorage.setItem('temple_registered_families', JSON.stringify(updated));
-        } catch (err) {
-            console.error(err);
-        }
+        updateSessionFamilies(updated as unknown as Record<string, unknown>[]);
+
+        // Call Backend API Status Deactivate (FR-16)
+        familiesApi.updateStatus(selectedFamily.id, {
+            status: 'Deactivated',
+            deactivateReason,
+            deactivateNotes,
+        }).catch(console.error);
 
         if (selectedFamily) {
             setSelectedFamily({
@@ -375,30 +481,14 @@ export default function FamiliesPage() {
         }
 
         // Record into immutable audit logs
-        const auditRecord = {
-            id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-            timestamp: new Date().toLocaleString('en-GB', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }),
-            adminName: 'Nimal Perera',
-            adminRole: 'Co-Administrator',
+        recordAuditAction({
             targetType: 'Family',
             targetName: selectedFamily.name,
-            targetId: selectedFamily.id,
+            targetId: String(selectedFamily.id),
             action: 'Deactivated',
             reason: `${deactivateReason} ${deactivateNotes ? `• ${deactivateNotes}` : ''}`,
-            statusBadge: 'deactivated'
-        };
-        try {
-            const existing = JSON.parse(localStorage.getItem('temple_audit_logs') || '[]');
-            localStorage.setItem('temple_audit_logs', JSON.stringify([auditRecord, ...existing]));
-        } catch (err) {
-            console.error(err);
-        }
+            statusBadge: 'deactivated',
+        });
 
         setIsDeactivateOpen(false);
         setNotificationMsg({
@@ -414,18 +504,21 @@ export default function FamiliesPage() {
             f.id === family.id
                 ? {
                     ...f,
-                    status: 'Active',
+                    status: 'Active' as const,
                     deactivationReason: undefined,
                     deactivationNotes: undefined
                 }
                 : f
         );
         setFamilies(updated);
-        try {
-            localStorage.setItem('temple_registered_families', JSON.stringify(updated));
-        } catch (err) {
-            console.error('Failed to save families to localStorage:', err);
-        }
+        updateSessionFamilies(updated as unknown as Record<string, unknown>[]);
+
+        // Call Backend API Status Reactivate (FR-16)
+        familiesApi.updateStatus(family.id, {
+            status: 'Active',
+            deactivateReason: undefined,
+            deactivateNotes: undefined,
+        }).catch(console.error);
 
         if (selectedFamily && selectedFamily.id === family.id) {
             setSelectedFamily({
@@ -437,30 +530,14 @@ export default function FamiliesPage() {
         }
 
         // Record into immutable audit logs
-        const auditRecord = {
-            id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-            timestamp: new Date().toLocaleString('en-GB', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }),
-            adminName: 'Nimal Perera',
-            adminRole: 'Co-Administrator',
+        recordAuditAction({
             targetType: 'Family',
             targetName: family.name,
-            targetId: family.id,
+            targetId: String(family.id),
             action: 'Reactivated',
             reason: 'Reinstated to active parish register / devotions resumed',
-            statusBadge: 'active'
-        };
-        try {
-            const existing = JSON.parse(localStorage.getItem('temple_audit_logs') || '[]');
-            localStorage.setItem('temple_audit_logs', JSON.stringify([auditRecord, ...existing]));
-        } catch (err) {
-            console.error('Failed to update audit logs:', err);
-        }
+            statusBadge: 'active',
+        });
 
         setNotificationMsg({
             type: 'success',
@@ -474,7 +551,7 @@ export default function FamiliesPage() {
         setSelectedFamily(family);
         setTransferData({
             destinationDistrict: family.district || 'Hambantota',
-            destinationTemple: 'Bodhirukkaramaya — Walasmulla',
+            destinationTemple: 'Bodhirukkaramaya - Walasmulla',
             destinationTempleCustom: '',
             destinationTempleCode: 'TPL-2024-0198',
             transferReason: 'Permanent Residence Relocation',
@@ -513,15 +590,15 @@ export default function FamiliesPage() {
             ? (transferData.destinationTempleCustom || 'Affiliated Temple')
             : transferData.destinationTemple;
 
-        const certNo = `CERT-TR-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+        const certNo = `CERT-TR-2026-${secureRandomInt(1000, 10000)}`;
 
         const updated = families.map((f) =>
             f.id === selectedFamily.id
                 ? {
                     ...f,
-                    status: 'Transferred',
-                    enrollmentMode: `Transferred to ${destName.split('—')[0].trim()}`,
-                    enrollmentType: 'transfer',
+                    status: 'Transferred' as const,
+                    enrollmentMode: `Transferred to ${templeHead(destName)}`,
+                    enrollmentType: 'transfer' as const,
                     transferData: {
                         destinationTemple: destName,
                         destinationDistrict: transferData.destinationDistrict,
@@ -536,11 +613,21 @@ export default function FamiliesPage() {
                 : f
         );
         setFamilies(updated);
-        try {
-            localStorage.setItem('temple_registered_families', JSON.stringify(updated));
-        } catch (err) {
-            console.error('Failed to save families to localStorage:', err);
-        }
+        updateSessionFamilies(updated as unknown as Record<string, unknown>[]);
+
+        // Call Backend API Transfer (FR-35, FR-36, FR-16)
+        familiesApi.transfer(selectedFamily.id, {
+            destinationDistrict: transferData.destinationDistrict,
+            destinationTemple: destName,
+            destinationTempleCode: transferData.destinationTempleCode,
+            transferReason: transferData.transferReason,
+            effectiveDate: transferData.effectiveDate,
+            authorizedBy: transferData.authorizedBy,
+            clergyRemarks: transferData.clergyRemarks,
+            issueCertificate: transferData.issueCertificate,
+            transferDanaHistory: transferData.transferDanaHistory,
+            notifyReceivingTemple: transferData.notifyReceivingTemple,
+        }).catch(console.error);
 
         setIsTransferOpen(false);
         setNotificationMsg({
@@ -554,7 +641,7 @@ export default function FamiliesPage() {
     // Incoming Transfer Handlers
     const handleStartAcceptIncoming = (incoming) => {
         setSelectedIncoming(incoming);
-        const nextIdNum = Math.floor(820 + Math.random() * 170);
+        const nextIdNum = secureRandomInt(820, 990);
         setAcceptFormData({
             assignedFamilyId: `FAM-0${nextIdNum}`,
             assignedWard: incoming.ward || 'meda-gama',
@@ -575,12 +662,12 @@ export default function FamiliesPage() {
         const newEnrolledFamily = {
             key: `transfer_${Date.now()}`,
             id: acceptFormData.assignedFamilyId,
-            templeName: 'Sri Sambodhi Maha Viharaya',
-            templeCode: 'TPL-2026-0482',
+            templeName: currentTempleName,
+            templeCode: currentTempleCode,
             firstName: selectedIncoming.firstName,
             lastName: selectedIncoming.lastName,
             name: selectedIncoming.name,
-            alias: `Transferred from ${selectedIncoming.originTempleName.split('—')[0].trim()}`,
+            alias: `Transferred from ${templeHead(selectedIncoming.originTempleName || selectedIncoming.fromTemple)}`,
             email: selectedIncoming.email,
             phone: selectedIncoming.phone,
             address: selectedIncoming.newAddress,
@@ -588,20 +675,16 @@ export default function FamiliesPage() {
             district: selectedIncoming.district || 'Hambantota',
             postalCode: selectedIncoming.postalCode || '82200',
             ward: acceptFormData.assignedWard,
-            status: 'Active',
-            enrollmentMode: `Transferred from ${selectedIncoming.originTempleName.split('—')[0].trim()}`,
-            enrollmentType: 'transfer',
+            status: 'Active' as const,
+            enrollmentMode: `Transferred from ${templeHead(selectedIncoming.originTempleName || selectedIncoming.fromTemple)}`,
+            enrollmentType: 'transfer' as const,
             certificateNumber: selectedIncoming.certificateNumber,
             members: selectedIncoming.members || []
         };
 
         const updatedFamilies = [newEnrolledFamily, ...families];
         setFamilies(updatedFamilies);
-        try {
-            localStorage.setItem('temple_registered_families', JSON.stringify(updatedFamilies));
-        } catch (err) {
-            console.error(err);
-        }
+        updateSessionFamilies(updatedFamilies as unknown as Record<string, unknown>[]);
 
         const remainingIncoming = incomingTransfers.filter((t) => t.id !== selectedIncoming.id);
         setIncomingTransfers(remainingIncoming);
@@ -619,7 +702,7 @@ export default function FamiliesPage() {
         setNotificationMsg({
             type: 'success',
             title: 'Parish Transfer Accepted & Enrolled',
-            desc: `${selectedIncoming.name} from ${selectedIncoming.originTempleName.split('—')[0].trim()} has been formally enrolled into the Dayaka Ledger as ${acceptFormData.assignedFamilyId}.`
+            desc: `${selectedIncoming.name} from ${templeHead(selectedIncoming.originTempleName || selectedIncoming.fromTemple)} has been formally enrolled into the Dayaka Ledger as ${acceptFormData.assignedFamilyId}.`
         });
         setTimeout(() => setNotificationMsg(null), 6500);
     };
@@ -651,7 +734,7 @@ export default function FamiliesPage() {
 
             {/* ============ SHARED SACRED TEMPLE SIDEBAR (DESKTOP) ============ */}
             <div className="sticky top-0 hidden lg:block h-dvh shrink-0 self-start z-30">
-                <Sidebar collapsed={railCollapsed} onToggleCollapse={toggleRail}/>
+                <Sidebar/>
             </div>
 
             {/* ============ MOBILE SIDEBAR DRAWER ============ */}
@@ -801,10 +884,10 @@ export default function FamiliesPage() {
                                     <div
                                         className="text-[10px] sm:text-[11.5px] text-gray-500 font-medium truncate">{t('families.kpi.total', 'Total Families')}</div>
                                     <div
-                                        className="text-[16px] sm:text-[22px] font-bold text-gray-900 leading-tight mt-0.5">{families.length}</div>
+                                        className="text-[16px] sm:text-[22px] font-bold text-gray-900 leading-tight mt-0.5">{templeFamilies.length}</div>
                                     <div
                                         className="text-[9.5px] sm:text-[10.5px] text-[#16A34A] font-semibold flex items-center gap-0.5 mt-0.5">
-                                        <span>↑ 12 active</span>
+                                        <span>↑ {templeFamilies.filter(f => f.status === 'Active').length} active</span>
                                     </div>
                                 </div>
                             </div>
@@ -825,7 +908,7 @@ export default function FamiliesPage() {
                                         className="text-[10px] sm:text-[11.5px] text-gray-500 font-medium truncate">{t('families.kpi.active', 'Active Dayakas')}</div>
                                     <div
                                         className="text-[16px] sm:text-[22px] font-bold text-gray-900 leading-tight mt-0.5">
-                                        {families.filter(f => f.status === 'Active').length}
+                                        {templeFamilies.filter(f => f.status === 'Active').length}
                                     </div>
                                     <div
                                         className="text-[9.5px] sm:text-[10.5px] text-[#16A34A] font-semibold flex items-center gap-0.5 mt-0.5">
@@ -1144,8 +1227,9 @@ export default function FamiliesPage() {
                     </span>
                                     </div>
                                     <p className="text-[11px] text-blue-800/80 truncate mt-0.5">
-                                        Transferred
-                                        from {incomingTransfers.map((t) => t.originTempleName.split('—')[0].trim()).join(' & ')}
+                                        Transferred from {incomingTransfers
+                                        .map((t) => templeHead(t.originTempleName || t.fromTemple) || 'another temple')
+                                        .join(' & ')}
                                     </p>
                                 </div>
                             </div>
@@ -1711,10 +1795,9 @@ export default function FamiliesPage() {
                                                     className="flex items-center gap-1 justify-end font-mono text-[10.5px]">
                                                     <span
                                                         className="material-symbols-outlined text-[13px] text-[#0C4A6E] flex-shrink-0">call</span>
-                                                    <a href={`tel:${fam.phone}`}
-                                                       className="text-[#0C4A6E] font-semibold hover:underline truncate">
-                                                        {fam.phone}
-                                                    </a>
+                                                    <span className="text-[#0C4A6E] font-semibold truncate select-all">
+                            {fam.phone}
+                          </span>
                                                 </div>
                                             </div>
 
@@ -1736,7 +1819,7 @@ export default function FamiliesPage() {
                                                 {fam.transferData && (
                                                     <span
                                                         className="text-[9.5px] font-medium text-amber-800 truncate max-w-[120px]">
-                            → {fam.transferData.destinationTempleName.split('—')[0]}
+                            → {templeHead(fam.transferData.destinationTempleName || fam.transferData.destinationTemple)}
                           </span>
                                                 )}
                                             </div>
@@ -1872,7 +1955,7 @@ export default function FamiliesPage() {
                 </span>
                             </div>
                             <h1 className="text-2xl font-bold font-serif text-slate-900 leading-tight">
-                                Sri Sambodhi Maha Viharaya — Walasmulla
+                                Sri Sambodhi Maha Viharaya - Walasmulla
                             </h1>
                             <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-600 mt-1">
                                 Official Dayaka Household Registry (2026 / 2569 B.E.)
@@ -1941,7 +2024,7 @@ export default function FamiliesPage() {
             {isDetailsOpen && selectedFamily && (
                 <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
                     <div
-                        className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden flex flex-col border border-gray-200 animate-fade-up">
+                        className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col border border-gray-200 animate-fade-up">
 
                         {/* Header */}
                         <div
@@ -1952,7 +2035,7 @@ export default function FamiliesPage() {
                             </div>
                             <div className="relative z-10 flex items-center gap-4">
                                 <div
-                                    className="w-13 h-13 rounded-full flex items-center justify-center font-bold text-[18px] tracking-wide shadow-md ring-2 ring-white/60 ring-offset-2 ring-offset-[#0284C7] bg-white text-[#0284C7] flex-shrink-0">
+                                    className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-[18px] tracking-wide shadow-md ring-2 ring-white/60 ring-offset-2 ring-offset-[#0284C7] bg-white text-[#0284C7] flex-shrink-0">
                                     {selectedFamily.name ? selectedFamily.name.charAt(0).toUpperCase() : 'F'}
                                 </div>
                                 <div>
@@ -1971,6 +2054,13 @@ export default function FamiliesPage() {
                       <span className="material-symbols-outlined text-[12px] text-sky-200">temple_buddhist</span>
                       <span>{selectedFamily.templeCode || 'TPL-2026-0482'}</span>
                     </span>
+                                        {selectedFamily.nic && (
+                                            <span
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium bg-emerald-950/40 text-emerald-200 border border-emerald-300/40">
+                        <span className="material-symbols-outlined text-[12px] text-emerald-300">badge</span>
+                        <span>NIC: {selectedFamily.nic}</span>
+                      </span>
+                                        )}
                                     </div>
                                     <h2 className="text-[20px] font-bold leading-tight text-white tracking-tight">
                                         {selectedFamily.name || `${selectedFamily.firstName || ''} ${selectedFamily.lastName || ''}`}
@@ -2081,151 +2171,187 @@ export default function FamiliesPage() {
                                 </div>
                             )}
 
-                            {/* Card 1: Family Identification & Temple Information */}
+                            {/* 1. Temple Institution */}
                             <div className="p-4 rounded-xl bg-white border border-gray-200/80 shadow-xs">
                                 <div className="flex items-center gap-2 pb-2.5 mb-3 border-b border-gray-100">
+                                    <div
+                                        className="w-6 h-6 rounded-md bg-[#0C4A6E]/8 flex items-center justify-center text-[#0C4A6E]">
+                                        <span className="material-symbols-outlined text-[15px]">temple_buddhist</span>
+                                    </div>
+                                    <h4 className="text-[11.5px] font-bold uppercase tracking-wider text-gray-800">
+                                        Temple Institution
+                                    </h4>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                    <div className="p-3 rounded-lg bg-gray-50/70 border border-gray-200/60">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">
+                      Temple Name
+                    </span>
+                                        <span className="text-[13.5px] font-semibold text-gray-900 block">
+                      {selectedFamily.templeName || 'Sri Sambodhi Maha Viharaya'}
+                    </span>
+                                        <span className="text-[11px] text-gray-500 mt-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Official Registered Viharaya
+                    </span>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-gray-50/70 border border-gray-200/60">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">
+                      Temple Registration Code
+                    </span>
+                                        <span className="font-mono text-[13.5px] font-semibold text-[#0369A1] block">
+                      {selectedFamily.templeCode || 'TPL-2026-0482'}
+                    </span>
+                                        <span className="text-[11px] text-gray-500 mt-1 block">
+                      Department of Buddhist Affairs Code
+                    </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 2. Official Member Identity & Verification */}
+                            <div className="p-4 rounded-xl bg-white border border-gray-200/80 shadow-xs">
+                                <div className="flex items-center gap-2 pb-2.5 mb-3.5 border-b border-gray-100">
                                     <div
                                         className="w-6 h-6 rounded-md bg-[#0C4A6E]/8 flex items-center justify-center text-[#0C4A6E]">
                                         <span className="material-symbols-outlined text-[15px]">badge</span>
                                     </div>
                                     <h4 className="text-[11.5px] font-bold uppercase tracking-wider text-gray-800">
-                                        Family Identification &amp; Temple Affiliation
+                                        Household Identity &amp; Verification
                                     </h4>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                    <div className="p-3 rounded-lg bg-gray-50/70 border border-gray-200/60">
-                                        <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">Family ID</span>
-                                        <span className="font-mono text-[14px] font-semibold text-gray-900 block">
-                      {selectedFamily.id}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3.5">
+                                    <div>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">
+                      Household Head Name
                     </span>
-                                    </div>
-                                    <div className="p-3 rounded-lg bg-gray-50/70 border border-gray-200/60">
-                                        <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">Temple Code</span>
-                                        <span className="font-mono text-[14px] font-semibold text-[#0369A1] block">
-                      {selectedFamily.templeCode || 'TPL-2026-0482'}
-                    </span>
-                                    </div>
-                                    <div
-                                        className="sm:col-span-2 p-3 rounded-lg bg-gray-50/70 border border-gray-200/60">
-                                        <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">Temple Name</span>
                                         <span className="text-[13.5px] font-semibold text-gray-900 block">
-                      {selectedFamily.templeName || 'Sri Sambodhi Maha Viharaya'}
-                    </span>
-                                    </div>
-                                </div>
-
-                                <div
-                                    className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3 pt-3 border-t border-gray-100">
-                                    <div>
-                                        <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-0.5">Enrollment Mode</span>
-                                        <span className="text-[12.5px] font-medium text-gray-800 block">
-                      {selectedFamily.enrollmentMode || 'Manual Clergy Entry'}
+                      {selectedFamily.name || `${selectedFamily.firstName || ''} ${selectedFamily.lastName || ''}`}
                     </span>
                                     </div>
                                     <div>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">
+                      Honorific Devotee Alias / Title
+                    </span>
+                                        <span className="text-[13px] font-medium text-gray-700 block">
+                      {selectedFamily.alias ? `"${selectedFamily.alias}"` : 'Parish Devotee'}
+                    </span>
+                                    </div>
+                                    <div>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">
+                      National Identity Card (NIC) / Household ID
+                    </span>
                                         <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-0.5">Parish Ledger Status</span>
+                                            className="font-mono text-[13px] font-semibold text-gray-900 flex items-center gap-1.5 mt-0.5">
+                      <span className="material-symbols-outlined text-[16px] text-emerald-600">verified_user</span>
+                      <span
+                          className="font-bold text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        {selectedFamily.nic || 'Verified NIC (SL)'}
+                      </span>
+                    </span>
+                                    </div>
+                                    <div>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">
+                      Parish Enrolment Mode
+                    </span>
                                         <span
                                             className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                            {selectedFamily.status}
-                    </span>
-                                    </div>
-                                    <div>
-                                        <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-0.5">Devotee Alias / Title</span>
-                                        <span className="text-[12.5px] font-medium text-gray-700 block">
-                      {selectedFamily.alias ? `"${selectedFamily.alias}"` : '—'}
+                      <span className="material-symbols-outlined text-[13px]">check_circle</span>
+                                            {selectedFamily.enrollmentMode || 'Manual Clergy Entry'}
                     </span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Card 2: Household Head & Contact Details */}
+                            {/* 3. Residential Location & Parish Ward */}
                             <div className="p-4 rounded-xl bg-white border border-gray-200/80 shadow-xs">
-                                <div className="flex items-center gap-2 pb-2.5 mb-3 border-b border-gray-100">
-                                    <div
-                                        className="w-6 h-6 rounded-md bg-[#0C4A6E]/8 flex items-center justify-center text-[#0C4A6E]">
-                                        <span className="material-symbols-outlined text-[15px]">person</span>
-                                    </div>
-                                    <h4 className="text-[11.5px] font-bold uppercase tracking-wider text-gray-800">
-                                        Household Head &amp; Contact Details
-                                    </h4>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div>
-                                        <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">First Name</span>
-                                        <span className="text-[13px] font-semibold text-gray-900 block">
-                      {selectedFamily.firstName || selectedFamily.name?.split(' ')[0]}
-                    </span>
-                                    </div>
-                                    <div>
-                                        <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">Last Name</span>
-                                        <span className="text-[13px] font-semibold text-gray-900 block">
-                      {selectedFamily.lastName || selectedFamily.name?.split(' ').slice(1).join(' ') || '—'}
-                    </span>
-                                    </div>
-                                    <div>
-                                        <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">Phone No.</span>
-                                        <span className="font-mono text-[13px] font-semibold text-gray-900 block">
-                      {selectedFamily.phone}
-                    </span>
-                                    </div>
-                                    <div>
-                                        <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">Email Address</span>
-                                        <span
-                                            className="font-mono text-[12.5px] font-medium text-gray-700 truncate block">
-                      {selectedFamily.email || '—'}
-                    </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Card 3: Residential Address & Location */}
-                            <div className="p-4 rounded-xl bg-white border border-gray-200/80 shadow-xs">
-                                <div className="flex items-center gap-2 pb-2.5 mb-3 border-b border-gray-100">
+                                <div className="flex items-center gap-2 pb-2.5 mb-3.5 border-b border-gray-100">
                                     <div
                                         className="w-6 h-6 rounded-md bg-[#0C4A6E]/8 flex items-center justify-center text-[#0C4A6E]">
                                         <span className="material-symbols-outlined text-[15px]">location_on</span>
                                     </div>
                                     <h4 className="text-[11.5px] font-bold uppercase tracking-wider text-gray-800">
-                                        Residential Address &amp; Location
+                                        Residential Location &amp; Parish Ward
                                     </h4>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3.5">
                                     <div className="sm:col-span-2">
-                                        <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">Address</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">
+                      Permanent Street Address
+                    </span>
                                         <span className="text-[13px] font-medium text-gray-900 block">
                       {selectedFamily.address || 'Temple Road'}
                     </span>
                                     </div>
                                     <div>
-                                        <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">Village</span>
-                                        <span className="text-[13px] font-medium text-gray-900 block">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">
+                      Village / Settlement
+                    </span>
+                                        <span className="text-[13px] font-semibold text-gray-900 block">
                       {selectedFamily.village || 'Walasmulla Central'}
                     </span>
                                     </div>
                                     <div>
-                                        <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">District &amp; Postal Code</span>
-                                        <span className="text-[13px] font-medium text-gray-900 block">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block mb-1">
+                      District &amp; Postal Code
+                    </span>
+                                        <span className="text-[13px] font-medium text-gray-700 block">
                       {selectedFamily.district || 'Hambantota'} ({selectedFamily.postalCode || '82200'})
                     </span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Card 4: Family Members Section */}
+                            {/* 4. Direct Contact Coordinates (Primary Email & Phone) */}
+                            <div className="p-4 rounded-xl bg-white border border-gray-200/80 shadow-xs">
+                                <div className="flex items-center gap-2 pb-2.5 mb-3 border-b border-gray-100">
+                                    <div
+                                        className="w-6 h-6 rounded-md bg-[#0C4A6E]/8 flex items-center justify-center text-[#0C4A6E]">
+                                        <span className="material-symbols-outlined text-[15px]">contact_phone</span>
+                                    </div>
+                                    <h4 className="text-[11.5px] font-bold uppercase tracking-wider text-gray-800">
+                                        Direct Contact Coordinates
+                                    </h4>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                    <div
+                                        className="flex items-start gap-3 p-3 rounded-lg bg-gray-50/70 border border-gray-200/60 hover:border-gray-300 transition-colors">
+                                        <div
+                                            className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-700 flex-shrink-0 shadow-2xs">
+                                            <span className="material-symbols-outlined text-[16px]">mail</span>
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block">
+                        Primary Email Address
+                      </span>
+                                            <span
+                                                className="font-mono text-[12.5px] font-semibold text-gray-900 block break-all whitespace-normal mt-0.5 select-all">
+                        {selectedFamily.email || '-'}
+                      </span>
+                                            <span className="text-[10.5px] text-gray-400 mt-0.5 block">Official Digital Notification Mail</span>
+                                        </div>
+                                    </div>
+                                    <div
+                                        className="flex items-start gap-3 p-3 rounded-lg bg-gray-50/70 border border-gray-200/60 hover:border-gray-300 transition-colors">
+                                        <div
+                                            className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-[#0C4A6E] flex-shrink-0 shadow-2xs">
+                                            <span className="material-symbols-outlined text-[16px]">call</span>
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block">
+                        Primary Contact Number
+                      </span>
+                                            <span
+                                                className="font-mono text-[12.5px] font-semibold text-gray-900 block truncate mt-0.5 select-all">
+                        {selectedFamily.phone}
+                      </span>
+                                            <span className="text-[10.5px] text-gray-400 mt-0.5 block">Direct Mobile / Voice Line</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 5. Family Members Section */}
                             <div className="p-4 rounded-xl bg-white border border-gray-200/80 shadow-xs">
                                 <div className="flex items-center justify-between mb-3 border-b pb-2.5 border-gray-100">
                                     <div className="flex items-center gap-2">
@@ -2235,7 +2361,7 @@ export default function FamiliesPage() {
                                                 className="material-symbols-outlined text-[15px]">family_restroom</span>
                                         </div>
                                         <h4 className="text-[11.5px] font-bold uppercase tracking-wider text-gray-800">
-                                            Family Members
+                                            Registered Household Members
                                         </h4>
                                     </div>
                                     <span
@@ -2245,7 +2371,7 @@ export default function FamiliesPage() {
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                     {selectedFamily.members?.map((m, i) => {
-                                        const initials = (m.name || 'Member').split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase();
+                                        const initials = (m?.name || 'Member').split(' ').filter(Boolean).map((n) => n[0]).join('').substring(0, 2).toUpperCase();
                                         const genderBg = m.gender === 'Male' ? '#DCFCE7' : '#F3E8FF';
                                         const genderTxt = m.gender === 'Male' ? '#166534' : '#6B21A8';
                                         return (
@@ -2431,6 +2557,19 @@ export default function FamiliesPage() {
                                                 ...editingFamily,
                                                 phone: e.target.value
                                             })}
+                                            className="w-full px-3.5 py-2.5 rounded-lg text-[13px] font-mono border border-gray-300 focus:outline-none focus:border-[#0C4A6E] focus:ring-2 focus:ring-[#0C4A6E]/10 bg-white text-gray-900 shadow-2xs transition-all"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label
+                                            className="block text-[10.5px] font-semibold uppercase tracking-wider text-gray-500 mb-1">
+                                            National ID (NIC)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={editingFamily.nic || ''}
+                                            onChange={(e) => setEditingFamily({...editingFamily, nic: e.target.value})}
+                                            placeholder="e.g. 198512345678"
                                             className="w-full px-3.5 py-2.5 rounded-lg text-[13px] font-mono border border-gray-300 focus:outline-none focus:border-[#0C4A6E] focus:ring-2 focus:ring-[#0C4A6E]/10 bg-white text-gray-900 shadow-2xs transition-all"
                                         />
                                     </div>
@@ -2857,16 +2996,27 @@ export default function FamiliesPage() {
                             </div>
 
                             {/* Form Controls */}
-                            <div className="space-y-3 pt-1">
-                                <div>
-                                    <label className="text-[12px] font-bold text-[#0F172A] block mb-1">
+                            <div className="space-y-3.5 pt-1">
+                                <div
+                                    className={`p-4 rounded-xl border transition-colors ${deactivateErrors.reason ? 'border-rose-300 ring-2 ring-rose-100 bg-rose-50/10' : 'border-slate-200 bg-white'}`}>
+                                    <label className="text-[12px] font-bold text-[#0F172A] block mb-1.5">
                                         Primary Reason for Deactivation <span className="text-red-500">*</span>
                                     </label>
                                     <select
                                         value={deactivateReason}
-                                        onChange={(e) => setDeactivateReason(e.target.value)}
-                                        className="w-full px-3.5 py-2.5 rounded-xl text-[13px] bg-white border border-slate-300 text-[#0F172A] focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100 transition-all"
+                                        onChange={(e) => {
+                                            setDeactivateReason(e.target.value);
+                                            if (e.target.value && deactivateErrors.reason) {
+                                                setDeactivateErrors((prev) => ({...prev, reason: undefined}));
+                                            }
+                                        }}
+                                        className={`w-full px-3.5 py-2.5 rounded-xl text-[13px] border focus:outline-none transition-all cursor-pointer ${
+                                            deactivateErrors.reason
+                                                ? 'border-rose-500 bg-rose-50/20 text-rose-950 focus:border-rose-500 focus:ring-2 focus:ring-rose-200'
+                                                : 'border-slate-300 bg-white text-[#0F172A] focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100'
+                                        }`}
                                     >
+                                        <option value="">-- Select Deactivation Reason (Required) --</option>
                                         <option value="Relocated outside parish boundary">
                                             Relocated outside parish boundary
                                         </option>
@@ -2883,35 +3033,70 @@ export default function FamiliesPage() {
                                             Extended non-attendance / Clergy directive
                                         </option>
                                     </select>
+                                    {deactivateErrors.reason && (
+                                        <p className="text-[11.5px] text-rose-600 font-semibold mt-1.5 flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-[15px]">error</span>
+                                            {deactivateErrors.reason}
+                                        </p>
+                                    )}
                                 </div>
 
-                                <div>
-                                    <label className="text-[12px] font-bold text-[#0F172A] block mb-1">
-                                        Administrative Notes / Clergy Reference <span
-                                        className="text-slate-400 font-normal">(Optional)</span>
+                                <div
+                                    className={`p-4 rounded-xl border transition-colors ${deactivateErrors.notes ? 'border-rose-300 ring-2 ring-rose-100 bg-rose-50/10' : 'border-slate-200 bg-white'}`}>
+                                    <label className="text-[12px] font-bold text-[#0F172A] block mb-1.5">
+                                        Administrative Notes / Clergy Reference <span className="text-red-500">*</span>
                                     </label>
                                     <textarea
                                         value={deactivateNotes}
-                                        onChange={(e) => setDeactivateNotes(e.target.value)}
-                                        className="w-full px-3.5 py-2 rounded-xl text-[13px] bg-white border border-slate-300 text-[#0F172A] focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100 transition-all"
+                                        onChange={(e) => {
+                                            setDeactivateNotes(e.target.value);
+                                            if (e.target.value.trim().length >= 5 && deactivateErrors.notes) {
+                                                setDeactivateErrors((prev) => ({...prev, notes: undefined}));
+                                            }
+                                        }}
+                                        className={`w-full px-3.5 py-2.5 rounded-xl text-[12.5px] border focus:outline-none transition-all resize-none placeholder:text-slate-400 ${
+                                            deactivateErrors.notes
+                                                ? 'border-rose-500 bg-rose-50/20 text-rose-950 focus:border-rose-500 focus:ring-2 focus:ring-rose-200'
+                                                : 'border-slate-300 bg-white text-[#0F172A] focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100'
+                                        }`}
                                         rows={2}
                                         placeholder="Enter Dayaka Sabhawa minute reference, clergy authorization note, or context..."
-                                    ></textarea>
+                                    />
+                                    {deactivateErrors.notes && (
+                                        <p className="text-[11.5px] text-rose-600 font-semibold mt-1.5 flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-[15px]">error</span>
+                                            {deactivateErrors.notes}
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* Clergy Acknowledgment Checkbox */}
-                                <label
-                                    className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-slate-300 transition-colors select-none">
-                                    <input
-                                        type="checkbox"
-                                        checked={deactivateAcknowledged}
-                                        onChange={(e) => setDeactivateAcknowledged(e.target.checked)}
-                                        className="mt-0.5 w-4 h-4 rounded text-[#0284C7] focus:ring-sky-500 cursor-pointer"
-                                    />
-                                    <span className="text-[12px] text-slate-700 leading-snug">
-                    I confirm this deactivation has been authorized by the Chief Incumbent (Nayaka Thero) or Parish Secretary in accordance with Dayaka Sabhawa regulations.
-                  </span>
-                                </label>
+                                <div
+                                    className={`p-3.5 rounded-xl border transition-colors ${deactivateErrors.ack ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200 bg-white'}`}>
+                                    <label className="flex items-start gap-3 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={deactivateAcknowledged}
+                                            onChange={(e) => {
+                                                setDeactivateAcknowledged(e.target.checked);
+                                                if (e.target.checked && deactivateErrors.ack) {
+                                                    setDeactivateErrors((prev) => ({...prev, ack: undefined}));
+                                                }
+                                            }}
+                                            className="mt-0.5 w-4 h-4 rounded text-[#0284C7] focus:ring-sky-500 cursor-pointer"
+                                        />
+                                        <span className="text-[12px] text-slate-700 leading-snug">
+                      I confirm this deactivation has been authorized by the Chief Incumbent (Nayaka Thero) or Parish Secretary in accordance with Dayaka Sabhawa regulations. <span
+                                            className="text-red-500">*</span>
+                    </span>
+                                    </label>
+                                    {deactivateErrors.ack && (
+                                        <p className="text-[11.5px] text-rose-600 font-semibold mt-2 pl-7 flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-[15px]">error</span>
+                                            {deactivateErrors.ack}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
 
                         </div>
@@ -2927,12 +3112,8 @@ export default function FamiliesPage() {
                             </button>
                             <button
                                 type="button"
-                                disabled={!deactivateAcknowledged}
                                 onClick={handleConfirmDeactivate}
-                                className={`px-5 py-2.5 rounded-xl text-[12px] font-bold text-white shadow-sm flex items-center gap-2 transition-all ${deactivateAcknowledged
-                                    ? 'bg-[#EF4444] hover:bg-[#DC2626] cursor-pointer shadow-red-500/20 active:scale-95'
-                                    : 'bg-slate-300 cursor-not-allowed opacity-60'
-                                }`}
+                                className="px-5 py-2.5 rounded-xl text-[12px] font-bold text-white bg-[#EF4444] hover:bg-[#DC2626] shadow-sm shadow-red-500/20 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
                             >
                                 <span className="material-symbols-outlined text-[18px]">person_off</span>
                                 <span>Confirm Deactivation</span>
@@ -3814,7 +3995,7 @@ export default function FamiliesPage() {
                                         <GoldenLotusIcon className="w-6 h-5 text-[#0369A1]"/>
                                     </div>
                                     <h4 className="text-[15px] font-bold text-[#0C4A6E] font-serif leading-tight">
-                                        {selectedFamilyForCard.templeName || 'Sri Sambodhi Maha Viharaya — Walasmulla'}
+                                        {selectedFamilyForCard.templeName || 'Sri Sambodhi Maha Viharaya - Walasmulla'}
                                     </h4>
                                     <p className="text-[10px] text-gray-600 font-mono mt-0.5">
                                         Registration No: <span
@@ -3996,10 +4177,10 @@ export default function FamiliesPage() {
                                         <GoldenLotusIcon className="w-7 h-6 text-[#0369A1]"/>
                                     </div>
                                     <h2 className="text-[22px] sm:text-[24px] font-bold text-[#0C4A6E] font-serif leading-tight">
-                                        Sri Sambodhi Maha Viharaya — Walasmulla
+                                        Sri Sambodhi Maha Viharaya - Walasmulla
                                     </h2>
                                     <h3 className="text-[14px] font-semibold text-[#0369A1] font-serif">
-                                        Sri Sambodhi Maha Viharaya — Walasmulla
+                                        Sri Sambodhi Maha Viharaya - Walasmulla
                                     </h3>
                                     <div
                                         className="flex flex-wrap items-center justify-center gap-3 text-[10.5px] text-gray-600 font-mono mt-1">
@@ -4050,7 +4231,7 @@ export default function FamiliesPage() {
                                             Designated Receiving Parish:
                                         </div>
                                         <div>
-                                            <strong>{selectedTransferCert.transferInfo?.destinationTemple || 'Bodhirukkaramaya — Walasmulla'}</strong>
+                                            <strong>{selectedTransferCert.transferInfo?.destinationTemple || 'Bodhirukkaramaya - Walasmulla'}</strong>
                                         </div>
                                         <div className="text-gray-600 mt-0.5 font-mono">
                                             District: {selectedTransferCert.transferInfo?.destinationDistrict || 'Hambantota'} •
@@ -4062,7 +4243,7 @@ export default function FamiliesPage() {
                                     {/* Blessings Stanza */}
                                     <div
                                         className="p-3 rounded-lg bg-sky-50 border border-sky-200 text-center italic font-serif text-[#0C4A6E] text-[12px]">
-                                        "Bhavatu Sabba Mangalam Rakkhantu Sabba Devatha — Sabba Buddhanubhavena Sada
+                                        "Bhavatu Sabba Mangalam Rakkhantu Sabba Devatha - Sabba Buddhanubhavena Sada
                                         Sotthi Bhavantu Te"<br/>
                                         <span className="text-[10.5px] not-italic text-sky-700 font-sans mt-0.5 block">
                       May all triple gem blessings be upon this devotee household in their continued service to the Buddha Sasana.
@@ -4201,7 +4382,7 @@ export default function FamiliesPage() {
                                         <GoldenLotusIcon className="w-6 h-5 text-[#0284C7]"/>
                                     </div>
                                     <h2 className="text-[20px] sm:text-[23px] font-bold text-[#0C4A6E] font-serif leading-tight">
-                                        ශ්‍රී සම්බෝධි මහා විහාරය — වළස්මුල්ල
+                                        ශ්‍රී සම්බෝධි මහා විහාරය - වළස්මුල්ල
                                     </h2>
                                     <p className="text-[10px] text-sky-700 font-mono mt-1">
                                         Department of Buddhist Affairs Code: <strong
