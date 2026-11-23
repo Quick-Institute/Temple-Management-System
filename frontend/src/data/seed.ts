@@ -445,7 +445,7 @@ export const SEED_FAMILIES: FamilyRecord[] = [
     enrollmentMode: 'Transferred to Kelaniya Raja Maha Viharaya',
     enrollmentType: 'transfer',
     transferData: {
-      destinationTemple: 'Kelaniya Raja Maha Viharaya — Kelaniya',
+      destinationTemple: 'Kelaniya Raja Maha Viharaya - Kelaniya',
       destinationDistrict: 'Gampaha',
       destinationTempleCode: 'TPL-2020-0005',
       transferReason: 'Permanent Residence Relocation',
@@ -469,7 +469,7 @@ export const SEED_INCOMING_TRANSFERS: IncomingTransferRecord[] = [
     nic: '197214509876',
     email: 'nihal.w@example.com',
     phone: '+94 77 456 7890',
-    originTempleName: 'Bellanwila Rajamaha Viharaya — Boralesgamuwa',
+    originTempleName: 'Bellanwila Rajamaha Viharaya - Boralesgamuwa',
     originTempleCode: 'TPL-2021-0089',
     dispatchedBy: 'Ven. Boralesgamuwe Rathanatissa Thero',
     dispatchedDate: '12 Nov 2026',
@@ -568,14 +568,14 @@ export const SRI_LANKA_DISTRICTS: string[] = [
 ];
 
 export const AFFILIATED_TEMPLES: AffiliatedTemple[] = [
-  { name: 'Bodhirukkaramaya — Walasmulla', code: 'TPL-2024-0198', district: 'Hambantota' },
-  { name: 'Sri Sudharmarama Purana Viharaya — Weeraketiya', code: 'TPL-2025-0341', district: 'Hambantota' },
-  { name: 'Gangaramaya Maha Viharaya — Colombo 02', code: 'TPL-2023-0012', district: 'Colombo' },
-  { name: 'Bellanwila Rajamaha Viharaya — Boralesgamuwa', code: 'TPL-2021-0089', district: 'Colombo' },
-  { name: 'Kelaniya Raja Maha Viharaya — Kelaniya', code: 'TPL-2020-0005', district: 'Gampaha' },
-  { name: 'Asgiriya Maha Viharaya — Kandy', code: 'TPL-2019-0002', district: 'Kandy' },
-  { name: 'Malwathu Maha Viharaya — Kandy', code: 'TPL-2019-0001', district: 'Kandy' },
-  { name: 'Ruwanweli Maha Seya Parish Viharaya — Anuradhapura', code: 'TPL-2018-0003', district: 'Anuradhapura' }
+  { name: 'Bodhirukkaramaya - Walasmulla', code: 'TPL-2024-0198', district: 'Hambantota' },
+  { name: 'Sri Sudharmarama Purana Viharaya - Weeraketiya', code: 'TPL-2025-0341', district: 'Hambantota' },
+  { name: 'Gangaramaya Maha Viharaya - Colombo 02', code: 'TPL-2023-0012', district: 'Colombo' },
+  { name: 'Bellanwila Rajamaha Viharaya - Boralesgamuwa', code: 'TPL-2021-0089', district: 'Colombo' },
+  { name: 'Kelaniya Raja Maha Viharaya - Kelaniya', code: 'TPL-2020-0005', district: 'Gampaha' },
+  { name: 'Asgiriya Maha Viharaya - Kandy', code: 'TPL-2019-0002', district: 'Kandy' },
+  { name: 'Malwathu Maha Viharaya - Kandy', code: 'TPL-2019-0001', district: 'Kandy' },
+  { name: 'Ruwanweli Maha Seya Parish Viharaya - Anuradhapura', code: 'TPL-2018-0003', district: 'Anuradhapura' }
 ];
 
 export const COMMUNITY_WARDS = [
