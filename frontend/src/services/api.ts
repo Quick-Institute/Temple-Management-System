@@ -112,12 +112,14 @@ export const familiesApi = {
     return request<DuplicateCheckResult>(`/families/check-duplicate?${searchParams.toString()}`);
   },
 
-  getAll: (params?: { q?: string; ward?: string; status?: string; templeCode?: string }) => {
+  getAll: (params?: { q?: string; ward?: string; status?: string; templeCode?: string; templeName?: string; templeId?: string }) => {
     const searchParams = new URLSearchParams();
     if (params?.q) searchParams.append('q', params.q);
     if (params?.ward) searchParams.append('ward', params.ward);
     if (params?.status) searchParams.append('status', params.status);
     if (params?.templeCode) searchParams.append('templeCode', params.templeCode);
+    if (params?.templeName) searchParams.append('templeName', params.templeName);
+    if (params?.templeId) searchParams.append('templeId', params.templeId);
     return request<{ success: boolean; count: number; data: ApiFamilyRecord[] }>(`/families?${searchParams.toString()}`);
   },
 
@@ -173,12 +175,14 @@ export const familiesApi = {
 // USERS & ROLES API (FR-01, FR-08, FR-09, FR-16)
 // ==========================================
 export const usersApi = {
-  getAll: (params?: { q?: string; committee?: string; status?: string; templeCode?: string }) => {
+  getAll: (params?: { q?: string; committee?: string; status?: string; templeCode?: string; templeName?: string; templeId?: string }) => {
     const searchParams = new URLSearchParams();
     if (params?.q) searchParams.append('q', params.q);
     if (params?.committee) searchParams.append('committee', params.committee);
     if (params?.status) searchParams.append('status', params.status);
     if (params?.templeCode) searchParams.append('templeCode', params.templeCode);
+    if (params?.templeName) searchParams.append('templeName', params.templeName);
+    if (params?.templeId) searchParams.append('templeId', params.templeId);
     return request<{ success: boolean; count: number; data: ApiUserRecord[] }>(`/users?${searchParams.toString()}`);
   },
 
