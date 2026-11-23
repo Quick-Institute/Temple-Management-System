@@ -19,8 +19,12 @@ export type {CapacityField, CommitteeMember, TempleDocument, TempleRecord, Templ
 
 /* --------------------------------- seed ---------------------------------- */
 
-/** The demo Temple Admin controls every seeded temple, so the temple switcher has something to do. */
+/**
+ * The demo Temple Admin accounts. Both control every seeded temple, so the temple switcher has
+ * something to do and the second account matches the first one's permissions exactly.
+ */
 const TEMPLE_ADMIN_EMAIL = 'templeadmin@temple.lk'
+const TEMPLE_ADMIN_EMAILS = [TEMPLE_ADMIN_EMAIL, 'templeadmin02@temple.lk']
 
 const SEED: TempleRecord[] = [
     {
@@ -114,6 +118,7 @@ const SEED: TempleRecord[] = [
         deletionRequestedOn: null,
         reviewNote: null,
         ownerEmail: TEMPLE_ADMIN_EMAIL,
+        ownerEmails: TEMPLE_ADMIN_EMAILS,
     },
     {
         id: 't-rec-2',
@@ -158,6 +163,7 @@ const SEED: TempleRecord[] = [
         deletionRequestedOn: null,
         reviewNote: null,
         ownerEmail: TEMPLE_ADMIN_EMAIL,
+        ownerEmails: TEMPLE_ADMIN_EMAILS,
     },
     {
         id: 't-rec-3',
@@ -205,6 +211,7 @@ const SEED: TempleRecord[] = [
         deletionRequestedOn: null,
         reviewNote: null,
         ownerEmail: TEMPLE_ADMIN_EMAIL,
+        ownerEmails: TEMPLE_ADMIN_EMAILS,
     },
     {
         id: 't-rec-4',
@@ -244,6 +251,7 @@ const SEED: TempleRecord[] = [
         deletionRequestedOn: null,
         reviewNote: 'Please attach the land deed and confirm the Dana hall seating capacity.',
         ownerEmail: TEMPLE_ADMIN_EMAIL,
+        ownerEmails: TEMPLE_ADMIN_EMAILS,
     },
     {
         id: 't-rec-5',
@@ -283,6 +291,7 @@ const SEED: TempleRecord[] = [
         deletionRequestedOn: '2026-10-20',
         reviewNote: null,
         ownerEmail: TEMPLE_ADMIN_EMAIL,
+        ownerEmails: TEMPLE_ADMIN_EMAILS,
     },
 ]
 
@@ -375,7 +384,13 @@ const STORAGE_KEY = 'tms.templeRecords'
 const loadRecords = (): TempleRecord[] => {
     try {
         const saved = sessionStorage.getItem(STORAGE_KEY)
-        if (saved) return JSON.parse(saved) as TempleRecord[]
+        if (saved) {
+            /* A record saved before a change to the seed keeps working: fill in the missing fields. */
+            return (JSON.parse(saved) as TempleRecord[]).map((record) => ({
+                ...record,
+                ownerEmails: record.ownerEmails ?? (record.ownerEmail ? TEMPLE_ADMIN_EMAILS : undefined),
+            }))
+        }
     } catch {
         /* A blocked or corrupt store just falls back to the seed. */
     }

@@ -55,6 +55,23 @@ export const demoUsers: DemoUser[] = [
         contactNumber: '+94 31 223 4478',
     },
     {
+        /*
+         * A second Temple Admin of the same temple. Same role, so the same permission set and the same
+         * temples as the chief incumbent - only the person and the sign-in differ.
+         */
+        identifier: 'templeadmin02@temple.lk',
+        password: 'temple@2026',
+        id: '198760412345',
+        name: 'Ven. Kithalagama Sumana Thero',
+        shortName: 'Ven. Sumana Thero',
+        role: 'templeAdmin',
+        roleLabel: 'Temple Admin',
+        designation: 'Assistant Incumbent Monk',
+        initials: 'ST',
+        templeName: TEMPLE,
+        contactNumber: '+94 31 223 4479',
+    },
+    {
         identifier: 'coadmin@temple.lk',
         password: 'coadmin@2026',
         id: '198512304568',
