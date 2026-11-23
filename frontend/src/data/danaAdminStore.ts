@@ -9,7 +9,11 @@ import {useSyncExternalStore} from 'react'
  * is ready, every exported function below swaps its body for a fetch - the screens do not change.
  *
  * What a devotee booking looks like to an admin is deliberately *limited*: name, village, number of
- * people, status and a masked contact number. Nothing else is exposed by `assigneesFor`.
+ * people, status and the contact number. The number is shown in full - the temple's own admin has to
+ * ring a family to verify a place - but no address and no identity number ever leaves the store.
+ *
+ * Every booking records the temple it belongs to. The screens pass the temple from the top bar, so a
+ * Temple Admin only ever sees the devotees of the temple they are working on.
  */
 
 export type DanaKind = 'morning' | 'midday'
@@ -48,7 +52,8 @@ export type FamilyChoice = {
     templeRef: string
     name: string
     village: string
-    contactMasked: string
+    /** Full number - the same one the assigned list shows. */
+    contact: string
 }
 
 export type DanaBookingRecord = {
@@ -56,6 +61,11 @@ export type DanaBookingRecord = {
     reference: string
     date: string
     kind: DanaKind
+    /**
+     * The temple this place belongs to (`TempleRecord.id`, the one in the top bar). The assigned
+     * list, the day counts and the charts read only the rows of the current temple.
+     */
+    templeRef: string
     /** The family record this assignment points at (empty for a temporary family). */
     familyId: string
     /**
@@ -65,7 +75,7 @@ export type DanaBookingRecord = {
     temporary: boolean
     familyName: string
     village: string
-    /** Full number - only `assigneesFor` may expose it, and only masked. */
+    /** Full number, as the family gave it on the register form. */
     contact: string
     participants: number
     status: BookingStatus
@@ -82,8 +92,11 @@ export type LimitedAssignee = {
     village: string
     participants: number
     status: BookingStatus
-    /** "077****567" - enough to recognise, never the whole number. */
-    contactMasked: string
+    /**
+     * The full number, digits only: the admin rings it to verify a place, so it is not masked.
+     * `formatContact` lays it out as 077 123 4567 for the screen.
+     */
+    contact: string
 }
 
 export type SlotSummary = {
@@ -277,6 +290,7 @@ const seedData = (): { slots: DanaSlotRecord[]; bookings: DanaBookingRecord[]; f
                     reference: `DANA-${date.slice(0, 4)}-${String(reference).padStart(5, '0')}`,
                     date,
                     kind,
+                    templeRef: PRIMARY_TEMPLE_REF,
                     familyId: family.id,
                     temporary: false,
                     familyName: family.name,
@@ -309,16 +323,20 @@ const defaults = (): State => {
             const parsed = JSON.parse(raw) as State
             if (Array.isArray(parsed.slots) && Array.isArray(parsed.bookings)) {
                 /* Data saved before the family directory existed still loads - it gets the seed list. */
+                /* Rows saved before this existed belong to the primary temple; a booking whose family is
+                   still on file takes that family's temple instead. */
+                const families = Array.isArray(parsed.families) && parsed.families.length
+                    ? parsed.families.map((family) => ({...family, templeRef: family.templeRef ?? PRIMARY_TEMPLE_REF}))
+                    : seedFamilies()
+                const templeOf = new Map(families.map((family) => [family.id, family.templeRef]))
                 return {
                     ...parsed,
-                    /* Rows saved before the temple scoping existed belong to the primary temple. */
-                    families: Array.isArray(parsed.families) && parsed.families.length
-                        ? parsed.families.map((family) => ({
-                            ...family,
-                            templeRef: family.templeRef ?? PRIMARY_TEMPLE_REF
-                        }))
-                        : seedFamilies(),
-                    bookings: parsed.bookings.map((booking) => ({...booking, temporary: Boolean(booking.temporary)})),
+                    families,
+                    bookings: parsed.bookings.map((booking) => ({
+                        ...booking,
+                        temporary: Boolean(booking.temporary),
+                        templeRef: booking.templeRef ?? templeOf.get(booking.familyId) ?? PRIMARY_TEMPLE_REF,
+                    })),
                 }
             }
         }
@@ -373,23 +391,29 @@ export const resetDanaData = (): void => {
 
 export const slotId = (date: string, kind: DanaKind): string => `${date}|${kind}`
 
-const maskContact = (value: string): string => {
+/** 0771234567 -> "077 123 4567", so a number is easy to read out and ring. */
+export const formatContact = (value: string): string => {
     const digits = (value ?? '').replace(/\D/g, '')
-    if (digits.length < 6) return '-'
-    return `${digits.slice(0, 3)}${'*'.repeat(Math.max(2, digits.length - 6))}${digits.slice(-3)}`
+    if (!digits) return '—'
+    if (digits.length === 10) return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`
+    if (digits.length === 9) return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5)}`
+    return digits
 }
 
-const activeBookings = (bookings: DanaBookingRecord[]): DanaBookingRecord[] =>
-    bookings.filter((booking) => booking.status === 'Approved' || booking.status === 'Pending')
+const activeBookings = (bookings: DanaBookingRecord[], templeRef?: string): DanaBookingRecord[] =>
+    bookings.filter((booking) =>
+        (booking.status === 'Approved' || booking.status === 'Pending') &&
+        (!templeRef || booking.templeRef === templeRef))
 
 export const slotsBetween = (fromDate: string, toDate: string): DanaSlotRecord[] =>
     snapshot().slots
         .filter((slot) => slot.date >= fromDate && slot.date <= toDate)
         .sort((a, b) => a.date.localeCompare(b.date) || (a.kind === 'morning' ? -1 : 1))
 
-export const summarise = (fromDate: string, toDate: string): SlotSummary[] => {
+/** Places taken per slot, for one temple (`templeRef` omitted counts every temple). */
+export const summarise = (fromDate: string, toDate: string, templeRef?: string): SlotSummary[] => {
     const {bookings} = snapshot()
-    const booked = activeBookings(bookings)
+    const booked = activeBookings(bookings, templeRef)
     return slotsBetween(fromDate, toDate).map((slot) => {
         const count = booked.filter((booking) => booking.date === slot.date && booking.kind === slot.kind).length
         return {
@@ -404,16 +428,23 @@ export const summarise = (fromDate: string, toDate: string): SlotSummary[] => {
     })
 }
 
-export const daySummary = (date: string): SlotSummary[] => summarise(date, date)
+export const daySummary = (date: string, templeRef?: string): SlotSummary[] => summarise(date, date, templeRef)
 
 export const findSlot = (date: string, kind: DanaKind): DanaSlotRecord | undefined =>
     snapshot().slots.find((slot) => slot.id === slotId(date, kind))
 
-/** Assigned devotees for one slot - limited details only. */
-export const assigneesFor = (date: string, kind: DanaKind): LimitedAssignee[] => {
+/**
+ * Assigned devotees for one slot of one temple - limited details only, but the contact number in
+ * full, because the admin rings a family to verify a place.
+ */
+export const assigneesFor = (date: string, kind: DanaKind, templeRef?: string): LimitedAssignee[] => {
     const {bookings} = snapshot()
     return bookings
-        .filter((booking) => booking.date === date && booking.kind === kind && booking.status !== 'Cancelled')
+        .filter((booking) =>
+            booking.date === date &&
+            booking.kind === kind &&
+            booking.status !== 'Cancelled' &&
+            (!templeRef || booking.templeRef === templeRef))
         .sort((a, b) => a.reference.localeCompare(b.reference))
         .map((booking) => ({
             id: booking.id,
@@ -424,7 +455,7 @@ export const assigneesFor = (date: string, kind: DanaKind): LimitedAssignee[] =>
             village: booking.village,
             participants: booking.participants,
             status: booking.status,
-            contactMasked: maskContact(booking.contact),
+            contact: booking.contact,
         }))
 }
 
@@ -441,14 +472,14 @@ export const listFamilies = (templeRef?: string): DanaFamily[] =>
         .filter((family) => !templeRef || family.templeRef === templeRef)
         .sort((a, b) => a.name.localeCompare(b.name) || a.village.localeCompare(b.village))
 
-/** The directory as the assign screen shows it: contact numbers masked, same rule as the bookings. */
+/** The directory as the assign screen shows it: the same full contact number as the bookings. */
 export const familyChoices = (templeRef?: string): FamilyChoice[] =>
     listFamilies(templeRef).map((family) => ({
         id: family.id,
         templeRef: family.templeRef,
         name: family.name,
         village: family.village,
-        contactMasked: maskContact(family.contact),
+        contact: family.contact,
     }))
 
 export const findFamily = (familyId: string): DanaFamily | undefined =>
@@ -498,10 +529,10 @@ const addTo = (bucket: SlackBucket, summary: SlotSummary) => {
 }
 
 /** Bars per day for the week that holds `iso` (Monday to Sunday). */
-const dayBuckets = (iso: string, locale: 'en' | 'si'): Bucket[] => {
+const dayBuckets = (iso: string, locale: 'en' | 'si', templeRef?: string): Bucket[] => {
     const monday = startOfWeek(iso)
     const dates = Array.from({length: 7}, (_, index) => addDays(monday, index))
-    const summaries = summarise(dates[0], dates[6])
+    const summaries = summarise(dates[0], dates[6], templeRef)
 
     return dates.map((date) => {
         const bucket: Bucket = {
@@ -525,7 +556,7 @@ const dayBuckets = (iso: string, locale: 'en' | 'si'): Bucket[] => {
 }
 
 /** Bars per week for the month that holds `iso`. */
-const weekBuckets = (iso: string, locale: 'en' | 'si'): Bucket[] => {
+const weekBuckets = (iso: string, locale: 'en' | 'si', templeRef?: string): Bucket[] => {
     const first = startOfMonth(iso)
     const total = daysInMonth(iso)
     const buckets: Bucket[] = []
@@ -547,7 +578,7 @@ const weekBuckets = (iso: string, locale: 'en' | 'si'): Bucket[] => {
             capacity: 0,
             available: 0,
         }
-        for (const summary of summarise(cursor, weekEnd)) {
+        for (const summary of summarise(cursor, weekEnd, templeRef)) {
             addTo(summary.kind === 'morning' ? bucket.morning : bucket.midday, summary)
         }
         bucket.booked = bucket.morning.booked + bucket.midday.booked
@@ -561,7 +592,7 @@ const weekBuckets = (iso: string, locale: 'en' | 'si'): Bucket[] => {
 }
 
 /** Bars per month for the year that holds `iso`. */
-const monthBuckets = (iso: string, locale: 'en' | 'si'): Bucket[] => {
+const monthBuckets = (iso: string, locale: 'en' | 'si', templeRef?: string): Bucket[] => {
     const year = Number(iso.slice(0, 4))
     return Array.from({length: 12}, (_, index) => {
         const monthStart = `${year}-${String(index + 1).padStart(2, '0')}-01`
@@ -576,7 +607,7 @@ const monthBuckets = (iso: string, locale: 'en' | 'si'): Bucket[] => {
             capacity: 0,
             available: 0,
         }
-        for (const summary of summarise(monthStart, monthEnd)) {
+        for (const summary of summarise(monthStart, monthEnd, templeRef)) {
             addTo(summary.kind === 'morning' ? bucket.morning : bucket.midday, summary)
         }
         bucket.booked = bucket.morning.booked + bucket.midday.booked
@@ -586,10 +617,15 @@ const monthBuckets = (iso: string, locale: 'en' | 'si'): Bucket[] => {
     })
 }
 
-export const chartBuckets = (granularity: ChartGranularity, iso: string, locale: 'en' | 'si'): Bucket[] => {
-    if (granularity === 'day') return dayBuckets(iso, locale)
-    if (granularity === 'week') return weekBuckets(iso, locale)
-    return monthBuckets(iso, locale)
+export const chartBuckets = (
+    granularity: ChartGranularity,
+    iso: string,
+    locale: 'en' | 'si',
+    templeRef?: string,
+): Bucket[] => {
+    if (granularity === 'day') return dayBuckets(iso, locale, templeRef)
+    if (granularity === 'week') return weekBuckets(iso, locale, templeRef)
+    return monthBuckets(iso, locale, templeRef)
 }
 
 /* ------------------------------------------------------------------ */
@@ -692,11 +728,13 @@ export const createBooking = (input: {
     date: string
     kind: DanaKind
     participants: number
+    /** The temple the place is booked under - the one in the top bar. */
+    templeRef: string
     familyId?: string
     temporary?: { name: string; village: string; contact: string }
 }): DanaBookingRecord => {
     const current = snapshot()
-    const summary = daySummary(input.date).find((item) => item.kind === input.kind)
+    const summary = daySummary(input.date, input.templeRef).find((item) => item.kind === input.kind)
     if (!summary) throw new Error('Create the Dana slot first.')
     if (summary.closed) throw new Error('This slot is closed.')
     if (summary.available <= 0) throw new Error('This slot is already full.')
@@ -714,6 +752,9 @@ export const createBooking = (input: {
     } else {
         const family = findFamily(input.familyId ?? '')
         if (!family) throw new Error('Choose a family to assign.')
+        if (input.templeRef && family.templeRef !== input.templeRef) {
+            throw new Error('That family belongs to another temple.')
+        }
         guardFamilyOnce(current.bookings, family.id, input.date, input.kind)
         person = {
             familyId: family.id,
@@ -729,6 +770,7 @@ export const createBooking = (input: {
         reference: nextReference(current, input.date),
         date: input.date,
         kind: input.kind,
+        templeRef: input.templeRef || findFamily(person.familyId)?.templeRef || PRIMARY_TEMPLE_REF,
         familyId: person.familyId,
         temporary: person.temporary,
         familyName: person.name,
@@ -759,6 +801,7 @@ export const updateBooking = (
     if (patch.familyId && patch.familyId !== existing.familyId) {
         const family = findFamily(patch.familyId)
         if (!family) throw new Error('Choose a family to assign.')
+        if (family.templeRef !== existing.templeRef) throw new Error('That family belongs to another temple.')
         guardFamilyOnce(current.bookings, family.id, existing.date, existing.kind, bookingId)
         next = {
             ...next,

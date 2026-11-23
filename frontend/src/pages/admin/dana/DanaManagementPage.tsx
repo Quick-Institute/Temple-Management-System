@@ -41,8 +41,9 @@ import {
  *      are taken and how many are left,
  *   2. the selected day, where the admin creates, edits, closes and deletes a slot and manages the
  *      families assigned to it - choosing them from the temple's family list, editing the number of
- *      people, approving, rejecting or cancelling. Only the name, village and a masked contact
- *      number are ever shown for a family,
+ *      people, approving, rejecting or cancelling. Only the name, village and the contact number are
+ *      shown - the number in full, so the admin can ring and verify a family - and only the devotees
+ *      of the temple in the top bar are listed,
  *   3. a bar chart per day, week or month with the booked places and the places left.
  *
  * The data lives in data/danaAdminStore.ts (localStorage) until the API is wired up.
@@ -71,6 +72,12 @@ export const DanaManagementPage = () => {
     const locale = (i18n.language === 'si' ? 'si' : 'en') as 'en' | 'si'
     const {temple} = useActiveTemple()
     const {slots, bookings} = useDanaAdmin()
+    /*
+     * Everything below reads one temple only: the day counts on the calendar, the place count on the
+     * selected day, the chart and the assigned list all pass this id, so switching temple in the top
+     * bar shows that temple's Dana and nobody else's.
+     */
+    const templeRef = temple?.id ?? ''
 
     /* The wave ribbon goes into the shell's own footer slot - full width, under the padded content. */
     useShellFooter(TempleFooterWave)
@@ -102,19 +109,23 @@ export const DanaManagementPage = () => {
         const map = new Map<string, ReturnType<typeof daySummary>>()
         for (let day = 1; day <= monthDays.total; day += 1) {
             const date = `${month.slice(0, 7)}-${String(day).padStart(2, '0')}`
-            map.set(date, daySummary(date))
+            map.set(date, daySummary(date, templeRef))
         }
         return map
-    }, [month, monthDays.total, slots, bookings])
+    }, [month, monthDays.total, slots, bookings, templeRef])
 
-    const daySlots = useMemo(() => daySummary(selectedDate), [selectedDate, slots, bookings])
+    const daySlots = useMemo(
+        () => daySummary(selectedDate, templeRef),
+        [selectedDate, slots, bookings, templeRef],
+    )
     const buckets = useMemo(
         () => chartBuckets(
             granularity,
             granularity === 'day' ? startOfWeek(selectedDate) : granularity === 'week' ? month : selectedDate,
             locale,
+            templeRef,
         ),
-        [granularity, selectedDate, month, locale, slots, bookings],
+        [granularity, selectedDate, month, locale, slots, bookings, templeRef],
     )
 
     /* eslint-enable react-hooks/exhaustive-deps */
@@ -512,7 +523,7 @@ export const DanaManagementPage = () => {
                     <AssignedFamiliesPanel
                         slot={openSlot}
                         locale={locale}
-                        templeRef={temple?.id ?? ''}
+                        templeRef={templeRef}
                         onMessage={(text, isError) => {
                             setError(isError ? text : '')
                             setFlash(isError ? '' : text)
