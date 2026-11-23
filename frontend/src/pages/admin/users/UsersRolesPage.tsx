@@ -14,8 +14,8 @@ export default function UsersRolesPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { temple } = useActiveTemple();
-  const currentTempleCode = temple?.registrationId || 'TPL-2026-0482';
-  const currentTempleName = temple?.name || 'Sri Sambodhi Maha Viharaya';
+  const currentTempleCode = temple?.registrationId || temple?.id || '—';
+  const currentTempleName = temple?.name || 'Temple';
   const [users, setUsers] = useState<UserOfficial[]>(() => {
     try {
       const saved = getSessionUsers();
@@ -53,53 +53,64 @@ export default function UsersRolesPage() {
     }
   }, []);
 
-  // Fetch real-time users from PostgreSQL Backend API (FR-08, FR-09)
+  // Fetch real-time users from PostgreSQL Backend API (FR-08, FR-09) with smart seeds fallback
   useEffect(() => {
     let isMounted = true;
-    const tCode = temple?.registrationId || undefined;
-    usersApi.getAll(tCode ? { templeCode: tCode } : undefined)
+    const queryParams = {
+      templeCode: temple?.registrationId,
+      templeName: temple?.name,
+      templeId: temple?.id,
+    };
+    usersApi.getAll(queryParams)
       .then((res) => {
-        if (isMounted && res.data && res.data.length > 0) {
-          const mapped: UserOfficial[] = res.data.map((u: ApiUserRecord) => ({
-            id: Number(u.id),
-            firstName: u.firstName || '',
-            lastName: u.lastName || '',
-            name: u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim(),
-            alias: u.alias || '',
-            email: u.email,
-            phone: u.phone || '',
-            nic: u.nic || 'Verified NIC (SL)',
-            committeeName: u.committeeName || 'Dayaka Sabhawa',
-            designation: u.designation || 'Committee Member',
-            role: u.role || 'official',
-            roleDisplay: u.designation || 'Committee Member',
-            roleSubtitle: `${u.committeeName || 'Dayaka Sabhawa'} • ${u.templeName || currentTempleName}`,
-            templeName: u.templeName || currentTempleName,
-            templeCode: u.templeCode || currentTempleCode,
-            status: ((u.status as string) || 'active') as 'active' | 'deactivated' | 'permanent',
-            isPermanent: Boolean(u.isPermanent),
-            avatar: u.avatar || 'U',
-            avatarBg: u.avatarBg || 'bg-emerald-100',
-            avatarColor: u.avatarColor || 'text-emerald-800',
-            deactivateReason: u.deactivateReason,
-            deactivateNotes: u.deactivateNotes,
-            deactivatedAt: u.deactivatedAt,
-            permFamily: u.permFamily !== false,
-            permDana: u.permDana !== false,
-            permNotices: u.permNotices !== false,
-            permFinance: Boolean(u.permFinance),
-          }));
-          setUsers(mapped);
-          updateSessionUsers(mapped as unknown as Record<string, unknown>[]);
+        if (isMounted) {
+          if (res.data && res.data.length > 0) {
+            // Live PostgreSQL Database Data
+            const mapped: UserOfficial[] = res.data.map((u: ApiUserRecord) => ({
+              id: Number(u.id),
+              firstName: u.firstName || '',
+              lastName: u.lastName || '',
+              name: u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+              alias: u.alias || '',
+              email: u.email,
+              phone: u.phone || '',
+              nic: u.nic || 'Verified NIC (SL)',
+              committeeName: u.committeeName || 'Dayaka Sabhawa',
+              designation: u.designation || 'Committee Member',
+              role: u.role || 'official',
+              roleDisplay: u.designation || 'Committee Member',
+              roleSubtitle: `${u.committeeName || 'Dayaka Sabhawa'} • ${u.templeName || currentTempleName}`,
+              templeName: u.templeName || currentTempleName,
+              templeCode: u.templeCode || currentTempleCode,
+              status: ((u.status as string) || 'active') as 'active' | 'deactivated' | 'permanent',
+              isPermanent: Boolean(u.isPermanent),
+              avatar: u.avatar || 'U',
+              avatarBg: u.avatarBg || 'bg-emerald-100',
+              avatarColor: u.avatarColor || 'text-emerald-800',
+              deactivateReason: u.deactivateReason,
+              deactivateNotes: u.deactivateNotes,
+              deactivatedAt: u.deactivatedAt,
+              permFamily: u.permFamily !== false,
+              permDana: u.permDana !== false,
+              permNotices: u.permNotices !== false,
+              permFinance: Boolean(u.permFinance),
+            }));
+            setUsers(mapped);
+            updateSessionUsers(mapped as unknown as Record<string, unknown>[]);
+          } else {
+            // DB is empty for this temple: gracefully show seed data so page is never empty for team demo
+            setUsers(INITIAL_ROSTER);
+          }
         }
       })
       .catch((err) => {
-        console.warn('Backend users API offline, using local storage cache:', err);
+        console.warn('Backend users API offline, using seed data fallback:', err);
+        if (isMounted) setUsers(INITIAL_ROSTER);
       });
     return () => {
       isMounted = false;
     };
-  }, [temple?.registrationId, currentTempleName, currentTempleCode]);
+  }, [temple?.registrationId, temple?.name, temple?.id, currentTempleName, currentTempleCode]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [committeeFilter, setCommitteeFilter] = useState("all");
@@ -542,12 +553,12 @@ export default function UsersRolesPage() {
                 {t('users.title', 'User & Role Management')},
               </span>
               <h1 className="font-serif text-[22px] sm:text-[27px] font-bold text-[#0C4A6E] tracking-tight leading-tight">
-                Sri Sambodhi Maha Viharaya!
+                {currentTempleName}!
               </h1>
               <div className="flex items-center gap-2 mt-1.5 mb-2 flex-wrap">
                 <div className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0C4A6E]">
                   <span className="material-symbols-outlined text-[15px] text-[#0284C7]">location_on</span>
-                  <span>Kadokkele, Gampaha</span>
+                  <span>{temple?.address || 'Sri Lanka'}</span>
                 </div>
                 <span className="px-2.5 py-0.5 rounded-md text-[10.5px] font-bold bg-[#BAE6FD]/70 text-[#0369A1] border border-sky-300/60 shadow-2xs">
                   Temple Admin
@@ -1275,14 +1286,14 @@ export default function UsersRolesPage() {
                     )}
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium bg-sky-950/40 text-sky-200 border border-sky-300/40 tracking-wider">
                       <span className="material-symbols-outlined text-[13px] text-sky-200">temple_buddhist</span>
-                      <span>{selectedUserForDetails.templeCode || 'TPL-2026-0482'}</span>
+                      <span>{selectedUserForDetails.templeCode || currentTempleCode}</span>
                     </span>
                   </div>
                   <h2 className="text-[20px] font-bold text-white tracking-tight leading-snug">
                     {selectedUserForDetails.name || `${selectedUserForDetails.firstName || ''} ${selectedUserForDetails.lastName || ''}`}
                   </h2>
                   <div className="text-[12px] mt-1 text-sky-100/90 flex items-center gap-1.5 flex-wrap">
-                    <span className="font-medium text-white">{selectedUserForDetails.templeName || 'Sri Sambodhi Maha Viharaya'}</span>
+                    <span className="font-medium text-white">{selectedUserForDetails.templeName || currentTempleName}</span>
                     <span className="text-sky-300/60">•</span>
                     <span className="text-sky-100">{selectedUserForDetails.designation || selectedUserForDetails.roleDisplay}</span>
                     <span className="text-sky-300/60">•</span>
@@ -1347,7 +1358,7 @@ export default function UsersRolesPage() {
                       Temple Name
                     </span>
                     <span className="text-[13.5px] font-semibold text-gray-900 block">
-                      {selectedUserForDetails.templeName || 'Sri Sambodhi Maha Viharaya'}
+                      {selectedUserForDetails.templeName || currentTempleName}
                     </span>
                     <span className="text-[11px] text-gray-500 mt-1 flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -1359,7 +1370,7 @@ export default function UsersRolesPage() {
                       Temple Registration Code
                     </span>
                     <span className="font-mono text-[13.5px] font-semibold text-[#0369A1] block">
-                      {selectedUserForDetails.templeCode || 'TPL-2026-0482'}
+                      {selectedUserForDetails.templeCode || currentTempleCode}
                     </span>
                     <span className="text-[11px] text-gray-500 mt-1 block">
                       Department of Buddhist Affairs Code
@@ -1727,7 +1738,7 @@ export default function UsersRolesPage() {
                     </label>
                     <input
                       type="text"
-                      value={editingUser.templeName || 'Sri Sambodhi Maha Viharaya'}
+                      value={editingUser.templeName || currentTempleName}
                       onChange={(e) => setEditingUser({ ...editingUser, templeName: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-lg text-[13px] border border-gray-300 focus:outline-none focus:border-[#0C4A6E] focus:ring-2 focus:ring-[#0C4A6E]/10 bg-white text-gray-900 shadow-2xs transition-all"
                     />
@@ -1738,7 +1749,7 @@ export default function UsersRolesPage() {
                     </label>
                     <input
                       type="text"
-                      value={editingUser.templeCode || 'TPL-2026-0482'}
+                      value={editingUser.templeCode || currentTempleCode}
                       onChange={(e) => setEditingUser({ ...editingUser, templeCode: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-lg text-[13px] font-mono border border-gray-300 focus:outline-none focus:border-[#0C4A6E] focus:ring-2 focus:ring-[#0C4A6E]/10 bg-white text-[#0369A1] font-semibold shadow-2xs transition-all"
                     />
@@ -2322,10 +2333,10 @@ export default function UsersRolesPage() {
                     <GoldenLotusIcon className="w-6 h-5 text-[#0369A1]" />
                   </div>
                   <h4 className="text-[14.5px] font-bold text-[#0C4A6E] font-serif leading-tight">
-                    {selectedUserForCard.templeName || 'Sri Sambodhi Maha Viharaya'}
+                    {selectedUserForCard.templeName || currentTempleName}
                   </h4>
                   <p className="text-[10px] text-gray-600 font-mono mt-0.5">
-                    Registration No: <span className="font-bold text-[#0369A1]">{selectedUserForCard.templeCode || 'TPL-2026-0482'}</span> • Department of Buddhist Affairs
+                    Registration No: <span className="font-bold text-[#0369A1]">{selectedUserForCard.templeCode || currentTempleCode}</span> • Department of Buddhist Affairs
                   </p>
                 </div>
 

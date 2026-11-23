@@ -19,11 +19,13 @@ export default function AddUserPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { temple } = useActiveTemple();
+  const currentTempleName = temple?.name || '';
+  const currentTempleCode = temple?.registrationId || temple?.id || '';
 
   // Form State with user's required fields
   const [formData, setFormData] = useState({
-    templeName: temple?.name || 'Sri Sambodhi Maha Viharaya',
-    templeCode: temple?.registrationId || 'TPL-2026-0482',
+    templeName: currentTempleName,
+    templeCode: currentTempleCode,
     firstName: '',
     lastName: '',
     email: '',
@@ -216,8 +218,8 @@ export default function AddUserPage() {
     try {
       // Connect to PostgreSQL Backend API (FR-01, FR-08, FR-14)
       const res = await usersApi.create({
-        templeName: formData.templeName,
-        templeCode: formData.templeCode,
+        templeName: formData.templeName || currentTempleName,
+        templeCode: formData.templeCode || currentTempleCode,
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
@@ -240,8 +242,8 @@ export default function AddUserPage() {
 
       const newUser = {
         id: assignedId,
-        templeName: formData.templeName,
-        templeCode: formData.templeCode,
+        templeName: formData.templeName || currentTempleName,
+        templeCode: formData.templeCode || currentTempleCode,
         firstName: formData.firstName,
         lastName: formData.lastName,
         name: `${formData.firstName} ${formData.lastName}`,
@@ -251,7 +253,7 @@ export default function AddUserPage() {
         designation: effectiveDesignation,
         role: 'committee',
         roleDisplay: effectiveDesignation,
-        roleSubtitle: `${effectiveCommittee} • ${formData.templeName}`,
+        roleSubtitle: `${effectiveCommittee} • ${formData.templeName || currentTempleName}`,
         nic: formData.nic_id || 'Verified NIC (SL)',
         status: 'active',
         avatar: initials,
@@ -396,12 +398,12 @@ export default function AddUserPage() {
                 Register New Member / User,
               </span>
               <h1 className="font-serif text-[22px] sm:text-[27px] font-bold text-[#0C4A6E] tracking-tight leading-tight">
-                Sri Sambodhi Maha Viharaya!
+                {temple?.name || t('temple.defaultName', 'Temple')}!
               </h1>
               <div className="flex items-center gap-2 mt-1.5 mb-2 flex-wrap">
                 <div className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0C4A6E]">
                   <span className="material-symbols-outlined text-[15px] text-[#0284C7]">location_on</span>
-                  <span>Kadokkele, Gampaha</span>
+                  <span>{temple?.address || 'Sri Lanka'}</span>
                 </div>
               </div>
               <p className="text-[12px] sm:text-[13px] text-sky-900/80 font-normal leading-relaxed">
@@ -580,9 +582,9 @@ export default function AddUserPage() {
                         className={`form-input font-medium ${fieldErrors.templeName ? 'has-error' : ''}`}
                         id="templeName"
                         name="templeName"
-                        value={formData.templeName}
+                        value={formData.templeName || currentTempleName}
                         onChange={handleChange}
-                        placeholder="e.g., Sri Sambodhi Maha Viharaya"
+                        placeholder="e.g. Temple Name"
                         type="text"
                       />
                     </div>
@@ -607,9 +609,9 @@ export default function AddUserPage() {
                         className={`form-input font-mono font-semibold ${fieldErrors.templeCode ? 'has-error' : ''}`}
                         id="templeCode"
                         name="templeCode"
-                        value={formData.templeCode}
+                        value={formData.templeCode || currentTempleCode}
                         onChange={handleChange}
-                        placeholder="e.g., TPL-2026-0482"
+                        placeholder="e.g. TPL-XXXX-XXXX"
                         type="text"
                       />
                     </div>
