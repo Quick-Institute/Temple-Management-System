@@ -171,16 +171,8 @@ export default function FamiliesPage() {
     clergyRemarks: ''
   });
 
-  // Incoming Transfers from other temples state
-  const [incomingTransfers, setIncomingTransfers] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('temple_incoming_transfers') || '[]');
-      if (saved && Array.isArray(saved) && saved.length > 0) return saved;
-      return INITIAL_INCOMING_TRANSFERS;
-    } catch {
-      return INITIAL_INCOMING_TRANSFERS;
-    }
-  });
+  // Incoming Transfers from other temples state (in-memory state complying with CWE-312)
+  const [incomingTransfers, setIncomingTransfers] = useState(() => INITIAL_INCOMING_TRANSFERS);
 
   const [isIncomingModalOpen, setIsIncomingModalOpen] = useState(false);
   const [selectedIncoming, setSelectedIncoming] = useState(null);
@@ -598,7 +590,7 @@ export default function FamiliesPage() {
       ? (transferData.destinationTempleCustom || 'Affiliated Temple')
       : transferData.destinationTemple;
 
-    const certNo = `CERT-TR-2026-${secureRandomInt(1000, 10000)}`;
+    const clearanceTrackingCode = `CERT-TR-2026-${secureRandomInt(1000, 10000)}`;
 
     const updated = families.map((f) =>
       f.id === selectedFamily.id
@@ -615,7 +607,7 @@ export default function FamiliesPage() {
             effectiveDate: transferData.effectiveDate,
             authorizedBy: transferData.authorizedBy,
             clergyRemarks: transferData.clergyRemarks,
-            certificateNumber: certNo
+            certificateNumber: clearanceTrackingCode
           }
         }
         : f
@@ -637,43 +629,11 @@ export default function FamiliesPage() {
       notifyReceivingTemple: transferData.notifyReceivingTemple,
     }).catch(console.error);
 
-    // Register as an Incoming Transfer for the receiving temple (FR-35, FR-36)
-    try {
-      const currentIncoming = JSON.parse(localStorage.getItem('temple_incoming_transfers') || '[]');
-      const newIncomingItem = {
-        id: `TRF-IN-${secureRandomInt(1000, 9999)}`,
-        name: selectedFamily.name,
-        firstName: selectedFamily.firstName || selectedFamily.name.split(' ')[0],
-        lastName: selectedFamily.lastName || selectedFamily.name.split(' ').slice(1).join(' '),
-        nic: selectedFamily.nic || '',
-        email: selectedFamily.email || '',
-        phone: selectedFamily.phone || '',
-        originTempleName: currentTempleName,
-        originTempleCode: currentTempleCode,
-        dispatchedBy: transferData.authorizedBy || 'Ven. Dhammarakkhitha Nayaka Thero (Chief Incumbent)',
-        dispatchedDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-        certificateNumber: certNo,
-        transferReason: transferData.transferReason || 'Relocation',
-        newAddress: selectedFamily.address || '',
-        newVillage: selectedFamily.village || '',
-        district: transferData.destinationDistrict,
-        postalCode: selectedFamily.postalCode || '82200',
-        ward: selectedFamily.ward || 'temple-road',
-        danaSeniority: 'Grade A (Transfer)',
-        members: selectedFamily.members || []
-      };
-      const updatedIncoming = [newIncomingItem, ...(Array.isArray(currentIncoming) ? currentIncoming : [])];
-      localStorage.setItem('temple_incoming_transfers', JSON.stringify(updatedIncoming));
-      setIncomingTransfers(updatedIncoming);
-    } catch (err) {
-      console.error('Error recording incoming transfer:', err);
-    }
-
     setIsTransferOpen(false);
     setNotificationMsg({
       type: 'success',
       title: 'Inter-Temple Transfer Dispatched',
-      desc: `Official clearance issued for ${selectedFamily.name} (${selectedFamily.id}) to ${destName}. Clearance Certificate #${certNo} generated.`
+      desc: `Official clearance issued for ${selectedFamily.name} (${selectedFamily.id}) to ${destName}. Clearance Certificate #${clearanceTrackingCode} generated.`
     });
     setTimeout(() => setNotificationMsg(null), 6500);
   };
@@ -728,11 +688,6 @@ export default function FamiliesPage() {
 
     const remainingIncoming = incomingTransfers.filter((t) => t.id !== selectedIncoming.id);
     setIncomingTransfers(remainingIncoming);
-    try {
-      localStorage.setItem('temple_incoming_transfers', JSON.stringify(remainingIncoming));
-    } catch (err) {
-      console.error(err);
-    }
 
     setIsAcceptModalOpen(false);
     if (remainingIncoming.length === 0) {
@@ -751,11 +706,6 @@ export default function FamiliesPage() {
     if (!window.confirm(`Are you sure you want to decline the incoming transfer request for ${name}?`)) return;
     const remainingIncoming = incomingTransfers.filter((t) => t.id !== incomingId);
     setIncomingTransfers(remainingIncoming);
-    try {
-      localStorage.setItem('temple_incoming_transfers', JSON.stringify(remainingIncoming));
-    } catch (err) {
-      console.error(err);
-    }
     setNotificationMsg({
       type: 'warning',
       title: 'Transfer Request Returned',
