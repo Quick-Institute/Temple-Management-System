@@ -58,31 +58,33 @@ const PER_PAGE = 4
 /*
  * One colour story per status, used for the card's top ribbon, its emblem tile and the pill.
  * Keeping them in one map means a new status can never look half-styled.
+ *
+ * `glow` names a rule in index.css (`lift-*`) rather than carrying a long shadow value here.
  */
 const ROW_TONE: Record<TempleStatus, { ribbon: string; tile: string; ring: string; glow: string }> = {
     'Active': {
         ribbon: 'from-emerald-400 via-emerald-500 to-teal-500',
         tile: 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/20',
         ring: 'group-hover:border-emerald-300',
-        glow: 'group-hover:shadow-[0_18px_38px_-22px_rgba(5,150,105,.55)]',
+        glow: 'lift-emerald',
     },
     'Pending approval': {
         ribbon: 'from-sky-300 via-blue-400 to-blue-500',
         tile: 'bg-accent-blue-50 text-accent-blue ring-1 ring-accent-blue/20',
         ring: 'group-hover:border-blue-300',
-        glow: 'group-hover:shadow-[0_18px_38px_-22px_rgba(47,111,208,.45)]',
+        glow: 'lift-blue',
     },
     'Changes requested': {
         ribbon: 'from-purple-300 via-purple-400 to-purple-500',
         tile: 'bg-accent-purple-50 text-accent-purple ring-1 ring-accent-purple/20',
         ring: 'group-hover:border-purple-300',
-        glow: 'group-hover:shadow-[0_18px_38px_-22px_rgba(122,63,209,.45)]',
+        glow: 'lift-violet',
     },
     'Deletion requested': {
         ribbon: 'from-rose-300 via-rose-400 to-pink-500',
         tile: 'bg-rose-50 text-rose-600 ring-1 ring-rose-500/20',
         ring: 'group-hover:border-rose-300',
-        glow: 'group-hover:shadow-[0_18px_38px_-22px_rgba(225,29,72,.5)]',
+        glow: 'lift-rose',
     },
 }
 
@@ -108,7 +110,7 @@ const Stat = ({icon: Icon, label, value, tone}: {
        wider than the fixed-width row and the last card hangs off the banner. The label also
        wraps rather than overflowing if a translation is longer than the space allows. */
     <div
-        className="flex min-w-0 items-center gap-2.5 rounded-2xl border border-[#BAE6FD] bg-white/90 px-3 py-2.5 shadow-[0_1px_3px_rgba(2,132,199,0.06)] backdrop-blur-[2px]">
+        className="temple-list-stat">
         <span className={`grid h-8 w-8 flex-none place-items-center rounded-xl ${tone}`}>
             <Icon size={16} strokeWidth={1.9}/>
         </span>
@@ -347,7 +349,7 @@ export const TempleListPage = () => {
 
                 {/* ---------------------------------------------------------------- header */}
                 <header
-                    className="relative rounded-2xl border border-[#BAE6FD] bg-linear-to-r from-[#D0E8F9] via-[#E4F2FD] to-[#D5EDFD] px-4 py-5 shadow-[0_4px_20px_rgba(2,132,199,0.08)] sm:px-6 sm:py-6 lg:px-7">
+                    className="temple-list-band">
 
                     {/* The artwork is clipped by its own layer, not by the header: clipping the
                         header rounded the photo but also cut off the help tooltip that hangs
@@ -382,7 +384,7 @@ export const TempleListPage = () => {
                     <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                         <div className="min-w-0">
                             <span
-                                className="inline-flex items-center gap-2 rounded-full bg-white/75 px-3 py-1 text-[0.75rem] font-bold tracking-[0.14em] text-sage-700 uppercase ring-1 ring-[#BAE6FD]">
+                                className="temple-list-eyebrow">
                                 <Landmark size={13}/> {t('nav.templeInformation')}
                             </span>
                             <h1 className="mt-3 font-temple text-[2rem] leading-tight font-semibold text-sage-900 sm:text-[2.3rem]">
@@ -400,7 +402,7 @@ export const TempleListPage = () => {
                                     </Link>
                                 ) : (
                                     <span
-                                        className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-white/75 px-3.5 text-[0.93rem] font-semibold text-sage-700 ring-1 ring-[#BAE6FD]">
+                                        className="temple-list-readonly">
                                         <Eye
                                             size={15}/> {t('list.readOnlyAccess', {level: levelLabel('manageTempleInformation')})}
                                     </span>
