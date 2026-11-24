@@ -52,6 +52,25 @@ import EditFamilyPage from '../pages/admin/families/EditFamilyPage';
 import UsersRolesPage from '../pages/admin/users/UsersRolesPage';
 import AddUserPage from '../pages/admin/users/AddUserPage';
 import EditUserPage from '../pages/admin/users/EditUserPage';
+import { verifyQrSecurityToken } from '../utils/qrSecurity';
+
+/** Guarded / Public route for Family Registration (allows verified QR scan without admin session) */
+const FamilyAddRoute = () => {
+    const [searchParams] = useSearchParams();
+    const token = searchParams.get('token');
+    const templeCode = searchParams.get('templeCode');
+    const isQrValid = Boolean(token && templeCode && verifyQrSecurityToken(templeCode, token));
+
+    if (isQrValid) {
+        return <AddFamilyPage isQrMode={true} />;
+    }
+
+    return (
+        <RequirePermissionShell permission="registerFamilyQr">
+            <AddFamilyPage />
+        </RequirePermissionShell>
+    );
+};
 
 
 /* Roles that only ever see their own single temple, read-only. */
@@ -276,14 +295,12 @@ export const AppRoutes = () => (
         {/* Dayaka Families Management Routes */}
         <Route path="/families" element={<RequirePermissionShell
             permission="registerFamilyQr"><FamiliesPage/></RequirePermissionShell>}/>
-        <Route path="/families/add" element={<RequirePermissionShell
-            permission="registerFamilyQr"><AddFamilyPage/></RequirePermissionShell>}/>
+        <Route path="/families/add" element={<FamilyAddRoute/>}/>
         <Route path="/families/edit/:id" element={<RequirePermissionShell
             permission="registerFamilyQr"><EditFamilyPage/></RequirePermissionShell>}/>
         <Route path="/admin/families" element={<RequirePermissionShell
             permission="registerFamilyQr"><FamiliesPage/></RequirePermissionShell>}/>
-        <Route path="/admin/families/add" element={<RequirePermissionShell
-            permission="registerFamilyQr"><AddFamilyPage/></RequirePermissionShell>}/>
+        <Route path="/admin/families/add" element={<FamilyAddRoute/>}/>
         <Route path="/admin/families/edit/:id" element={<RequirePermissionShell
             permission="registerFamilyQr"><EditFamilyPage/></RequirePermissionShell>}/>
 

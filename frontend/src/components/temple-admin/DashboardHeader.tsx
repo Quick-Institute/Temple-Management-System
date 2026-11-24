@@ -555,7 +555,7 @@ export default function DashboardHeader({onMenuClick, className = ''}: Dashboard
                                     </div>
                                     <div className="mt-2 flex items-center gap-1.5 text-[0.72rem] text-muted">
                                         <Landmark size={13} strokeWidth={1.8}/>{' '}
-                                        {user?.templeName ?? 'Sri Sambodhi Maha Viharaya'}
+                                        {user?.templeName ?? workingTemple?.name ?? 'Temple'}
                                     </div>
                                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                                         <span className="badge badge-muted text-[0.68rem]">

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Sidebar from '../../../components/Sidebar';
 import DashboardHeader from '../../../components/temple-admin/DashboardHeader';
@@ -15,6 +15,7 @@ import {
 } from '../../../utils/sriLankanValidation';
 import { secureRandomInt, secureRandomString } from '../../../utils/cryptoRandom';
 import { saveSessionFamily, getSessionFamilies } from '../../../utils/sessionCache';
+import { verifyQrSecurityToken } from '../../../utils/qrSecurity';
 
 interface FamilyMemberInput {
   id: number;
@@ -24,15 +25,23 @@ interface FamilyMemberInput {
   gender: 'Male' | 'Female';
 }
 
-export default function AddFamilyPage() {
+export default function AddFamilyPage({ isQrMode = false }: { isQrMode?: boolean }) {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isSi = i18n.language?.startsWith('si');
+  const [searchParams] = useSearchParams();
+  const paramTempleCode = searchParams.get('templeCode') || '';
+  const paramToken = searchParams.get('token') || '';
+  const isVerifiedScan = isQrMode || Boolean(paramTempleCode && paramToken && verifyQrSecurityToken(paramTempleCode, paramToken));
+
   const { temple } = useActiveTemple();
+  const currentTempleName = temple?.name || '';
+  const currentTempleCode = paramTempleCode || temple?.registrationId || temple?.id || '';
 
   // Form State
   const [formData, setFormData] = useState({
-    templeName: temple?.name || 'Sri Sambodhi Maha Viharaya',
-    templeCode: temple?.registrationId || 'TPL-2026-0482',
+    templeName: currentTempleName,
+    templeCode: currentTempleCode,
     firstName: '',
     lastName: '',
     nic: '',
@@ -314,8 +323,8 @@ export default function AddFamilyPage() {
     try {
       // Connect to PostgreSQL Backend API (FR-23, FR-31, FR-37)
       const res = await familiesApi.create({
-        templeName: formData.templeName,
-        templeCode: formData.templeCode,
+        templeName: formData.templeName || currentTempleName,
+        templeCode: formData.templeCode || currentTempleCode,
         firstName: formData.firstName,
         lastName: formData.lastName,
         nic: formData.nic,
@@ -328,8 +337,8 @@ export default function AddFamilyPage() {
         ward: formData.village.toLowerCase().includes('north') ? 'north-ward' : 'temple-road',
         password: formData.password,
         clericalNotes: formData.clericalNotes,
-        enrollmentType: 'manual',
-        enrollmentMode: 'Admin-Assisted Clergy Registration',
+        enrollmentType: isVerifiedScan ? 'qr' : 'manual',
+        enrollmentMode: isVerifiedScan ? 'Self-Service QR Registration' : 'Admin-Assisted Clergy Registration',
         members: members.map((m) => ({
           fullName: m.fullName || 'Household Member',
           relationship: m.relationship || 'Dependent',
@@ -344,8 +353,8 @@ export default function AddFamilyPage() {
       const newFamilyRecord = {
         key: `fam-${Date.now()}`,
         id: generatedFamilyId,
-        templeName: formData.templeName,
-        templeCode: formData.templeCode,
+        templeName: formData.templeName || currentTempleName,
+        templeCode: formData.templeCode || currentTempleCode,
         firstName: formData.firstName,
         lastName: formData.lastName,
         name: familyHeadName,
@@ -359,8 +368,8 @@ export default function AddFamilyPage() {
         postalCode: formData.postalCode,
         ward: formData.village.toLowerCase().includes('north') ? 'north-ward' : 'temple-road',
         status: 'Active',
-        enrollmentMode: 'Admin-Assisted Clergy Registration',
-        enrollmentType: 'manual',
+        enrollmentMode: isVerifiedScan ? 'Self-Service QR Registration' : 'Admin-Assisted Clergy Registration',
+        enrollmentType: isVerifiedScan ? 'qr' : 'manual',
         clericalNotes: formData.clericalNotes || '',
         members: members.length > 0 ? members.map(m => ({
           name: m.fullName || 'Household Member',
@@ -470,15 +479,22 @@ export default function AddFamilyPage() {
             {/* Left Content Column */}
             <div className="relative z-10 flex flex-col max-w-xl">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <Link
-                  to="/families"
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold transition-all hover:bg-white bg-white/80 text-sky-900 border border-sky-300 shadow-xs"
-                >
-                  <span className="material-symbols-outlined text-[14px]">arrow_back</span>
-                  <span>Back to Registry</span>
-                </Link>
+                {!isVerifiedScan ? (
+                  <Link
+                    to="/families"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold transition-all hover:bg-white bg-white/80 text-sky-900 border border-sky-300 shadow-xs"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">arrow_back</span>
+                    <span>Back to Registry</span>
+                  </Link>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs">
+                    <span className="material-symbols-outlined text-[15px] text-emerald-700">verified</span>
+                    <span>{isSi ? 'තහවුරු කළ QR ලියාපදිංචිය' : 'Verified QR Devotee Onboarding'}</span>
+                  </span>
+                )}
                 <span className="px-2.5 py-0.5 rounded-md text-[10.5px] font-bold bg-[#BAE6FD]/70 text-[#0369A1] border border-sky-300/60 shadow-2xs">
-                  Temple Admin
+                  {isVerifiedScan ? (isSi ? 'නිල දායක ලේඛනය' : 'Parish Enrollment') : 'Temple Admin'}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-md text-[10.5px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
                   Duplicate Shield
@@ -489,12 +505,12 @@ export default function AddFamilyPage() {
                 Register New Dayaka Family,
               </span>
               <h1 className="font-serif text-[22px] sm:text-[27px] font-bold text-[#0C4A6E] tracking-tight leading-tight">
-                Sri Sambodhi Maha Viharaya!
+                {temple?.name || t('temple.defaultName', 'Temple')}!
               </h1>
               <div className="flex items-center gap-2 mt-1.5 mb-2 flex-wrap">
                 <div className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0C4A6E]">
                   <span className="material-symbols-outlined text-[15px] text-[#0284C7]">location_on</span>
-                  <span>Kadokkele, Gampaha</span>
+                  <span>{temple?.address || 'Sri Lanka'}</span>
                 </div>
               </div>
               <p className="text-[12px] sm:text-[13px] text-sky-900/80 font-normal leading-relaxed">
@@ -674,9 +690,9 @@ export default function AddFamilyPage() {
                         className={`form-input font-medium ${fieldErrors.templeName ? 'has-error' : ''}`}
                         id="templeName"
                         name="templeName"
-                        value={formData.templeName}
+                        value={formData.templeName || currentTempleName}
                         onChange={handleInputChange}
-                        placeholder="e.g. Sri Sambodhi Maha Viharaya"
+                        placeholder="e.g. Temple Name"
                         type="text"
                       />
                     </div>
@@ -686,7 +702,7 @@ export default function AddFamilyPage() {
                         <span>{fieldErrors.templeName}</span>
                       </p>
                     ) : (
-                      <p className="form-hint">Official parish temple in the Hambantota Sasana division</p>
+                      <p className="form-hint">Official parish temple in the Sasana division</p>
                     )}
                   </div>
 
@@ -701,9 +717,9 @@ export default function AddFamilyPage() {
                         className={`form-input font-mono font-semibold ${fieldErrors.templeCode ? 'has-error' : ''}`}
                         id="templeCode"
                         name="templeCode"
-                        value={formData.templeCode}
+                        value={formData.templeCode || currentTempleCode}
                         onChange={handleInputChange}
-                        placeholder="e.g. TPL-2026-0482"
+                        placeholder="e.g. TPL-XXXX-XXXX"
                         type="text"
                       />
                     </div>
