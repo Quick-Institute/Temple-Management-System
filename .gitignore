@@ -30,6 +30,7 @@ coverage/
 
 # IDE and editor files
 .idea/
+.vscode/
 
 # Operating system files
 .DS_Store
@@ -52,5 +53,3 @@ desktop.ini
 *.pem
 *.key
 *.cert
-
-config.bat
