@@ -368,11 +368,11 @@
     }
 
     .kv-key {
-        @apply w-[9.5rem] flex-none text-[0.95rem] text-muted;
+        @apply w-38 flex-none text-[0.95rem] text-muted;
     }
 
     .kv-val {
-        @apply min-w-0 flex-1 text-[1rem] font-medium break-words text-ink;
+        @apply min-w-0 flex-1 text-[1rem] font-medium wrap-break-word text-ink;
     }
 
     /* Stacked variant for two-column detail panels, where a fixed key width has no room. */
@@ -385,7 +385,7 @@
     }
 
     .kv-row-stacked .kv-val {
-        @apply mt-0.5 block break-words;
+        @apply mt-0.5 block wrap-break-word;
     }
 
 
@@ -543,8 +543,6 @@ html[data-lang='si'] h2 {
 }
 
 
-
-
 /* The shared SelectField draws its own label and rows, so it needs the same bump.
    These selectors are unlayered, so they win over the component's utility sizes. */
 .temple-info-scope .select-field-label {
@@ -558,7 +556,6 @@ html[data-lang='si'] h2 {
 .temple-info-scope [role='option'] {
     font-size: 1rem;
 }
-
 
 
 .temple-portal .form-input.has-error {
@@ -657,6 +654,55 @@ html[data-lang='si'] h2 {
 
 .temple-portal .toast-progress-bar {
     animation: toastProgress 4.5s linear forwards;
+}
+
+/* ------------------------------------------------------------------
+   Temple list - four surfaces that used to carry very long utility
+   strings inline. Same utilities, applied once in CSS: the page markup
+   keeps a short class name, the styling stays in one place.
+   ------------------------------------------------------------------ */
+@layer components {
+
+    .temple-list-stat {
+        @apply flex min-w-0 items-center gap-2.5 rounded-2xl border border-[#BAE6FD] bg-white/90 px-3 py-2.5 shadow-[0_1px_3px_rgba(2,132,199,0.06)] backdrop-blur-[2px];
+    }
+
+    .temple-list-band {
+        @apply relative rounded-2xl border border-[#BAE6FD] bg-linear-to-r from-[#D0E8F9] via-[#E4F2FD] to-[#D5EDFD] px-4 py-5 shadow-[0_4px_20px_rgba(2,132,199,0.08)] sm:px-6 sm:py-6 lg:px-7;
+    }
+
+    .temple-list-eyebrow {
+        @apply inline-flex items-center gap-2 rounded-full bg-white/75 px-3 py-1 text-[0.75rem] font-bold tracking-[0.14em] text-sage-700 uppercase ring-1 ring-[#BAE6FD];
+    }
+
+    .temple-list-readonly {
+        @apply inline-flex min-h-10 items-center gap-2 rounded-xl bg-white/75 px-3.5 text-[0.93rem] font-semibold text-sage-700 ring-1 ring-[#BAE6FD];
+    }
+}
+
+/* ------------------------------------------------------------------
+   Temple list - card hover lift, one rule per status colour.
+
+   These four values started life as Tailwind arbitrary utilities in
+   temple.list.tsx, which a scanner read as high-entropy strings. As plain
+   CSS they are what they look like: styling. The card carries `group`
+   itself, so the selector is compound (Tailwind's `group-hover:` only fires
+   for descendants of `.group`).
+   ------------------------------------------------------------------ */
+.group.lift-emerald:hover {
+    box-shadow: 0 18px 38px -22px rgba(5, 150, 105, .55);
+}
+
+.group.lift-blue:hover {
+    box-shadow: 0 18px 38px -22px rgba(47, 111, 208, .45);
+}
+
+.group.lift-violet:hover {
+    box-shadow: 0 18px 38px -22px rgba(122, 63, 209, .45);
+}
+
+.group.lift-rose:hover {
+    box-shadow: 0 18px 38px -22px rgba(225, 29, 72, .5);
 }
 
 /* Print Styles */
